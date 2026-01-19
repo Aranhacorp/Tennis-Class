@@ -1,6 +1,7 @@
 import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 import pandas as pd
+from datetime import datetime
 
 # 1. Configuração da página
 st.set_page_config(page_title="TENNIS CLASS", layout="centered")
@@ -16,7 +17,6 @@ st.markdown("""
         background-attachment: fixed;
     }
     
-    /* Container para Título e Logo ficarem na mesma linha */
     .header-container {
         display: flex;
         align-items: center;
@@ -36,7 +36,6 @@ st.markdown("""
 
     .logo-img {
         border-radius: 10px;
-        /* Isso ajuda a mesclar a silhueta se ela tiver fundo branco */
         mix-blend-mode: screen; 
     }
 
@@ -50,8 +49,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Cabeçalho com Título e a Silhueta (Link direto do seu GitHub)
-# O %20 substitui os espaços no nome do arquivo para o navegador entender
+# 3. Cabeçalho
 st.markdown("""
     <div class="header-container">
         <h1>TENNIS CLASS</h1>
@@ -70,6 +68,7 @@ with st.container():
     except Exception:
         st.error("Erro na conexão com a planilha.")
 
+    # Formulário de Agendamento
     with st.form("agendamento"):
         aluno = st.text_input("Nome do Aluno")
         servico = st.selectbox("Selecione o Serviço", [
@@ -77,15 +76,33 @@ with st.container():
             "Aula em Dupla (R$ 200/pessoa)", 
             "Aluguel de Quadra (R$ 250)"
         ])
+        
         data = st.date_input("Data Desejada")
-        horario = st.selectbox("Horário", ["08:00", "09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00"])
+        
+        # --- Lógica de Horários Dinâmicos por Dia da Semana ---
+        # 0=Seg, 1=Ter, 2=Qua, 3=Qui, 4=Sex, 5=Sáb, 6=Dom
+        dia_semana = data.weekday() 
+        
+        if dia_semana == 0:  # SEGUNDA-FEIRA
+            lista_horarios = ["12:00", "13:00", "15:00"]
+        elif dia_semana == 1: # TERÇA-FEIRA
+            lista_horarios = ["11:00", "12:00", "13:00", "14:00", "15:00"]
+        elif dia_semana == 2: # QUARTA-FEIRA
+            lista_horarios = ["12:00", "14:00", "16:00", "18:00"]
+        elif dia_semana == 3: # QUINTA-FEIRA
+            lista_horarios = ["10:00", "12:00", "15:00", "17:00", "19:00"]
+        elif dia_semana == 4: # SEXTA-FEIRA
+            lista_horarios = ["10:00", "12:00", "15:00", "16:00", "18:00", "20:00"]
+        else: # FINAIS DE SEMANA (Sábado e Domingo)
+            lista_horarios = ["08:00", "09:00", "10:00", "11:00", "14:00", "15:00"]
+            
+        horario = st.selectbox("Horário Disponível", lista_horarios)
         
         submit = st.form_submit_button("CONFIRMAR E IR PARA PAGAMENTO")
         
         if submit:
             if aluno:
                 try:
-                    # Salva na planilha
                     nova_linha = pd.DataFrame([{
                         "Data": str(data),
                         "Horario": horario,
@@ -109,11 +126,4 @@ with st.container():
     # --- ETAPA DE PAGAMENTO ---
     if st.session_state.get('pago'):
         st.markdown("---")
-        st.markdown('<div style="text-align: center; background-color: #f0f8ff; padding: 20px; border-radius: 10px; border: 2px dashed #003366;">', unsafe_allow_html=True)
-        st.markdown(f"### 💰 Pagamento via PIX")
-        st.write(f"Valor referente a: **{st.session_state['servico_selecionado']}**")
-        st.code("250.197.278-30", language="text")
-        st.write("Envie o comprovante para o WhatsApp: **(11) 97142-5028**")
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('<div style="text-align: center; background-color: #f0f8ff; padding: 20px;

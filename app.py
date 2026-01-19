@@ -3,7 +3,7 @@ from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 
 # 1. Configuração da página
-st.set_page_config(page_title="SPORTS CLASS", layout="centered")
+st.set_page_config(page_title="TENNIS CLASS", layout="centered")
 
 # 2. CSS para o fundo e estilo
 st.markdown("""
@@ -111,3 +111,4 @@ with st.container():
         st.markdown('</div>', unsafe_allow_html=True)
         
     st.markdown('</div>', unsafe_allow_html=True)
+

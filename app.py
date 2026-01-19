@@ -98,7 +98,7 @@ with st.container():
         st.write(f"Para confirmar sua vaga, realize o pagamento do **{servico}**")
         
         # Coloque sua chave PIX aqui
-        st.code("250.197.278-30 (Chave tipo CPF", language="text")
+        st.code("250.197.278-30 (Chave tipo CPF)
         
         st.write("**Instruções:**")
         st.write("1. Copie a chave acima e pague no seu banco.")
@@ -107,5 +107,6 @@ with st.container():
         st.markdown('</div>', unsafe_allow_html=True)
         
     st.markdown('</div>', unsafe_allow_html=True)
+
 
 

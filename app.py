@@ -8,10 +8,9 @@ from io import BytesIO
 # 1. Configuração da página
 st.set_page_config(page_title="TENNIS CLASS", layout="centered")
 
-# 2. Estilização Visual (CSS) e ÍCONE FLUTUANTE DO WHATSAPP
+# 2. Estilização Visual e ÍCONE WHATSAPP (Logo Branco)
 st.markdown("""
     <style>
-    /* Fundo do App */
     .stApp {
         background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), 
                     url("https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/Fundo%20APP%20ver2.png");
@@ -20,7 +19,6 @@ st.markdown("""
         background-attachment: fixed;
     }
     
-    /* Container do Cabeçalho */
     .header-container {
         display: flex;
         align-items: center;
@@ -37,7 +35,6 @@ st.markdown("""
     }
     .logo-img { border-radius: 10px; mix-blend-mode: screen; }
 
-    /* Card Principal */
     .main-card {
         background-color: rgba(255, 255, 255, 0.95);
         padding: 30px;
@@ -46,28 +43,29 @@ st.markdown("""
         margin-top: 10px;
     }
 
-    /* BOTÃO FLUTUANTE DO WHATSAPP */
+    /* BOTÃO WHATSAPP - LOGO BRANCO */
     .whatsapp-float {
         position: fixed;
         width: 60px;
         height: 60px;
-        bottom: 40px;
-        right: 40px;
-        background-color: #25d366;
-        color: #FFF;
+        bottom: 20px;
+        right: 20px;
+        background-color: #25d366; /* Verde WhatsApp */
+        color: white !important; /* Ícone Branco */
         border-radius: 50px;
         text-align: center;
-        font-size: 30px;
-        box-shadow: 2px 2px 3px #999;
+        font-size: 35px;
+        box-shadow: 2px 2px 10px rgba(0,0,0,0.5);
         z-index: 1000;
         display: flex;
         align-items: center;
         justify-content: center;
         text-decoration: none !important;
+        transition: all 0.3s ease;
     }
     .whatsapp-float:hover {
+        transform: scale(1.1);
         background-color: #128c7e;
-        color: white !important;
     }
     </style>
     
@@ -78,7 +76,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # 3. Cabeçalho
-st.markdown(f"""
+st.markdown("""
     <div class="header-container">
         <h1>TENNIS CLASS</h1>
         <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/tennis-player-silhouette%20ver2.jpg" width="70" class="logo-img">
@@ -105,21 +103,14 @@ with st.container():
         ])
         data = st.date_input("Data Desejada")
         
-        # --- LÓGICA DE HORÁRIOS ATUALIZADA ---
+        # Horários Específicos
         dia_semana = data.weekday() 
-        
-        if dia_semana == 0:  # SEGUNDA
-            lista_horarios = ["12:00", "13:00", "15:00"]
-        elif dia_semana == 1: # TERÇA
-            lista_horarios = ["11:00", "12:00", "13:00", "14:00", "15:00"]
-        elif dia_semana == 2: # QUARTA
-            lista_horarios = ["12:00", "14:00", "16:00", "18:00"]
-        elif dia_semana == 3: # QUINTA
-            lista_horarios = ["10:00", "12:00", "15:00", "17:00", "19:00"]
-        elif dia_semana == 4: # SEXTA
-            lista_horarios = ["10:00", "12:00", "15:00", "16:00", "18:00", "20:00"]
-        else: # FINAIS DE SEMANA
-            lista_horarios = ["08:00", "09:00", "10:00", "11:00"]
+        if dia_semana == 0: lista_horarios = ["12:00", "13:00", "15:00"]
+        elif dia_semana == 1: lista_horarios = ["11:00", "12:00", "13:00", "14:00", "15:00"]
+        elif dia_semana == 2: lista_horarios = ["12:00", "14:00", "16:00", "18:00"]
+        elif dia_semana == 3: lista_horarios = ["10:00", "12:00", "15:00", "17:00", "19:00"]
+        elif dia_semana == 4: lista_horarios = ["10:00", "12:00", "15:00", "16:00", "18:00", "20:00"]
+        else: lista_horarios = ["08:00", "09:00", "10:00", "11:00"]
             
         horario = st.selectbox("Horário Disponível", lista_horarios)
         submit = st.form_submit_button("CONFIRMAR E GERAR QR CODE")
@@ -132,18 +123,16 @@ with st.container():
                     df_final = pd.concat([dados_existentes, nova_linha], ignore_index=True)
                     conn.update(data=df_final)
                     
-                    # Balões celebrando a reserva
-                    st.balloons() 
-                    
+                    st.balloons() # Balões de confirmação
                     st.session_state['confirmado'] = True
                     st.session_state['servico_valor'] = servico
                     st.success(f"Reserva pré-agendada para {aluno}!")
-                except Exception as e:
-                    st.error("Erro ao salvar agendamento.")
+                except Exception:
+                    st.error("Erro ao salvar dados.")
             else:
-                st.warning("Por favor, preencha o nome do aluno.")
+                st.warning("Preencha o nome do aluno.")
 
-    # --- SEÇÃO DO PIX COM QR CODE ---
+    # Seção do PIX
     if st.session_state.get('confirmado'):
         st.markdown("---")
         st.markdown('<div style="text-align: center; color: black;">', unsafe_allow_html=True)
@@ -151,16 +140,12 @@ with st.container():
         st.write(f"**Favorecido:** Andre Aranha Cagno")
         st.write(f"**Serviço:** {st.session_state['servico_valor']}")
         
-        # Gerador do QR Code
+        # QR Code
         chave_pix = "25019727830"
         qr = segno.make(chave_pix)
         img_buffer = BytesIO()
         qr.save(img_buffer, kind='png', scale=7)
-        
-        st.image(img_buffer.getvalue(), width=250, caption="Escaneie para concluir o pagamento")
+        st.image(img_buffer.getvalue(), width=250, caption="Escaneie para pagar")
         
         st.code("250.197.278-30", language="text")
-        st.write("Após pagar, envie o comprovante: **(11) 97142-5028**")
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.write("Envie o comprovante: **(11) 97

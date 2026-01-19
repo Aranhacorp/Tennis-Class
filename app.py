@@ -6,7 +6,7 @@ from datetime import datetime
 # 1. Configuração da página
 st.set_page_config(page_title="TENNIS CLASS", layout="centered")
 
-# 2. CSS para o fundo, estilo do card e ALINHAMENTO DO LOGO
+# 2. CSS para layout e fundo
 st.markdown("""
     <style>
     .stApp {
@@ -31,7 +31,6 @@ st.markdown("""
         font-family: 'Arial Black', sans-serif;
         text-shadow: 2px 2px 4px #000000;
         margin: 0;
-        padding: 0;
     }
 
     .logo-img {
@@ -49,8 +48,8 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Cabeçalho
-st.markdown("""
+# 3. Cabeçalho com Título e Silhueta
+st.markdown(f"""
     <div class="header-container">
         <h1>TENNIS CLASS</h1>
         <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/tennis-player-silhouette%20ver2.jpg" width="70" class="logo-img">
@@ -68,7 +67,6 @@ with st.container():
     except Exception:
         st.error("Erro na conexão com a planilha.")
 
-    # Formulário de Agendamento
     with st.form("agendamento"):
         aluno = st.text_input("Nome do Aluno")
         servico = st.selectbox("Selecione o Serviço", [
@@ -79,22 +77,21 @@ with st.container():
         
         data = st.date_input("Data Desejada")
         
-        # --- Lógica de Horários Dinâmicos por Dia da Semana ---
-        # 0=Seg, 1=Ter, 2=Qua, 3=Qui, 4=Sex, 5=Sáb, 6=Dom
+        # --- Lógica de Horários Dinâmicos (Segunda a Sexta) ---
         dia_semana = data.weekday() 
         
-        if dia_semana == 0:  # SEGUNDA-FEIRA
+        if dia_semana == 0:  # SEGUNDA
             lista_horarios = ["12:00", "13:00", "15:00"]
-        elif dia_semana == 1: # TERÇA-FEIRA
+        elif dia_semana == 1: # TERÇA
             lista_horarios = ["11:00", "12:00", "13:00", "14:00", "15:00"]
-        elif dia_semana == 2: # QUARTA-FEIRA
+        elif dia_semana == 2: # QUARTA
             lista_horarios = ["12:00", "14:00", "16:00", "18:00"]
-        elif dia_semana == 3: # QUINTA-FEIRA
+        elif dia_semana == 3: # QUINTA
             lista_horarios = ["10:00", "12:00", "15:00", "17:00", "19:00"]
-        elif dia_semana == 4: # SEXTA-FEIRA
+        elif dia_semana == 4: # SEXTA
             lista_horarios = ["10:00", "12:00", "15:00", "16:00", "18:00", "20:00"]
-        else: # FINAIS DE SEMANA (Sábado e Domingo)
-            lista_horarios = ["08:00", "09:00", "10:00", "11:00", "14:00", "15:00"]
+        else: # FINAIS DE SEMANA
+            lista_horarios = ["08:00", "09:00", "10:00", "11:00"]
             
         horario = st.selectbox("Horário Disponível", lista_horarios)
         
@@ -121,9 +118,3 @@ with st.container():
                 except Exception as e:
                     st.error("Erro ao salvar dados na planilha.")
             else:
-                st.warning("Por favor, preencha o nome do aluno.")
-
-    # --- ETAPA DE PAGAMENTO ---
-    if st.session_state.get('pago'):
-        st.markdown("---")
-        st.markdown('<div style="text-align: center; background-color: #f0f8ff; padding: 20px;

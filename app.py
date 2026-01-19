@@ -48,7 +48,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Cabeçalho Dinâmico
+# 3. Cabeçalho com Título e Imagem Lateral
 st.markdown(f"""
     <div class="header-container">
         <h1>TENNIS CLASS</h1>
@@ -77,8 +77,8 @@ with st.container():
         
         data = st.date_input("Data Desejada")
         
-        # --- Lógica de Horários Dinâmicos ---
-        dia_semana = data.weekday() # 0=Seg, 1=Ter, 2=Qua, 3=Qui, 4=Sex
+        # --- Lógica de Horários (Segunda a Sexta) ---
+        dia_semana = data.weekday() 
         
         if dia_semana == 0:  # SEGUNDA
             lista_horarios = ["12:00", "13:00", "15:00"]
@@ -113,4 +113,21 @@ with st.container():
                     
                     st.session_state['pago'] = True
                     st.session_state['servico_selecionado'] = servico
-                    st.success(f"Reserva pré-agendada para
+                    st.success(f"Reserva pré-agendada para {aluno}!")
+                    st.balloons()
+                except Exception as e:
+                    st.error("Erro ao salvar dados na planilha.")
+            else:
+                st.warning("Por favor, preencha o nome do aluno.")
+
+    # --- ETAPA DE PAGAMENTO (CORRIGIDA) ---
+    if st.session_state.get('pago'):
+        st.markdown("---")
+        st.markdown('<div style="text-align: center; background-color: #f0f8ff; padding: 20px; border-radius: 10px; border: 2px dashed #003366;">', unsafe_allow_html=True)
+        st.markdown("### 💰 Pagamento via PIX")
+        st.write(f"Valor referente a: **{st.session_state.get('servico_selecionado')}**")
+        st.code("250.197.278-30", language="text")
+        st.write("Envie o comprovante para o WhatsApp: **(11) 97142-5028**")
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+    st.markdown('</div>', unsafe_allow_html=True)

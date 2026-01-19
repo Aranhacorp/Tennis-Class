@@ -80,10 +80,10 @@ with st.container():
                     df_final = pd.concat([dados_existentes, nova_linha], ignore_index=True)
                     conn.update(data=df_final)
                     
-                    # Mensagem de sucesso e ativação da tela de pagamento
-                    st.success(f"Reserva pré-agendada, {aluno}!")
+                    # Guardamos as informações na "memória" da sessão (Session State)
                     st.session_state['pago'] = True
-                    st.session_state['aluno_nome'] = aluno
+                    st.session_state['servico_selecionado'] = servico
+                    st.success(f"Reserva pré-agendada, {aluno}!")
                     st.balloons()
                 except Exception as e:
                     st.error("Erro ao salvar. Verifique as permissões da planilha.")
@@ -91,22 +91,23 @@ with st.container():
                 st.warning("Por favor, preencha o nome.")
 
     # --- ETAPA DE PAGAMENTO ---
-    if 'pago' in st.session_state:
+    # Só aparece se o formulário foi enviado com sucesso
+    if st.session_state.get('pago'):
         st.markdown("---")
         st.markdown('<div class="pix-box">', unsafe_allow_html=True)
         st.markdown(f"### 💰 Pagamento via PIX")
-        st.write(f"Para confirmar sua vaga, realize o pagamento do **{servico}**")
         
-        # Coloque sua chave PIX aqui
-        st.code("250.197.278-30 (Chave tipo CPF)
+        # Agora pegamos o serviço que guardamos na memória
+        servico_nome = st.session_state['servico_selecionado']
+        st.write(f"Para confirmar sua vaga, realize o pagamento do **{servico_nome}**")
+        
+        # Chave PIX formatada corretamente
+        st.code("250.197.278-30", language="text")
         
         st.write("**Instruções:**")
-        st.write("1. Copie a chave acima e pague no seu banco.")
+        st.write("1. Copie o CPF acima e pague no seu banco via PIX.")
         st.write("2. Envie o comprovante para o WhatsApp: **(11) 97142-5028**")
-        st.write("3. Sua reserva será confirmada após o envio do comprovante.")
+        st.write("3. Sua reserva será confirmada definitivamente após o recebimento.")
         st.markdown('</div>', unsafe_allow_html=True)
         
     st.markdown('</div>', unsafe_allow_html=True)
-
-
-

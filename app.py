@@ -1,6 +1,14 @@
 import streamlit as st
+from streamlit_gsheets import GSheetsConnection
+import pandas as pd
+
+# 1. Configuração da Página (Título na aba do navegador)
+st.set_page_config(page_title="Tennis Class - Agendamento", layout="centered")
+
+# 2. Estilização CSS (Imagem de Fundo e Transparência)
 page_bg_img = """
 <style>
+/* Imagem de fundo no container principal */
 [data-testid="stAppViewContainer"] {
     background-image: url("https://images.unsplash.com/photo-1595435064219-49293a10173d?q=80&w=2070&auto=format&fit=crop");
     background-size: cover;
@@ -8,63 +16,62 @@ page_bg_img = """
     background-attachment: fixed;
 }
 
-[data-testid="stHeader"] {
-    background: rgba(0,0,0,0);
+/* Deixa o fundo do Streamlit transparente para a imagem aparecer */
+[data-testid="stMain"], [data-testid="stHeader"] {
+    background-color: rgba(0,0,0,0);
 }
 
-/* Deixa os textos mais visíveis com um fundo semitransparente nos cards */
+/* Estiliza a caixa do formulário */
 .stForm {
-    background-color: rgba(255, 255, 255, 0.85);
-    padding: 20px;
-    border-radius: 10px;
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    padding: 30px !important;
+    border-radius: 15px !important;
+    box-shadow: 0px 4px 15px rgba(0,0,0,0.3);
+}
+
+/* Estilo para o Título principal */
+.titulo-principal {
+    color: white;
+    text-shadow: 2px 2px 4px #000000;
+    text-align: center;
+    font-size: 3rem;
+    font-weight: bold;
+    margin-bottom: 20px;
 }
 </style>
 """
-
 st.markdown(page_bg_img, unsafe_allow_html=True)
-from streamlit_gsheets import GSheetsConnection
-import pandas as pd
 
-st.set_page_config(page_title="Tennis Class", layout="centered")
+# 3. Conteúdo da Tela
+st.markdown('<p class="titulo-principal">TENNIS CLASS 🎾</p>', unsafe_allow_html=True)
 
-# CSS para fundo e estilo do cartão
-st.markdown("""
-    <style>
-    .stApp {
-        background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), 
-                    url("https://raw.githubusercontent.com/Aranhacorp/Sports-Class/main/fundo_tenis.jpg");
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
-    }
-    .main-card {
-        background-color: rgba(0, 31, 63, 0.85);
-        padding: 30px;
-        border-radius: 20px;
-        border: 2px solid #FF8C00;
-        color: white;
-    }
-    h1 { color: #FF8C00; text-align: center; }
-    </style>
-    """, unsafe_allow_html=True)
+# Conexão com a planilha (usando os Secrets que já configuramos)
+conn = st.connection("gsheets", type=GSheetsConnection)
 
-st.markdown('<h1>TENNIS CLASS 🎾</h1>', unsafe_allow_html=True)
+with st.form("agendamento"):
+    st.subheader("Faça sua reserva")
+    
+    aluno = st.text_input("Nome do Aluno")
+    data = st.date_input("Escolha a Data")
+    horario = st.time_input("Escolha o Horário")
+    
+    submit = st.form_submit_button("RESERVAR AGORA")
 
-with st.container():
-    st.markdown('<div class="main-card">', unsafe_allow_html=True)
-    conn = st.connection("gsheets", type=GSheetsConnection)
-
-    with st.form("agendamento"):
-        aluno = st.text_input("Nome do Aluno")
-        servico = st.selectbox("Serviço", ["Aula Individual", "Aula em Dupla", "Aluguel de Quadra"])
-        data = st.date_input("Data")
-        horario = st.selectbox("Horário", ["08:00", "09:00", "10:00", "11:00", "14:00", "15:00"])
-
-        if st.form_submit_button("RESERVAR AGORA"):
-            nova_linha = pd.DataFrame([{"Data": str(data), "Horario": horario, "Aluno": aluno, "Servico": servico, "Status": "Pendente"}])
+    if submit:
+        if aluno == "":
+            st.error("Por favor, preencha o nome do aluno.")
+        else:
+            # Lógica para salvar na planilha
+            nova_linha = pd.DataFrame([{"Aluno": aluno, "Data": str(data), "Horario": str(horario)}])
+            
+            # Lê os dados atuais
             dados_atuais = conn.read()
+            
+            # Junta com a nova reserva
             df_final = pd.concat([dados_atuais, nova_linha], ignore_index=True)
+            
+            # Atualiza a planilha
             conn.update(data=df_final)
-            st.success("Reserva enviada!")
-
-    st.markdown('</div>', unsafe_allow_html=True)
+            
+            st.success(f"Tudo certo, {aluno}! Sua aula foi agendada.")
+            st.balloons()

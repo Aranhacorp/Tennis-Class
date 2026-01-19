@@ -1,4 +1,27 @@
 import streamlit as st
+page_bg_img = """
+<style>
+[data-testid="stAppViewContainer"] {
+    background-image: url("https://images.unsplash.com/photo-1595435064219-49293a10173d?q=80&w=2070&auto=format&fit=crop");
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+}
+
+[data-testid="stHeader"] {
+    background: rgba(0,0,0,0);
+}
+
+/* Deixa os textos mais visíveis com um fundo semitransparente nos cards */
+.stForm {
+    background-color: rgba(255, 255, 255, 0.85);
+    padding: 20px;
+    border-radius: 10px;
+}
+</style>
+"""
+
+st.markdown(page_bg_img, unsafe_allow_html=True)
 from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 
@@ -43,4 +66,5 @@ with st.container():
             df_final = pd.concat([dados_atuais, nova_linha], ignore_index=True)
             conn.update(data=df_final)
             st.success("Reserva enviada!")
+
     st.markdown('</div>', unsafe_allow_html=True)

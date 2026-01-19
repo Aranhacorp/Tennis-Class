@@ -71,14 +71,21 @@ with st.container():
         ])
         data = st.date_input("Data Desejada")
         
-        # Lógica de Horários Personalizados
+        # --- LOGICA DE HORARIOS EXATOS ---
         dia_semana = data.weekday() 
-        if dia_semana == 0: lista_horarios = ["12:00", "13:00", "15:00"]
-        elif dia_semana == 1: lista_horarios = ["11:00", "12:00", "13:00", "14:00", "15:00"]
-        elif dia_semana == 2: lista_horarios = ["12:00", "14:00", "16:00", "18:00"]
-        elif dia_semana == 3: lista_horarios = ["10:00", "12:00", "15:00", "17:00", "19:00"]
-        elif dia_semana == 4: lista_horarios = ["10:00", "12:00", "15:00", "16:00", "18:00", "20:00"]
-        else: lista_horarios = ["08:00", "09:00", "10:00", "11:00"]
+        
+        if dia_semana == 0:  # SEGUNDA
+            lista_horarios = ["12:00", "13:00", "15:00"]
+        elif dia_semana == 1: # TERÇA
+            lista_horarios = ["11:00", "12:00", "13:00", "14:00", "15:00"]
+        elif dia_semana == 2: # QUARTA
+            lista_horarios = ["12:00", "14:00", "16:00", "18:00"]
+        elif dia_semana == 3: # QUINTA
+            lista_horarios = ["10:00", "12:00", "15:00", "17:00", "19:00"]
+        elif dia_semana == 4: # SEXTA
+            lista_horarios = ["10:00", "12:00", "15:00", "16:00", "18:00", "20:00"]
+        else: # FINAIS DE SEMANA (Sábado e Domingo)
+            lista_horarios = ["08:00", "09:00", "10:00", "11:00"]
             
         horario = st.selectbox("Horário Disponível", lista_horarios)
         submit = st.form_submit_button("CONFIRMAR E GERAR QR CODE")
@@ -86,12 +93,18 @@ with st.container():
         if submit:
             if aluno:
                 try:
-                    nova_linha = pd.DataFrame([{"Data": str(data), "Horario": horario, "Aluno": aluno, "Servico": servico, "Status": "Aguardando Pagamento"}])
+                    nova_linha = pd.DataFrame([{
+                        "Data": str(data), 
+                        "Horario": horario, 
+                        "Aluno": aluno, 
+                        "Servico": servico, 
+                        "Status": "Aguardando Pagamento"
+                    }])
                     dados_existentes = conn.read()
                     df_final = pd.concat([dados_existentes, nova_linha], ignore_index=True)
                     conn.update(data=df_final)
                     
-                    # Efeito visual de celebração
+                    # Efeito de balões
                     st.balloons() 
                     
                     st.session_state['confirmado'] = True
@@ -100,7 +113,7 @@ with st.container():
                 except Exception as e:
                     st.error("Erro ao salvar agendamento.")
             else:
-                st.warning("Preencha o nome do aluno.")
+                st.warning("Por favor, preencha o nome do aluno.")
 
     # --- SEÇÃO DO PIX COM QR CODE ---
     if st.session_state.get('confirmado'):
@@ -110,7 +123,7 @@ with st.container():
         st.write(f"**Favorecido:** Andre Aranha Cagno")
         st.write(f"**Serviço:** {st.session_state['servico_valor']}")
         
-        # Gerador do QR Code
+        # Gerador do QR Code Dinâmico
         chave_pix = "25019727830"
         qr = segno.make(chave_pix)
         img_buffer = BytesIO()

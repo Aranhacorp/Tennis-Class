@@ -6,7 +6,7 @@ from datetime import datetime
 # 1. Configuração da página
 st.set_page_config(page_title="TENNIS CLASS", layout="centered")
 
-# 2. CSS para layout e fundo
+# 2. CSS para o fundo, card e alinhamento do logotipo
 st.markdown("""
     <style>
     .stApp {
@@ -48,7 +48,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Cabeçalho com Título e Silhueta
+# 3. Cabeçalho Dinâmico
 st.markdown(f"""
     <div class="header-container">
         <h1>TENNIS CLASS</h1>
@@ -77,8 +77,8 @@ with st.container():
         
         data = st.date_input("Data Desejada")
         
-        # --- Lógica de Horários Dinâmicos (Segunda a Sexta) ---
-        dia_semana = data.weekday() 
+        # --- Lógica de Horários Dinâmicos ---
+        dia_semana = data.weekday() # 0=Seg, 1=Ter, 2=Qua, 3=Qui, 4=Sex
         
         if dia_semana == 0:  # SEGUNDA
             lista_horarios = ["12:00", "13:00", "15:00"]
@@ -113,8 +113,4 @@ with st.container():
                     
                     st.session_state['pago'] = True
                     st.session_state['servico_selecionado'] = servico
-                    st.success(f"Reserva pré-agendada para {aluno}!")
-                    st.balloons()
-                except Exception as e:
-                    st.error("Erro ao salvar dados na planilha.")
-            else:
+                    st.success(f"Reserva pré-agendada para

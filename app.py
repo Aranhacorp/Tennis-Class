@@ -8,7 +8,7 @@ from io import BytesIO
 # 1. Configuração da página
 st.set_page_config(page_title="TENNIS CLASS", layout="centered")
 
-# 2. CSS para layout e fundo
+# 2. Estilização Visual
 st.markdown("""
     <style>
     .stApp {
@@ -18,7 +18,6 @@ st.markdown("""
         background-position: center;
         background-attachment: fixed;
     }
-    
     .header-container {
         display: flex;
         align-items: center;
@@ -27,19 +26,13 @@ st.markdown("""
         margin-bottom: 5px;
         width: 100%;
     }
-
     .header-container h1 {
         color: white !important;
         font-family: 'Arial Black', sans-serif;
         text-shadow: 2px 2px 4px #000000;
         margin: 0;
     }
-
-    .logo-img {
-        border-radius: 10px;
-        mix-blend-mode: screen; 
-    }
-
+    .logo-img { border-radius: 10px; mix-blend-mode: screen; }
     .main-card {
         background-color: rgba(255, 255, 255, 0.95);
         padding: 30px;
@@ -76,7 +69,6 @@ with st.container():
             "Aula em Dupla (R$ 200/pessoa)", 
             "Aluguel de Quadra (R$ 250)"
         ])
-        
         data = st.date_input("Data Desejada")
         
         # Lógica de Horários
@@ -99,32 +91,34 @@ with st.container():
                     df_final = pd.concat([dados_existentes, nova_linha], ignore_index=True)
                     conn.update(data=df_final)
                     
-                    st.session_state['pago'] = True
-                    st.session_state['servico_selecionado'] = servico
+                    st.session_state['confirmado'] = True
+                    st.session_state['aluno_nome'] = aluno
+                    st.session_state['servico_valor'] = servico
                     st.success(f"Reserva pré-agendada para {aluno}!")
                 except Exception as e:
-                    st.error("Erro ao salvar dados.")
+                    st.error("Erro ao salvar agendamento.")
             else:
-                st.warning("Por favor, preencha o nome.")
+                st.warning("Preencha o nome do aluno.")
 
-    # --- SEÇÃO DE PAGAMENTO COM QR CODE ---
-    if st.session_state.get('pago'):
+    # --- SEÇÃO DO PIX ---
+    if st.session_state.get('confirmado'):
         st.markdown("---")
-        st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
+        st.markdown('<div style="text-align: center; color: black;">', unsafe_allow_html=True)
         st.markdown("### 💰 Pagamento via PIX")
         st.write(f"**Favorecido:** Andre Aranha Cagno")
-        st.write(f"**Valor:** {st.session_state.get('servico_selecionado')}")
+        st.write(f"**Serviço:** {st.session_state['servico_valor']}")
         
-        # Geração do QR Code da Chave (CPF)
-        chave_pix = "25019727830" # Apenas números para o QR Code
-        qrcode = segno.make(chave_pix)
-        out = BytesIO()
-        qrcode.save(out, kind='png', scale=5)
+        # Gerador do QR Code
+        # Payload estático simples com a sua chave
+        chave_pix = "25019727830"
+        qr = segno.make(chave_pix)
+        img_buffer = BytesIO()
+        qr.save(img_buffer, kind='png', scale=7)
         
-        st.image(out.getvalue(), caption="Escaneie para pagar")
+        st.image(img_buffer.getvalue(), width=250, caption="Aponte a câmera do banco para o QR Code")
         
         st.code("250.197.278-30", language="text")
-        st.write("Após pagar, envie o comprovante para o WhatsApp: **(11) 97142-5028**")
+        st.write("Após pagar, envie o comprovante: **(11) 97142-5028**")
         st.markdown('</div>', unsafe_allow_html=True)
         
     st.markdown('</div>', unsafe_allow_html=True)

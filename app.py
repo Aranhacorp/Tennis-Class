@@ -8,7 +8,7 @@ from io import BytesIO
 # 1. Configuração da página
 st.set_page_config(page_title="TENNIS CLASS", layout="centered")
 
-# 2. CSS: Fundo, Cards e WhatsApp (Subido 4cm)
+# 2. CSS: Fundo, Cards e WhatsApp (Posição ajustada para baixo)
 st.markdown("""
     <style>
     .stApp {
@@ -40,11 +40,12 @@ st.markdown("""
         box-shadow: 0 10px 25px rgba(0,0,0,0.3);
         margin-top: 10px;
     }
+    /* WhatsApp Flutuante - Descido 2cm (75px) */
     .whatsapp-float {
         position: fixed;
         width: 60px;
         height: 60px;
-        bottom: 150px; 
+        bottom: 75px; 
         right: 20px;
         background-color: rgba(0, 0, 0, 0.6);
         color: white !important;
@@ -58,6 +59,11 @@ st.markdown("""
         align-items: center;
         justify-content: center;
         text-decoration: none !important;
+        transition: all 0.3s ease;
+    }
+    .whatsapp-float:hover {
+        background-color: #25d366;
+        transform: scale(1.1);
     }
     </style>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
@@ -90,9 +96,8 @@ with st.container():
         # Data padrão Brasileiro
         data = st.date_input("Data Desejada", format="DD/MM/YYYY")
         
-        # --- MAPA DE HORÁRIOS DEFINITIVO ---
-        dia_semana = data.weekday() # 0=Seg, 1=Ter, 2=Qua, 3=Qui, 4=Sex, 5=Sab, 6=Dom
-        
+        # --- LÓGICA DE HORÁRIOS POR DIA ---
+        dia_semana = data.weekday() 
         mapa_horarios = {
             0: ["12:00", "13:00", "15:00"], # Segunda
             1: ["11:00", "12:00", "13:00", "14:00", "15:00"], # Terça
@@ -100,51 +105,4 @@ with st.container():
             3: ["10:00", "12:00", "15:00", "17:00", "19:00"], # Quinta
             4: ["10:00", "12:00", "15:00", "16:00", "18:00", "20:00"], # Sexta
             5: ["08:00", "09:00", "10:00", "11:00"], # Sábado
-            6: ["08:00", "09:00", "10:00", "11:00"]  # Domingo
-        }
-        
-        lista_horarios = mapa_horarios.get(dia_semana, ["08:00", "09:00"])
-            
-        horario = st.selectbox("Horário Disponível", lista_horarios)
-        submit = st.form_submit_button("CONFIRMAR E GERAR QR CODE")
-        
-        if submit:
-            if aluno:
-                try:
-                    data_formatada = data.strftime("%d/%m/%Y")
-                    nova_linha = pd.DataFrame([{
-                        "Data": data_formatada, 
-                        "Horario": horario, 
-                        "Aluno": aluno, 
-                        "Servico": servico, 
-                        "Status": "Aguardando Pagamento"
-                    }])
-                    dados_existentes = conn.read()
-                    df_final = pd.concat([dados_existentes, nova_linha], ignore_index=True)
-                    conn.update(data=df_final)
-                    
-                    st.balloons() 
-                    st.session_state['confirmado'] = True
-                    st.session_state['serv_v'] = servico
-                    st.success(f"Reserva pré-agendada para {aluno}!")
-                except Exception:
-                    st.error("Erro ao salvar os dados.")
-            else:
-                st.warning("Preencha o nome do aluno.")
-
-    if st.session_state.get('confirmado'):
-        st.markdown("---")
-        st.markdown('<div style="text-align: center; color: black;">', unsafe_allow_html=True)
-        st.markdown("### 💰 Pagamento via PIX")
-        st.write(f"**Serviço:** {st.session_state['serv_v']}")
-        
-        qr = segno.make("25019727830")
-        img_buffer = BytesIO()
-        qr.save(img_buffer, kind='png', scale=7)
-        st.image(img_buffer.getvalue(), width=250)
-        
-        st.code("250.197.278-30", language="text")
-        st.write("Envie o comprovante: **(11) 97142-5028**")
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-    st.markdown('</div>', unsafe_allow_html=True)
+            6: ["08:00", "09:0

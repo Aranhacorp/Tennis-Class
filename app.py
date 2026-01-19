@@ -2,11 +2,13 @@ import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 from datetime import datetime
+import segno
+from io import BytesIO
 
 # 1. Configuração da página
 st.set_page_config(page_title="TENNIS CLASS", layout="centered")
 
-# 2. CSS para o fundo, card e alinhamento do logotipo
+# 2. CSS para layout e fundo
 st.markdown("""
     <style>
     .stApp {
@@ -48,7 +50,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Cabeçalho com Título e Imagem Lateral
+# 3. Cabeçalho
 st.markdown(f"""
     <div class="header-container">
         <h1>TENNIS CLASS</h1>
@@ -77,36 +79,22 @@ with st.container():
         
         data = st.date_input("Data Desejada")
         
-        # --- Lógica de Horários (Segunda a Sexta) ---
+        # Lógica de Horários
         dia_semana = data.weekday() 
-        
-        if dia_semana == 0:  # SEGUNDA
-            lista_horarios = ["12:00", "13:00", "15:00"]
-        elif dia_semana == 1: # TERÇA
-            lista_horarios = ["11:00", "12:00", "13:00", "14:00", "15:00"]
-        elif dia_semana == 2: # QUARTA
-            lista_horarios = ["12:00", "14:00", "16:00", "18:00"]
-        elif dia_semana == 3: # QUINTA
-            lista_horarios = ["10:00", "12:00", "15:00", "17:00", "19:00"]
-        elif dia_semana == 4: # SEXTA
-            lista_horarios = ["10:00", "12:00", "15:00", "16:00", "18:00", "20:00"]
-        else: # FINAIS DE SEMANA
-            lista_horarios = ["08:00", "09:00", "10:00", "11:00"]
+        if dia_semana == 0: lista_horarios = ["12:00", "13:00", "15:00"]
+        elif dia_semana == 1: lista_horarios = ["11:00", "12:00", "13:00", "14:00", "15:00"]
+        elif dia_semana == 2: lista_horarios = ["12:00", "14:00", "16:00", "18:00"]
+        elif dia_semana == 3: lista_horarios = ["10:00", "12:00", "15:00", "17:00", "19:00"]
+        elif dia_semana == 4: lista_horarios = ["10:00", "12:00", "15:00", "16:00", "18:00", "20:00"]
+        else: lista_horarios = ["08:00", "09:00", "10:00", "11:00"]
             
         horario = st.selectbox("Horário Disponível", lista_horarios)
-        
-        submit = st.form_submit_button("CONFIRMAR E IR PARA PAGAMENTO")
+        submit = st.form_submit_button("CONFIRMAR E GERAR QR CODE")
         
         if submit:
             if aluno:
                 try:
-                    nova_linha = pd.DataFrame([{
-                        "Data": str(data),
-                        "Horario": horario,
-                        "Aluno": aluno,
-                        "Servico": servico,
-                        "Status": "Aguardando Pagamento"
-                    }])
+                    nova_linha = pd.DataFrame([{"Data": str(data), "Horario": horario, "Aluno": aluno, "Servico": servico, "Status": "Aguardando Pagamento"}])
                     dados_existentes = conn.read()
                     df_final = pd.concat([dados_existentes, nova_linha], ignore_index=True)
                     conn.update(data=df_final)
@@ -114,20 +102,29 @@ with st.container():
                     st.session_state['pago'] = True
                     st.session_state['servico_selecionado'] = servico
                     st.success(f"Reserva pré-agendada para {aluno}!")
-                    st.balloons()
                 except Exception as e:
-                    st.error("Erro ao salvar dados na planilha.")
+                    st.error("Erro ao salvar dados.")
             else:
-                st.warning("Por favor, preencha o nome do aluno.")
+                st.warning("Por favor, preencha o nome.")
 
-    # --- ETAPA DE PAGAMENTO (CORRIGIDA) ---
+    # --- SEÇÃO DE PAGAMENTO COM QR CODE ---
     if st.session_state.get('pago'):
         st.markdown("---")
-        st.markdown('<div style="text-align: center; background-color: #f0f8ff; padding: 20px; border-radius: 10px; border: 2px dashed #003366;">', unsafe_allow_html=True)
+        st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
         st.markdown("### 💰 Pagamento via PIX")
-        st.write(f"Valor referente a: **{st.session_state.get('servico_selecionado')}**")
+        st.write(f"**Favorecido:** Andre Aranha Cagno")
+        st.write(f"**Valor:** {st.session_state.get('servico_selecionado')}")
+        
+        # Geração do QR Code da Chave (CPF)
+        chave_pix = "25019727830" # Apenas números para o QR Code
+        qrcode = segno.make(chave_pix)
+        out = BytesIO()
+        qrcode.save(out, kind='png', scale=5)
+        
+        st.image(out.getvalue(), caption="Escaneie para pagar")
+        
         st.code("250.197.278-30", language="text")
-        st.write("Envie o comprovante para o WhatsApp: **(11) 97142-5028**")
+        st.write("Após pagar, envie o comprovante para o WhatsApp: **(11) 97142-5028**")
         st.markdown('</div>', unsafe_allow_html=True)
         
     st.markdown('</div>', unsafe_allow_html=True)

@@ -8,7 +8,7 @@ from io import BytesIO
 # 1. Configuração da página
 st.set_page_config(page_title="TENNIS CLASS", layout="centered")
 
-# 2. CSS: Fundo, Cards e WhatsApp Flutuante (Fundo do App + Logo Branco)
+# 2. CSS: Fundo, Cards e WhatsApp (Subido 4cm)
 st.markdown("""
     <style>
     .stApp {
@@ -40,14 +40,13 @@ st.markdown("""
         box-shadow: 0 10px 25px rgba(0,0,0,0.3);
         margin-top: 10px;
     }
-    /* WhatsApp Flutuante com Fundo Escuro/Transparente do App e Logo Branco */
     .whatsapp-float {
         position: fixed;
         width: 60px;
         height: 60px;
-        bottom: 20px;
+        bottom: 150px; 
         right: 20px;
-        background-color: rgba(0, 0, 0, 0.6); /* Fundo acompanhando o layout */
+        background-color: rgba(0, 0, 0, 0.6);
         color: white !important;
         border: 2px solid white;
         border-radius: 50px;
@@ -59,11 +58,6 @@ st.markdown("""
         align-items: center;
         justify-content: center;
         text-decoration: none !important;
-        transition: all 0.3s ease;
-    }
-    .whatsapp-float:hover {
-        transform: scale(1.1);
-        background-color: #25d366;
     }
     </style>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
@@ -80,8 +74,6 @@ st.markdown("""
     </div>
     """, unsafe_allow_html=True)
 
-st.markdown('<h3 style="text-align: center; color: white; text-shadow: 1px 1px 2px #000; margin-bottom: 20px;">Agendamento Profissional</h3>', unsafe_allow_html=True)
-
 with st.container():
     st.markdown('<div class="main-card">', unsafe_allow_html=True)
     st.subheader("📝 Agende sua Aula")
@@ -95,17 +87,23 @@ with st.container():
         aluno = st.text_input("Nome do Aluno")
         servico = st.selectbox("Selecione o Serviço", ["Aula Individual (R$ 250)", "Aula em Dupla (R$ 200/pessoa)", "Aluguel de Quadra (R$ 250)"])
         
-        # --- DATA NO PADRÃO BRASILEIRO (DD/MM/YYYY) ---
+        # Data padrão Brasileiro
         data = st.date_input("Data Desejada", format="DD/MM/YYYY")
         
-        # Horários Específicos
-        dia_semana = data.weekday() 
-        if dia_semana == 0: lista_horarios = ["12:00", "13:00", "15:00"]
-        elif dia_semana == 1: lista_horarios = ["11:00", "12:00", "13:00", "14:00", "15:00"]
-        elif dia_semana == 2: lista_horarios = ["12:00", "14:00", "16:00", "18:00"]
-        elif dia_semana == 3: lista_horarios = ["10:00", "12:00", "15:00", "17:00", "19:00"]
-        elif dia_semana == 4: lista_horarios = ["10:00", "12:00", "15:00", "16:00", "18:00", "20:00"]
-        else: lista_horarios = ["08:00", "09:00", "10:00", "11:00"]
+        # --- MAPA DE HORÁRIOS DEFINITIVO ---
+        dia_semana = data.weekday() # 0=Seg, 1=Ter, 2=Qua, 3=Qui, 4=Sex, 5=Sab, 6=Dom
+        
+        mapa_horarios = {
+            0: ["12:00", "13:00", "15:00"], # Segunda
+            1: ["11:00", "12:00", "13:00", "14:00", "15:00"], # Terça
+            2: ["12:00", "14:00", "16:00", "18:00"], # Quarta
+            3: ["10:00", "12:00", "15:00", "17:00", "19:00"], # Quinta
+            4: ["10:00", "12:00", "15:00", "16:00", "18:00", "20:00"], # Sexta
+            5: ["08:00", "09:00", "10:00", "11:00"], # Sábado
+            6: ["08:00", "09:00", "10:00", "11:00"]  # Domingo
+        }
+        
+        lista_horarios = mapa_horarios.get(dia_semana, ["08:00", "09:00"])
             
         horario = st.selectbox("Horário Disponível", lista_horarios)
         submit = st.form_submit_button("CONFIRMAR E GERAR QR CODE")
@@ -113,9 +111,9 @@ with st.container():
         if submit:
             if aluno:
                 try:
-                    # Correção do erro da linha 123 (fechamento de colchetes e parênteses)
+                    data_formatada = data.strftime("%d/%m/%Y")
                     nova_linha = pd.DataFrame([{
-                        "Data": data.strftime("%d/%m/%Y"), 
+                        "Data": data_formatada, 
                         "Horario": horario, 
                         "Aluno": aluno, 
                         "Servico": servico, 
@@ -127,29 +125,26 @@ with st.container():
                     
                     st.balloons() 
                     st.session_state['confirmado'] = True
-                    st.session_state['servico_valor'] = servico
+                    st.session_state['serv_v'] = servico
                     st.success(f"Reserva pré-agendada para {aluno}!")
                 except Exception:
                     st.error("Erro ao salvar os dados.")
             else:
                 st.warning("Preencha o nome do aluno.")
 
-    # 4. Seção do PIX
     if st.session_state.get('confirmado'):
         st.markdown("---")
         st.markdown('<div style="text-align: center; color: black;">', unsafe_allow_html=True)
         st.markdown("### 💰 Pagamento via PIX")
-        st.write(f"**Favorecido:** Andre Aranha Cagno")
-        st.write(f"**Serviço:** {st.session_state['servico_valor']}")
+        st.write(f"**Serviço:** {st.session_state['serv_v']}")
         
-        chave_pix = "25019727830"
-        qr = segno.make(chave_pix)
+        qr = segno.make("25019727830")
         img_buffer = BytesIO()
         qr.save(img_buffer, kind='png', scale=7)
-        st.image(img_buffer.getvalue(), width=250, caption="Escaneie para pagar")
+        st.image(img_buffer.getvalue(), width=250)
         
         st.code("250.197.278-30", language="text")
-        st.write("Após pagar, envie o comprovante para: **(11) 97142-5028**")
+        st.write("Envie o comprovante: **(11) 97142-5028**")
         st.markdown('</div>', unsafe_allow_html=True)
         
     st.markdown('</div>', unsafe_allow_html=True)

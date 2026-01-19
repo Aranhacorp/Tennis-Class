@@ -8,7 +8,7 @@ from io import BytesIO
 # 1. Configuração da página
 st.set_page_config(page_title="TENNIS CLASS", layout="centered")
 
-# 2. Estilização Visual
+# 2. Estilização Visual (CSS)
 st.markdown("""
     <style>
     .stApp {
@@ -71,7 +71,7 @@ with st.container():
         ])
         data = st.date_input("Data Desejada")
         
-        # Lógica de Horários
+        # Lógica de Horários Personalizados
         dia_semana = data.weekday() 
         if dia_semana == 0: lista_horarios = ["12:00", "13:00", "15:00"]
         elif dia_semana == 1: lista_horarios = ["11:00", "12:00", "13:00", "14:00", "15:00"]
@@ -91,8 +91,10 @@ with st.container():
                     df_final = pd.concat([dados_existentes, nova_linha], ignore_index=True)
                     conn.update(data=df_final)
                     
+                    # Efeito visual de celebração
+                    st.balloons() 
+                    
                     st.session_state['confirmado'] = True
-                    st.session_state['aluno_nome'] = aluno
                     st.session_state['servico_valor'] = servico
                     st.success(f"Reserva pré-agendada para {aluno}!")
                 except Exception as e:
@@ -100,7 +102,7 @@ with st.container():
             else:
                 st.warning("Preencha o nome do aluno.")
 
-    # --- SEÇÃO DO PIX ---
+    # --- SEÇÃO DO PIX COM QR CODE ---
     if st.session_state.get('confirmado'):
         st.markdown("---")
         st.markdown('<div style="text-align: center; color: black;">', unsafe_allow_html=True)
@@ -109,13 +111,12 @@ with st.container():
         st.write(f"**Serviço:** {st.session_state['servico_valor']}")
         
         # Gerador do QR Code
-        # Payload estático simples com a sua chave
         chave_pix = "25019727830"
         qr = segno.make(chave_pix)
         img_buffer = BytesIO()
         qr.save(img_buffer, kind='png', scale=7)
         
-        st.image(img_buffer.getvalue(), width=250, caption="Aponte a câmera do banco para o QR Code")
+        st.image(img_buffer.getvalue(), width=250, caption="Escaneie para concluir o pagamento")
         
         st.code("250.197.278-30", language="text")
         st.write("Após pagar, envie o comprovante: **(11) 97142-5028**")

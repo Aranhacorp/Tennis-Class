@@ -8,7 +8,7 @@ from io import BytesIO
 # 1. Configuração da página
 st.set_page_config(page_title="TENNIS CLASS", layout="centered")
 
-# 2. Estilização Visual e ÍCONE WHATSAPP (Logo Branco)
+# 2. Estilização Visual e ÍCONE WHATSAPP (Logotipo Branco)
 st.markdown("""
     <style>
     .stApp {
@@ -43,15 +43,15 @@ st.markdown("""
         margin-top: 10px;
     }
 
-    /* BOTÃO WHATSAPP - LOGO BRANCO */
+    /* BOTÃO WHATSAPP FLUTUANTE COM LOGO BRANCO */
     .whatsapp-float {
         position: fixed;
         width: 60px;
         height: 60px;
         bottom: 20px;
         right: 20px;
-        background-color: #25d366; /* Verde WhatsApp */
-        color: white !important; /* Ícone Branco */
+        background-color: #25d366;
+        color: white !important;
         border-radius: 50px;
         text-align: center;
         font-size: 35px;
@@ -103,7 +103,7 @@ with st.container():
         ])
         data = st.date_input("Data Desejada")
         
-        # Horários Específicos
+        # --- LÓGICA DE HORÁRIOS EXATOS ---
         dia_semana = data.weekday() 
         if dia_semana == 0: lista_horarios = ["12:00", "13:00", "15:00"]
         elif dia_semana == 1: lista_horarios = ["11:00", "12:00", "13:00", "14:00", "15:00"]
@@ -120,32 +120,4 @@ with st.container():
                 try:
                     nova_linha = pd.DataFrame([{"Data": str(data), "Horario": horario, "Aluno": aluno, "Servico": servico, "Status": "Aguardando Pagamento"}])
                     dados_existentes = conn.read()
-                    df_final = pd.concat([dados_existentes, nova_linha], ignore_index=True)
-                    conn.update(data=df_final)
-                    
-                    st.balloons() # Balões de confirmação
-                    st.session_state['confirmado'] = True
-                    st.session_state['servico_valor'] = servico
-                    st.success(f"Reserva pré-agendada para {aluno}!")
-                except Exception:
-                    st.error("Erro ao salvar dados.")
-            else:
-                st.warning("Preencha o nome do aluno.")
-
-    # Seção do PIX
-    if st.session_state.get('confirmado'):
-        st.markdown("---")
-        st.markdown('<div style="text-align: center; color: black;">', unsafe_allow_html=True)
-        st.markdown("### 💰 Pagamento via PIX")
-        st.write(f"**Favorecido:** Andre Aranha Cagno")
-        st.write(f"**Serviço:** {st.session_state['servico_valor']}")
-        
-        # QR Code
-        chave_pix = "25019727830"
-        qr = segno.make(chave_pix)
-        img_buffer = BytesIO()
-        qr.save(img_buffer, kind='png', scale=7)
-        st.image(img_buffer.getvalue(), width=250, caption="Escaneie para pagar")
-        
-        st.code("250.197.278-30", language="text")
-        st.write("Envie o comprovante: **(11) 97
+                    df_final = pd.concat([dados_existentes,

@@ -16,13 +16,14 @@ st.markdown("""
         background-attachment: fixed;
     }
     
-    /* Container para Título e Logo lado a lado */
+    /* Container para Título e Logo ficarem na mesma linha */
     .header-container {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 20px;
+        gap: 15px;
         margin-bottom: 5px;
+        width: 100%;
     }
 
     .header-container h1 {
@@ -30,12 +31,13 @@ st.markdown("""
         font-family: 'Arial Black', sans-serif;
         text-shadow: 2px 2px 4px #000000;
         margin: 0;
+        padding: 0;
     }
 
-    /* Estilização da silhueta para remover fundo branco se houver */
     .logo-img {
-        border-radius: 5px;
-        mix-blend-mode: multiply; /* Tenta suavizar fundos brancos em imagens JPG */
+        border-radius: 10px;
+        /* Isso ajuda a mesclar a silhueta se ela tiver fundo branco */
+        mix-blend-mode: screen; 
     }
 
     .main-card {
@@ -45,27 +47,19 @@ st.markdown("""
         box-shadow: 0 10px 25px rgba(0,0,0,0.3);
         margin-top: 10px;
     }
-    
-    .pix-box {
-        background-color: #f0f8ff;
-        padding: 20px;
-        border-radius: 10px;
-        border: 2px dashed #003366;
-        text-align: center;
-        margin-top: 20px;
-    }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Cabeçalho com Título Branco e Silhueta ao lado
+# 3. Cabeçalho com Título e a Silhueta (Link direto do seu GitHub)
+# O %20 substitui os espaços no nome do arquivo para o navegador entender
 st.markdown("""
     <div class="header-container">
         <h1>TENNIS CLASS</h1>
-        <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/tennis-player-silhouette%20ver2.jpg" width="80" class="logo-img">
+        <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/tennis-player-silhouette%20ver2.jpg" width="70" class="logo-img">
     </div>
     """, unsafe_allow_html=True)
 
-st.markdown('<h3 style="text-align: center; color: white; text-shadow: 1px 1px 2px #000;">Agendamento Profissional</h3>', unsafe_allow_html=True)
+st.markdown('<h3 style="text-align: center; color: white; text-shadow: 1px 1px 2px #000; margin-bottom: 20px;">Agendamento Profissional</h3>', unsafe_allow_html=True)
 
 with st.container():
     st.markdown('<div class="main-card">', unsafe_allow_html=True)
@@ -115,18 +109,11 @@ with st.container():
     # --- ETAPA DE PAGAMENTO ---
     if st.session_state.get('pago'):
         st.markdown("---")
-        st.markdown('<div class="pix-box">', unsafe_allow_html=True)
+        st.markdown('<div style="text-align: center; background-color: #f0f8ff; padding: 20px; border-radius: 10px; border: 2px dashed #003366;">', unsafe_allow_html=True)
         st.markdown(f"### 💰 Pagamento via PIX")
-        
-        servico_nome = st.session_state['servico_selecionado']
-        st.write(f"Para confirmar, pague o valor referente a: **{servico_nome}**")
-        
-        # Chave PIX (CPF)
+        st.write(f"Valor referente a: **{st.session_state['servico_selecionado']}**")
         st.code("250.197.278-30", language="text")
-        
-        st.write("**Instruções:**")
-        st.write("1. Copie o CPF acima e realize o pagamento via PIX.")
-        st.write("2. Envie o comprovante para o WhatsApp: **(11) 97142-5028**")
+        st.write("Envie o comprovante para o WhatsApp: **(11) 97142-5028**")
         st.markdown('</div>', unsafe_allow_html=True)
         
     st.markdown('</div>', unsafe_allow_html=True)

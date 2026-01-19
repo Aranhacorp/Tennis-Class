@@ -8,7 +8,7 @@ from io import BytesIO
 # 1. Configuração da página
 st.set_page_config(page_title="TENNIS CLASS", layout="centered")
 
-# 2. CSS: Fundo, Cards e WhatsApp (Posição ajustada para baixo)
+# 2. CSS: Fundo, Cards e WhatsApp (Posição 75px)
 st.markdown("""
     <style>
     .stApp {
@@ -40,7 +40,6 @@ st.markdown("""
         box-shadow: 0 10px 25px rgba(0,0,0,0.3);
         margin-top: 10px;
     }
-    /* WhatsApp Flutuante - Descido 2cm (75px) */
     .whatsapp-float {
         position: fixed;
         width: 60px;
@@ -61,10 +60,7 @@ st.markdown("""
         text-decoration: none !important;
         transition: all 0.3s ease;
     }
-    .whatsapp-float:hover {
-        background-color: #25d366;
-        transform: scale(1.1);
-    }
+    .whatsapp-float:hover { background-color: #25d366; transform: scale(1.1); }
     </style>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
     <a href="https://wa.me/5511971425028" class="whatsapp-float" target="_blank">
@@ -92,17 +88,20 @@ with st.container():
     with st.form("agendamento"):
         aluno = st.text_input("Nome do Aluno")
         servico = st.selectbox("Selecione o Serviço", ["Aula Individual (R$ 250)", "Aula em Dupla (R$ 200/pessoa)", "Aluguel de Quadra (R$ 250)"])
-        
-        # Data padrão Brasileiro
         data = st.date_input("Data Desejada", format="DD/MM/YYYY")
         
-        # --- LÓGICA DE HORÁRIOS POR DIA ---
+        # --- LÓGICA DE HORÁRIOS REVISADA (SEM ERROS DE SINTAXE) ---
         dia_semana = data.weekday() 
         mapa_horarios = {
-            0: ["12:00", "13:00", "15:00"], # Segunda
-            1: ["11:00", "12:00", "13:00", "14:00", "15:00"], # Terça
-            2: ["12:00", "14:00", "16:00", "18:00"], # Quarta
-            3: ["10:00", "12:00", "15:00", "17:00", "19:00"], # Quinta
-            4: ["10:00", "12:00", "15:00", "16:00", "18:00", "20:00"], # Sexta
-            5: ["08:00", "09:00", "10:00", "11:00"], # Sábado
-            6: ["08:00", "09:0
+            0: ["12:00", "13:00", "15:00"],
+            1: ["11:00", "12:00", "13:00", "14:00", "15:00"],
+            2: ["12:00", "14:00", "16:00", "18:00"],
+            3: ["10:00", "12:00", "15:00", "17:00", "19:00"],
+            4: ["10:00", "12:00", "15:00", "16:00", "18:00", "20:00"],
+            5: ["08:00", "09:00", "10:00", "11:00"],
+            6: ["08:00", "09:00", "10:00", "11:00"]
+        }
+        lista_disponivel = mapa_horarios.get(dia_semana, ["08:00", "09:00"])
+            
+        horario = st.selectbox("Horário Disponível", lista_disponivel)
+        submit = st.form_submit_button("CONFIR

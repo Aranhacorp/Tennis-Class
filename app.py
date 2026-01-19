@@ -8,9 +8,10 @@ from io import BytesIO
 # 1. Configuração da página
 st.set_page_config(page_title="TENNIS CLASS", layout="centered")
 
-# 2. Estilização Visual (CSS)
+# 2. Estilização Visual (CSS) e ÍCONE FLUTUANTE DO WHATSAPP
 st.markdown("""
     <style>
+    /* Fundo do App */
     .stApp {
         background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), 
                     url("https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/Fundo%20APP%20ver2.png");
@@ -18,6 +19,8 @@ st.markdown("""
         background-position: center;
         background-attachment: fixed;
     }
+    
+    /* Container do Cabeçalho */
     .header-container {
         display: flex;
         align-items: center;
@@ -33,6 +36,8 @@ st.markdown("""
         margin: 0;
     }
     .logo-img { border-radius: 10px; mix-blend-mode: screen; }
+
+    /* Card Principal */
     .main-card {
         background-color: rgba(255, 255, 255, 0.95);
         padding: 30px;
@@ -40,7 +45,36 @@ st.markdown("""
         box-shadow: 0 10px 25px rgba(0,0,0,0.3);
         margin-top: 10px;
     }
+
+    /* BOTÃO FLUTUANTE DO WHATSAPP */
+    .whatsapp-float {
+        position: fixed;
+        width: 60px;
+        height: 60px;
+        bottom: 40px;
+        right: 40px;
+        background-color: #25d366;
+        color: #FFF;
+        border-radius: 50px;
+        text-align: center;
+        font-size: 30px;
+        box-shadow: 2px 2px 3px #999;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none !important;
+    }
+    .whatsapp-float:hover {
+        background-color: #128c7e;
+        color: white !important;
+    }
     </style>
+    
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+    <a href="https://wa.me/5511971425028" class="whatsapp-float" target="_blank">
+        <i class="fa fa-whatsapp"></i>
+    </a>
     """, unsafe_allow_html=True)
 
 # 3. Cabeçalho
@@ -71,7 +105,7 @@ with st.container():
         ])
         data = st.date_input("Data Desejada")
         
-        # --- LOGICA DE HORARIOS EXATOS ---
+        # --- LÓGICA DE HORÁRIOS ATUALIZADA ---
         dia_semana = data.weekday() 
         
         if dia_semana == 0:  # SEGUNDA
@@ -84,7 +118,7 @@ with st.container():
             lista_horarios = ["10:00", "12:00", "15:00", "17:00", "19:00"]
         elif dia_semana == 4: # SEXTA
             lista_horarios = ["10:00", "12:00", "15:00", "16:00", "18:00", "20:00"]
-        else: # FINAIS DE SEMANA (Sábado e Domingo)
+        else: # FINAIS DE SEMANA
             lista_horarios = ["08:00", "09:00", "10:00", "11:00"]
             
         horario = st.selectbox("Horário Disponível", lista_horarios)
@@ -93,18 +127,12 @@ with st.container():
         if submit:
             if aluno:
                 try:
-                    nova_linha = pd.DataFrame([{
-                        "Data": str(data), 
-                        "Horario": horario, 
-                        "Aluno": aluno, 
-                        "Servico": servico, 
-                        "Status": "Aguardando Pagamento"
-                    }])
+                    nova_linha = pd.DataFrame([{"Data": str(data), "Horario": horario, "Aluno": aluno, "Servico": servico, "Status": "Aguardando Pagamento"}])
                     dados_existentes = conn.read()
                     df_final = pd.concat([dados_existentes, nova_linha], ignore_index=True)
                     conn.update(data=df_final)
                     
-                    # Efeito de balões
+                    # Balões celebrando a reserva
                     st.balloons() 
                     
                     st.session_state['confirmado'] = True
@@ -123,7 +151,7 @@ with st.container():
         st.write(f"**Favorecido:** Andre Aranha Cagno")
         st.write(f"**Serviço:** {st.session_state['servico_valor']}")
         
-        # Gerador do QR Code Dinâmico
+        # Gerador do QR Code
         chave_pix = "25019727830"
         qr = segno.make(chave_pix)
         img_buffer = BytesIO()

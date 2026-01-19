@@ -8,7 +8,7 @@ from io import BytesIO
 # 1. Configuração da página
 st.set_page_config(page_title="TENNIS CLASS", layout="centered")
 
-# 2. CSS: Fundo, Cards e Botão Flutuante do WhatsApp (Logo Branco)
+# 2. CSS: Fundo, Cards e WhatsApp Flutuante (Fundo do App + Logo Branco)
 st.markdown("""
     <style>
     .stApp {
@@ -40,15 +40,16 @@ st.markdown("""
         box-shadow: 0 10px 25px rgba(0,0,0,0.3);
         margin-top: 10px;
     }
-    /* WhatsApp Flutuante */
+    /* WhatsApp Flutuante com Fundo Escuro/Transparente do App e Logo Branco */
     .whatsapp-float {
         position: fixed;
         width: 60px;
         height: 60px;
         bottom: 20px;
         right: 20px;
-        background-color: #25d366;
+        background-color: rgba(0, 0, 0, 0.6); /* Fundo acompanhando o layout */
         color: white !important;
+        border: 2px solid white;
         border-radius: 50px;
         text-align: center;
         font-size: 35px;
@@ -58,6 +59,11 @@ st.markdown("""
         align-items: center;
         justify-content: center;
         text-decoration: none !important;
+        transition: all 0.3s ease;
+    }
+    .whatsapp-float:hover {
+        transform: scale(1.1);
+        background-color: #25d366;
     }
     </style>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
@@ -88,9 +94,11 @@ with st.container():
     with st.form("agendamento"):
         aluno = st.text_input("Nome do Aluno")
         servico = st.selectbox("Selecione o Serviço", ["Aula Individual (R$ 250)", "Aula em Dupla (R$ 200/pessoa)", "Aluguel de Quadra (R$ 250)"])
-        data = st.date_input("Data Desejada")
         
-        # Horários Específicos de Segunda a Sexta
+        # --- DATA NO PADRÃO BRASILEIRO (DD/MM/YYYY) ---
+        data = st.date_input("Data Desejada", format="DD/MM/YYYY")
+        
+        # Horários Específicos
         dia_semana = data.weekday() 
         if dia_semana == 0: lista_horarios = ["12:00", "13:00", "15:00"]
         elif dia_semana == 1: lista_horarios = ["11:00", "12:00", "13:00", "14:00", "15:00"]
@@ -105,7 +113,14 @@ with st.container():
         if submit:
             if aluno:
                 try:
-                    nova_linha = pd.DataFrame([{"Data": str(data), "Horario": horario, "Aluno": aluno, "Servico": servico, "Status": "Aguardando Pagamento"}])
+                    # Correção do erro da linha 123 (fechamento de colchetes e parênteses)
+                    nova_linha = pd.DataFrame([{
+                        "Data": data.strftime("%d/%m/%Y"), 
+                        "Horario": horario, 
+                        "Aluno": aluno, 
+                        "Servico": servico, 
+                        "Status": "Aguardando Pagamento"
+                    }])
                     dados_existentes = conn.read()
                     df_final = pd.concat([dados_existentes, nova_linha], ignore_index=True)
                     conn.update(data=df_final)

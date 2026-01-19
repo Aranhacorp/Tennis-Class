@@ -5,7 +5,7 @@ import pandas as pd
 # 1. Configuração da página
 st.set_page_config(page_title="TENNIS CLASS", layout="centered")
 
-# 2. CSS para o fundo e estilo
+# 2. CSS para o fundo, estilo do card e fontes
 st.markdown("""
     <style>
     .stApp {
@@ -33,16 +33,25 @@ st.markdown("""
         margin-top: 20px;
     }
     
+    /* Estilo do Título em Branco */
     h1 {
-        color: white;
+        color: white !important;
         text-align: center;
         font-family: 'Arial Black', sans-serif;
         text-shadow: 2px 2px 4px #000000;
+        margin-bottom: 0px;
+    }
+
+    h3 {
+        color: white !important;
+        text-align: center;
+        text-shadow: 1px 1px 2px #000000;
     }
     </style>
     """, unsafe_allow_html=True)
 
-st.markdown('<h1>SPORTS CLASS 🎾</h1>', unsafe_allow_html=True)
+st.markdown('<h1>TENNIS CLASS</h1>', unsafe_allow_html=True)
+st.markdown('<h3>Agendamento Profissional</h3>', unsafe_allow_html=True)
 
 with st.container():
     st.markdown('<div class="main-card">', unsafe_allow_html=True)
@@ -80,35 +89,31 @@ with st.container():
                     df_final = pd.concat([dados_existentes, nova_linha], ignore_index=True)
                     conn.update(data=df_final)
                     
-                    # Guardamos as informações na "memória" da sessão (Session State)
                     st.session_state['pago'] = True
                     st.session_state['servico_selecionado'] = servico
-                    st.success(f"Reserva pré-agendada, {aluno}!")
+                    st.success(f"Reserva pré-agendada para {aluno}!")
                     st.balloons()
                 except Exception as e:
-                    st.error("Erro ao salvar. Verifique as permissões da planilha.")
+                    st.error("Erro ao salvar dados na planilha.")
             else:
-                st.warning("Por favor, preencha o nome.")
+                st.warning("Por favor, preencha o nome do aluno.")
 
     # --- ETAPA DE PAGAMENTO ---
-    # Só aparece se o formulário foi enviado com sucesso
     if st.session_state.get('pago'):
         st.markdown("---")
         st.markdown('<div class="pix-box">', unsafe_allow_html=True)
         st.markdown(f"### 💰 Pagamento via PIX")
         
-        # Agora pegamos o serviço que guardamos na memória
         servico_nome = st.session_state['servico_selecionado']
         st.write(f"Para confirmar sua vaga, realize o pagamento do **{servico_nome}**")
         
-        # Chave PIX formatada corretamente
+        # Chave PIX (CPF)
         st.code("250.197.278-30", language="text")
         
         st.write("**Instruções:**")
-        st.write("1. Copie o CPF acima e pague no seu banco via PIX.")
+        st.write("1. Copie o CPF acima e realize o pagamento via PIX no seu banco.")
         st.write("2. Envie o comprovante para o WhatsApp: **(11) 97142-5028**")
         st.write("3. Sua reserva será confirmada definitivamente após o recebimento.")
         st.markdown('</div>', unsafe_allow_html=True)
         
     st.markdown('</div>', unsafe_allow_html=True)
-

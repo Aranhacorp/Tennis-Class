@@ -8,7 +8,7 @@ from io import BytesIO
 # 1. Configuração da página
 st.set_page_config(page_title="TENNIS CLASS", layout="centered")
 
-# 2. Estilização Visual e ÍCONE WHATSAPP (Logotipo Branco)
+# 2. CSS: Fundo, Cards e Botão Flutuante do WhatsApp (Logo Branco)
 st.markdown("""
     <style>
     .stApp {
@@ -18,7 +18,6 @@ st.markdown("""
         background-position: center;
         background-attachment: fixed;
     }
-    
     .header-container {
         display: flex;
         align-items: center;
@@ -34,7 +33,6 @@ st.markdown("""
         margin: 0;
     }
     .logo-img { border-radius: 10px; mix-blend-mode: screen; }
-
     .main-card {
         background-color: rgba(255, 255, 255, 0.95);
         padding: 30px;
@@ -42,8 +40,7 @@ st.markdown("""
         box-shadow: 0 10px 25px rgba(0,0,0,0.3);
         margin-top: 10px;
     }
-
-    /* BOTÃO WHATSAPP FLUTUANTE COM LOGO BRANCO */
+    /* WhatsApp Flutuante */
     .whatsapp-float {
         position: fixed;
         width: 60px;
@@ -61,14 +58,8 @@ st.markdown("""
         align-items: center;
         justify-content: center;
         text-decoration: none !important;
-        transition: all 0.3s ease;
-    }
-    .whatsapp-float:hover {
-        transform: scale(1.1);
-        background-color: #128c7e;
     }
     </style>
-    
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
     <a href="https://wa.me/5511971425028" class="whatsapp-float" target="_blank">
         <i class="fa fa-whatsapp"></i>
@@ -96,14 +87,10 @@ with st.container():
 
     with st.form("agendamento"):
         aluno = st.text_input("Nome do Aluno")
-        servico = st.selectbox("Selecione o Serviço", [
-            "Aula Individual (R$ 250)", 
-            "Aula em Dupla (R$ 200/pessoa)", 
-            "Aluguel de Quadra (R$ 250)"
-        ])
+        servico = st.selectbox("Selecione o Serviço", ["Aula Individual (R$ 250)", "Aula em Dupla (R$ 200/pessoa)", "Aluguel de Quadra (R$ 250)"])
         data = st.date_input("Data Desejada")
         
-        # --- LÓGICA DE HORÁRIOS EXATOS ---
+        # Horários Específicos de Segunda a Sexta
         dia_semana = data.weekday() 
         if dia_semana == 0: lista_horarios = ["12:00", "13:00", "15:00"]
         elif dia_semana == 1: lista_horarios = ["11:00", "12:00", "13:00", "14:00", "15:00"]
@@ -120,4 +107,34 @@ with st.container():
                 try:
                     nova_linha = pd.DataFrame([{"Data": str(data), "Horario": horario, "Aluno": aluno, "Servico": servico, "Status": "Aguardando Pagamento"}])
                     dados_existentes = conn.read()
-                    df_final = pd.concat([dados_existentes,
+                    df_final = pd.concat([dados_existentes, nova_linha], ignore_index=True)
+                    conn.update(data=df_final)
+                    
+                    st.balloons() 
+                    st.session_state['confirmado'] = True
+                    st.session_state['servico_valor'] = servico
+                    st.success(f"Reserva pré-agendada para {aluno}!")
+                except Exception:
+                    st.error("Erro ao salvar os dados.")
+            else:
+                st.warning("Preencha o nome do aluno.")
+
+    # 4. Seção do PIX
+    if st.session_state.get('confirmado'):
+        st.markdown("---")
+        st.markdown('<div style="text-align: center; color: black;">', unsafe_allow_html=True)
+        st.markdown("### 💰 Pagamento via PIX")
+        st.write(f"**Favorecido:** Andre Aranha Cagno")
+        st.write(f"**Serviço:** {st.session_state['servico_valor']}")
+        
+        chave_pix = "25019727830"
+        qr = segno.make(chave_pix)
+        img_buffer = BytesIO()
+        qr.save(img_buffer, kind='png', scale=7)
+        st.image(img_buffer.getvalue(), width=250, caption="Escaneie para pagar")
+        
+        st.code("250.197.278-30", language="text")
+        st.write("Após pagar, envie o comprovante para: **(11) 97142-5028**")
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+    st.markdown('</div>', unsafe_allow_html=True)

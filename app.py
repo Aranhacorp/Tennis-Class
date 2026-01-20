@@ -8,7 +8,7 @@ from io import BytesIO
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="TENNIS CLASS", layout="wide")
 
-# 2. CSS: DESIGN UNIFICADO (BARRA LATERAL -20% E CARDS TRANSPARENTES)
+# 2. CSS: DESIGN UNIFICADO
 st.markdown("""
     <style>
     .stApp {
@@ -19,7 +19,7 @@ st.markdown("""
         background-attachment: fixed;
     }
     
-    /* SIDEBAR REDUZIDA EM 20% (Aprox. 225px) */
+    /* SIDEBAR REDUZIDA EM 20% (225px) */
     [data-testid="stSidebar"] {
         background-color: rgba(0, 0, 0, 0.8) !important;
         backdrop-filter: blur(15px);
@@ -30,7 +30,7 @@ st.markdown("""
         border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    /* CARD TRANSPARENTE PADRÃO (Utilizado na Home e no Contato) */
+    /* CARD TRANSPARENTE PADRÃO */
     .custom-card {
         background-color: rgba(0, 0, 0, 0.7) !important;
         backdrop-filter: blur(10px);
@@ -43,12 +43,10 @@ st.markdown("""
         text-align: center;
     }
 
-    /* Forçar cor branca em textos e títulos dentro dos cards */
-    .custom-card h1, .custom-card h2, .custom-card h3, .custom-card p, .custom-card span {
+    .custom-card h1, .custom-card h2, .custom-card p {
         color: white !important;
     }
 
-    /* Estilo dos Botões do Menu na Sidebar */
     .stButton > button {
         background-color: rgba(255, 255, 255, 0.05) !important;
         color: white !important;
@@ -58,7 +56,6 @@ st.markdown("""
         width: 100% !important;
     }
 
-    /* Botão Flutuante WhatsApp */
     .whatsapp-float {
         position: fixed;
         width: 60px; height: 60px;
@@ -88,7 +85,7 @@ with st.sidebar:
             st.rerun()
         st.markdown(f"<div style='margin-top:-45px; text-align:right; color:rgba(255,255,255,0.4);'>▶</div><br>", unsafe_allow_html=True)
 
-# 4. CONTEÚDO DINÂMICO
+# 4. CONTEÚDO
 menu = st.session_state.menu_selecionado
 
 if menu == "Home":
@@ -99,19 +96,21 @@ if menu == "Home":
             conn = st.connection("gsheets", type=GSheetsConnection)
             with st.form("agendamento"):
                 aluno = st.text_input("Nome do Aluno")
-                # VALORES DAS AULAS INCLUÍDOS
-                servico = st.selectbox("Selecione o Serviço", ["Aula Individual (R$ 250/hora)", "Aula em Dupla (R$ 200/pessoa)", "Aluguel de Quadra (R$ 250/hora)"])
-                data = st.date_input("Data Desejada", format="DD/MM/YYYY")
+                servico = st.selectbox("Serviço", ["Aula Individual (R$ 250/hora)", "Aula em Dupla (R$ 200/pessoa)", "Aluguel de Quadra (R$ 250/hora)"])
+                data = st.date_input("Data", format="DD/MM/YYYY")
                 academia = st.selectbox("Academia", ["Play Tennis Ibirapuera", "Fontes e Barbeta", "TOP One", "Arena BTG"])
-                # HORÁRIOS: 11:00 às 21:00
-                horario = st.selectbox("Horário Disponível", [f"{h:02d}:00" for h in range(11, 22)])
+                horario = st.selectbox("Horário", [f"{h:02d}:00" for h in range(11, 22)])
                 
-                if st.form_submit_button("CONFIRMAR E GERAR QR CODE"):
+                if st.form_submit_button("CONFIRMAR RESERVA"):
                     if aluno:
                         data_br = data.strftime("%d/%m/%Y")
                         nova_linha = pd.DataFrame([{"Data": data_br, "Horario": horario, "Aluno": aluno, "Servico": servico, "Academia": academia}])
                         df_final = pd.concat([conn.read(), nova_linha], ignore_index=True)
                         conn.update(data=df_final)
+                        
+                        # --- BALÕES DE VOLTA AQUI ---
+                        st.balloons()
+                        
                         st.session_state.confirmado = True
                         st.rerun()
 
@@ -122,19 +121,17 @@ if menu == "Home":
                 qr.save(img_buffer, kind='png', scale=5)
                 st.image(img_buffer.getvalue(), width=200)
                 st.code("250.197.278-30")
-        except Exception:
+        except:
             st.warning("Aguardando conexão com a planilha.")
         st.markdown('</div>', unsafe_allow_html=True)
 
 elif menu == "Cadastro":
     st.markdown("<h1 style='text-align: center; color: white;'>Cadastro de Professor</h1>", unsafe_allow_html=True)
-    # Iframe do Google Forms
     form_url = "https://docs.google.com/forms/d/e/1FAIpQLSfN-d-T_G2V_u_yN0_S_b8O_G2H_u_yN0_S_b8O_G2H_u_yN0_S_b/viewform?embedded=true"
     st.markdown(f'<div style="background:white; border-radius:15px; padding:10px;"><iframe src="{form_url}" width="100%" height="700" frameborder="0"></iframe></div>', unsafe_allow_html=True)
 
 elif menu == "Contato":
     st.markdown("<h1 style='text-align: center; color: white;'>Fale Conosco</h1>", unsafe_allow_html=True)
-    # CAIXA DE CONTATO PADRONIZADA (TRANSPARÊNCIA E FONTE BRANCA)
     st.markdown("""
         <div class="custom-card">
             <h1>André Aranha</h1>

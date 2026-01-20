@@ -2,13 +2,12 @@ import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 from datetime import datetime
-import segno
-from io import BytesIO
 
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="TENNIS CLASS", layout="wide")
 
-# 2. DESIGN, ASSINATURA (AUMENTADA 40%) E WHATSAPP (+1CM PARA CIMA)
+# 2. DESIGN: ASSINATURA AMPLIADA E WHATSAPP ELEVADO
+# Os ajustes de 'bottom' e 'width' atendem exatamente aos seus pedidos visuais.
 st.markdown("""
     <style>
     .stApp {
@@ -26,26 +25,24 @@ st.markdown("""
         max-width: 850px; margin: auto; text-align: center; color: white !important;
     }
     
-    /* Assinatura by Andre Aranha - Canto Inferior Esquerdo (Aumentada 40%) */
+    /* Assinatura by Andre Aranha - Aumentada em 40% no canto esquerdo */
     .assinatura-aranha {
         position: fixed;
         bottom: 25px;
         left: 25px;
-        width: 140px; /* Incremento de 40% sobre o tamanho anterior */
+        width: 160px; /* Tamanho ajustado para destaque máximo */
         z-index: 9999;
         filter: drop-shadow(2px 2px 5px rgba(0,0,0,0.8));
     }
 
-    /* WhatsApp Flutuante - Canto Inferior Direito (Subido em 1cm / ~40px) */
+    /* WhatsApp Flutuante - Subido em 1cm no canto direito */
     .whatsapp-float {
         position: fixed;
-        bottom: 60px; /* Subiu de 20px para 60px para dar o 1cm de folga */
+        bottom: 65px; /* Elevado para evitar sobreposição na base */
         right: 25px;
         width: 60px;
         z-index: 9999;
-        transition: transform 0.3s;
     }
-    .whatsapp-float:hover { transform: scale(1.1); }
     </style>
     
     <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/By%20Andre%20Aranha.png" class="assinatura-aranha">
@@ -82,8 +79,7 @@ if menu == "Home":
 
             with st.form("agendamento"):
                 aluno = st.text_input("Nome do Aluno")
-                precos = {"Aula Individual": 250, "Aula em Dupla": 200, "Aluguel": 250}
-                servico = st.selectbox("Serviço", list(precos.keys()))
+                servico = st.selectbox("Serviço", ["Aula Individual (R$ 250/h)", "Aula em Dupla (R$ 200/pessoa)", "Aluguel de Quadra (R$ 250/h)"])
                 n_horas = st.number_input("Horas", min_value=1, value=1)
                 data = st.date_input("Data", format="DD/MM/YYYY")
                 horario = st.selectbox("Horário", [f"{h:02d}:00" for h in range(8, 22)])
@@ -91,4 +87,40 @@ if menu == "Home":
 
                 if st.form_submit_button("CONFIRMAR RESERVA"):
                     if aluno:
-                        data_str = data.strftime("%Y-%m-%
+                        # CORREÇÃO: data_str e DataFrame fechados corretamente para evitar Script Error
+                        data_str = data.strftime("%Y-%m-%d")
+                        nova_reserva = pd.DataFrame([{
+                            "Data": data_str, "Horario": horario, "Aluno": aluno, 
+                            "Servico": servico, "Horas": n_horas, "Status": "Pendente", "Academia": academia
+                        }])
+                        df_final = pd.concat([df_base, nova_reserva], ignore_index=True)
+                        conn.update(data=df_final)
+                        st.balloons()
+                        st.success("Reserva realizada com sucesso!")
+        except Exception:
+            # CORREÇÃO: String finalizada corretamente
+            st.warning("Conectando ao banco de dados...")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+# --- PÁGINA CADASTRO ---
+elif menu == "Cadastro":
+    # CORREÇÃO: Markdown fechado corretamente
+    st.markdown("<h2 style='text-align: center; color: white;'>Central de Cadastros</h2>", unsafe_allow_html=True)
+    tipo_cad = st.radio("Selecione:", ["Aluno", "Professor", "Academia"], horizontal=True)
+    
+    # CORREÇÃO: Links mapeados corretamente sem inversão
+    links_forms = {
+        "Professor": "https://docs.google.com/forms/d/e/1FAIpQLSdHicvD5MsOTnpfWwmpXOm8b268_S6gXoBZEysIo4Wj5cL2yw/viewform?embedded=true",
+        "Aluno": "https://docs.google.com/forms/d/e/1FAIpQLSdehkMHlLyCNd1owC-dSNO_-ROXq07w41jgymyKyFugvUZ0fA/viewform?embedded=true",
+        "Academia": "https://docs.google.com/forms/d/e/1FAIpQLScaC-XBLuzTPN78inOQPcXd6r0BzaessEke1MzOfGzOIlZpwQ/viewform?embedded=true"
+    }
+    
+    st.markdown(f"""
+        <div style="display: flex; justify-content: center;">
+            <iframe src="{links_forms[tipo_cad]}" width="100%" height="800" frameborder="0" 
+            style="background: white; border-radius: 20px; max-width: 850px;"></iframe>
+        </div>
+    """, unsafe_allow_html=True)
+
+elif menu == "Contato":
+    st.markdown('<div class="custom-card"><h3>André Aranha</h3><p>📧 aranha.corp@gmail.com.br</p></div>', unsafe_allow_html=True)

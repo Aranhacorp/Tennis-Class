@@ -8,7 +8,7 @@ from io import BytesIO
 # 1. Configuração da página
 st.set_page_config(page_title="TENNIS CLASS", layout="centered")
 
-# 2. CSS: Fundo, Cards e WhatsApp (Posição 75px - descido 2cm)
+# 2. CSS: Fundo, Cards, WhatsApp, Assinatura e Barra Branca
 st.markdown("""
     <style>
     .stApp {
@@ -32,14 +32,22 @@ st.markdown("""
         text-shadow: 2px 2px 4px #000000;
         margin: 0;
     }
+    /* Barra Branca Ajustada para 1,2cm (aprox 45px) */
+    .highlight-bar {
+        background-color: white;
+        height: 45px;
+        width: 100%;
+        border-radius: 15px;
+        margin: 10px 0;
+    }
     .logo-img { border-radius: 10px; mix-blend-mode: screen; }
     .main-card {
         background-color: rgba(255, 255, 255, 0.95);
         padding: 30px;
         border-radius: 20px;
         box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-        margin-top: 10px;
     }
+    /* WhatsApp Flutuante */
     .whatsapp-float {
         position: fixed;
         width: 60px;
@@ -52,26 +60,43 @@ st.markdown("""
         border-radius: 50px;
         text-align: center;
         font-size: 35px;
-        box-shadow: 2px 2px 10px rgba(0,0,0,0.5);
         z-index: 1000;
         display: flex;
         align-items: center;
         justify-content: center;
         text-decoration: none !important;
     }
+    /* Assinatura "By Andre Aranha" no canto inferior esquerdo */
+    .signature-float {
+        position: fixed;
+        bottom: 75px;
+        left: 20px;
+        z-index: 1000;
+    }
+    .signature-img {
+        width: 150px;
+        border-radius: 10px;
+        opacity: 0.9;
+    }
     </style>
+    
+    <div class="signature-float">
+        <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/By%20Andre%20Aranha.png" class="signature-img">
+    </div>
+
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
     <a href="https://wa.me/5511971425028" class="whatsapp-float" target="_blank">
         <i class="fa fa-whatsapp"></i>
     </a>
     """, unsafe_allow_html=True)
 
-# 3. Cabeçalho
+# 3. Cabeçalho e Barra Branca
 st.markdown("""
     <div class="header-container">
         <h1>TENNIS CLASS</h1>
         <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/tennis-player-silhouette%20ver2.jpg" width="70" class="logo-img">
     </div>
+    <div class="highlight-bar"></div>
     """, unsafe_allow_html=True)
 
 with st.container():
@@ -85,12 +110,20 @@ with st.container():
 
     with st.form("agendamento"):
         aluno = st.text_input("Nome do Aluno")
-        servico = st.selectbox("Selecione o Serviço", ["Aula Individual (R$ 250)", "Aula em Dupla (R$ 200/pessoa)", "Aluguel de Quadra (R$ 250)"])
         
-        # Data no padrão Brasileiro
+        # Lista de serviços atualizada com valores por hora
+        servicos_lista = [
+            "Aula Individual (R$ 250/hora)",
+            "Aula em Dupla (R$ 200/hora por pessoa)",
+            "Aula com 3 Alunos (R$ 180/hora por pessoa)",
+            "Aula com 4 Alunos (R$ 150/hora por pessoa)",
+            "Aluguel de Quadra (R$ 250/hora)"
+        ]
+        servico = st.selectbox("Selecione o Serviço", servicos_lista)
+        
         data = st.date_input("Data Desejada", format="DD/MM/YYYY")
         
-        # Lógica de horários blindada contra erros de aspas
+        # Lógica de horários
         dia_semana = data.weekday() 
         mapa_horarios = {
             0: ["12:00", "13:00", "15:00"],
@@ -110,23 +143,16 @@ with st.container():
             if aluno:
                 try:
                     data_br = data.strftime("%d/%m/%Y")
-                    nova_linha = pd.DataFrame([{
-                        "Data": data_br, 
-                        "Horario": horario, 
-                        "Aluno": aluno, 
-                        "Servico": servico, 
-                        "Status": "Aguardando Pagamento"
-                    }])
+                    nova_linha = pd.DataFrame([{"Data": data_br, "Horario": horario, "Aluno": aluno, "Servico": servico, "Status": "Aguardando Pagamento"}])
                     dados_existentes = conn.read()
                     df_final = pd.concat([dados_existentes, nova_linha], ignore_index=True)
                     conn.update(data=df_final)
-                    
                     st.balloons() 
                     st.session_state['confirmado'] = True
                     st.session_state['serv_v'] = servico
                     st.success(f"Reserva pré-agendada para {aluno}!")
                 except Exception:
-                    st.error("Erro ao salvar os dados na planilha.")
+                    st.error("Erro ao salvar dados.")
             else:
                 st.warning("Preencha o nome do aluno.")
 
@@ -135,14 +161,11 @@ with st.container():
         st.markdown('<div style="text-align: center; color: black;">', unsafe_allow_html=True)
         st.markdown("### 💰 Pagamento via PIX")
         st.write(f"**Serviço:** {st.session_state['serv_v']}")
-        
         qr = segno.make("25019727830")
         img_buffer = BytesIO()
         qr.save(img_buffer, kind='png', scale=7)
         st.image(img_buffer.getvalue(), width=250)
-        
         st.code("250.197.278-30", language="text")
-        st.write("Após pagar, envie o comprovante para: **(11) 97142-5028**")
+        st.write("Envie o comprovante para: (11) 97142-5028")
         st.markdown('</div>', unsafe_allow_html=True)
-        
     st.markdown('</div>', unsafe_allow_html=True)

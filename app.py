@@ -19,7 +19,6 @@ st.markdown("""
         background-attachment: fixed;
     }
     
-    /* TÍTULO CENTRALIZADO SEM IMAGEM */
     .header-title {
         color: white;
         font-size: 50px;
@@ -29,7 +28,6 @@ st.markdown("""
         text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
     }
 
-    /* SIDEBAR REDUZIDA EM 20% */
     [data-testid="stSidebar"] {
         background-color: rgba(0, 0, 0, 0.8) !important;
         backdrop-filter: blur(15px);
@@ -40,7 +38,6 @@ st.markdown("""
         border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    /* CARD TRANSPARENTE PADRÃO */
     .custom-card {
         background-color: rgba(0, 0, 0, 0.7) !important;
         backdrop-filter: blur(10px);
@@ -51,16 +48,6 @@ st.markdown("""
         margin: auto;
         border: 1px solid rgba(255, 255, 255, 0.2);
         text-align: center;
-    }
-
-    .custom-card h1, .custom-card p { color: white !important; }
-
-    .stButton > button {
-        background-color: rgba(255, 255, 255, 0.05) !important;
-        color: white !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-radius: 12px !important;
-        width: 100% !important;
     }
 
     .whatsapp-float {
@@ -85,10 +72,10 @@ with st.sidebar:
             st.session_state.menu_selecionado = item
             st.rerun()
 
-# 4. TÍTULO NO TOPO (SEM IMAGEM)
+# 4. TÍTULO NO TOPO
 st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
 
-# 5. CONTEÚDO DINÂMICO
+# 5. CONTEÚDO
 menu = st.session_state.menu_selecionado
 
 if menu == "Home":
@@ -106,38 +93,17 @@ if menu == "Home":
                 
                 if st.form_submit_button("CONFIRMAR RESERVA"):
                     if aluno:
+                        # Processamento da Planilha
                         data_br = data.strftime("%d/%m/%Y")
                         nova_linha = pd.DataFrame([{"Data": data_br, "Horario": horario, "Aluno": aluno, "Servico": servico, "Academia": academia}])
                         df_final = pd.concat([conn.read(), nova_linha], ignore_index=True)
                         conn.update(data=df_final)
                         
-                        # CELEBRAÇÃO COM BALÕES
-                        st.balloons()
+                        # AÇÃO DE SUCESSO
+                        st.balloons() # Balões ativados
                         st.session_state.confirmado = True
                         st.rerun()
 
+            # MENSAGEM ALTERADA PARA "Reserva realizada com sucesso!"
             if st.session_state.get('confirmado'):
-                st.success("Reserva realizada com sucesso!")
-                qr = segno.make("25019727830")
-                img_buffer = BytesIO()
-                qr.save(img_buffer, kind='png', scale=5)
-                st.image(img_buffer.getvalue(), width=200)
-                st.code("250.197.278-30")
-        except:
-            st.warning("Aguardando conexão com a planilha de agendamentos.")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-elif menu == "Contato":
-    st.markdown("<h1 style='text-align: center; color: white;'>Fale Conosco</h1>", unsafe_allow_html=True)
-    st.markdown("""
-        <div class="custom-card">
-            <h1>André Aranha</h1>
-            <p style="font-size: 22px;">📧 aranha.corp@gmail.com.br</p>
-            <p style="font-size: 22px;">📞 11 - 97142 5028</p>
-            <br>
-            <a href="https://wa.me/5511971425028" target="_blank" 
-               style="background:#25d366; color:white; padding:15px 35px; border-radius:15px; text-decoration:none; font-weight:bold; display: inline-block;">
-               INICIAR CONVERSA
-            </a>
-        </div>
-    """, unsafe_allow_html=True)
+                st.success("Reserva realizada com sucesso!") # Ajuste solicitado

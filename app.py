@@ -32,7 +32,6 @@ st.markdown("""
         text-shadow: 2px 2px 4px #000000;
         margin: 0;
     }
-    /* Barra Branca Retornada para a Medida Anterior (mais larga) */
     .highlight-bar {
         background-color: white;
         height: 80px;
@@ -46,7 +45,7 @@ st.markdown("""
     .highlight-text {
         color: #1e3d59;
         font-weight: bold;
-        font-size: 1.2rem;
+        font-size: 1.5rem;
         text-align: center;
     }
     .logo-img { border-radius: 10px; mix-blend-mode: screen; }
@@ -56,7 +55,6 @@ st.markdown("""
         border-radius: 20px;
         box-shadow: 0 10px 25px rgba(0,0,0,0.3);
     }
-    /* WhatsApp Flutuante */
     .whatsapp-float {
         position: fixed;
         width: 60px;
@@ -75,7 +73,6 @@ st.markdown("""
         justify-content: center;
         text-decoration: none !important;
     }
-    /* Assinatura "By Andre Aranha" */
     .signature-float {
         position: fixed;
         bottom: 75px;
@@ -99,7 +96,7 @@ st.markdown("""
     </a>
     """, unsafe_allow_html=True)
 
-# 3. Cabeçalho e Barra Branca (Medida Original)
+# 3. Cabeçalho
 st.markdown("""
     <div class="header-container">
         <h1>TENNIS CLASS</h1>
@@ -122,7 +119,6 @@ with st.container():
     with st.form("agendamento"):
         aluno = st.text_input("Nome do Aluno")
         
-        # Lista de serviços com valores atualizados
         servicos_lista = [
             "Aula Individual (R$ 250/hora)",
             "Aula em Dupla (R$ 200/hora cada)",
@@ -131,23 +127,16 @@ with st.container():
             "Aluguel de Quadra (R$ 250/hora)"
         ]
         servico = st.selectbox("Selecione o Serviço", servicos_lista)
-        
         data = st.date_input("Data Desejada", format="DD/MM/YYYY")
         
-        # Lógica de horários personalizada
-        dia_semana = data.weekday() 
-        mapa_horarios = {
-            0: ["12:00", "13:00", "15:00"],
-            1: ["11:00", "12:00", "13:00", "14:00", "15:00"],
-            2: ["12:00", "14:00", "16:00", "18:00"],
-            3: ["10:00", "12:00", "15:00", "17:00", "19:00"],
-            4: ["10:00", "12:00", "15:00", "16:00", "18:00", "20:00"],
-            5: ["08:00", "09:00", "10:00", "11:00"],
-            6: ["08:00", "09:00", "10:00", "11:00"]
-        }
-        lista_disponivel = mapa_horarios.get(dia_semana, ["08:00", "09:00"])
+        # --- LISTA DE HORÁRIOS ATUALIZADA ---
+        # 11 am e depois todos pm (12 até 21)
+        horarios_aula = [
+            "11:00 am", "12:00 pm", "13:00 pm", "14:00 pm", "15:00 pm", 
+            "16:00 pm", "17:00 pm", "18:00 pm", "19:00 pm", "20:00 pm", "21:00 pm"
+        ]
             
-        horario = st.selectbox("Horário Disponível", lista_disponivel)
+        horario = st.selectbox("Horário Disponível", horarios_aula)
         submit = st.form_submit_button("CONFIRMAR E GERAR QR CODE")
         
         if submit:

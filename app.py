@@ -8,7 +8,7 @@ from io import BytesIO
 # 1. Configuração da página
 st.set_page_config(page_title="TENNIS CLASS", layout="centered")
 
-# 2. CSS: Fundo, Sidebar FLUTUANTE e Layout
+# 2. CSS: Sidebar Flutuante, Quadrados no Menu e Transparência
 st.markdown("""
     <style>
     /* Fundo Principal */
@@ -20,23 +20,32 @@ st.markdown("""
         background-attachment: fixed;
     }
     
-    /* SIDEBAR FLUTUANTE */
+    /* SIDEBAR FLUTUANTE COM LARGURA DE 4CM (151px) */
     [data-testid="stSidebar"] {
-        background-color: rgba(0, 0, 0, 0.6) !important;
+        background-color: rgba(0, 0, 0, 0.7) !important;
         backdrop-filter: blur(15px);
-        margin: 20px 0 20px 60px; /* 60px de espaço da esquerda */
-        border-radius: 20px; /* Bordas arredondadas */
+        margin: 20px 0 20px 60px !important;
+        border-radius: 25px !important;
+        min-width: 151px !important;
+        max-width: 151px !important;
         height: calc(100vh - 40px) !important;
         border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 10px 0 30px rgba(0,0,0,0.5);
     }
     
-    /* Remove a borda padrão que o Streamlit coloca */
-    [data-testid="stSidebarNav"] {
-        background-color: transparent !important;
+    /* TRANSFORMAR BOLAS EM QUADRADOS NO MENU */
+    /* Remove o arredondamento da bola externa */
+    [data-testid="stWidgetLabel"] + div div[role="radiogroup"] div[data-testid="stMarkdownContainer"] {
+        border-radius: 0px !important;
+    }
+    
+    /* Altera o formato do seletor (input) para quadrado */
+    div[data-testid="stRadio"] div[role="radiogroup"] label div:first-child {
+        border-radius: 2px !important; /* Quadrado com canto levemente suavizado */
+        width: 16px !important;
+        height: 16px !important;
     }
 
-    /* Texto da Sidebar em Branco */
+    /* Texto e Estilo Geral Sidebar */
     [data-testid="stSidebar"] * {
         color: white !important;
         font-family: 'Arial', sans-serif;
@@ -47,7 +56,6 @@ st.markdown("""
         align-items: center;
         justify-content: center;
         gap: 15px;
-        margin-bottom: 5px;
     }
     
     .highlight-bar {
@@ -71,7 +79,6 @@ st.markdown("""
         background-color: rgba(255, 255, 255, 0.95);
         padding: 30px;
         border-radius: 20px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
     }
 
     .whatsapp-float {
@@ -99,14 +106,14 @@ st.markdown("""
 
 # 3. BARRA LATERAL (SIDEBAR)
 with st.sidebar:
-    st.markdown("<h2 style='text-align: center;'>🎾 TENNIS CLASS</h2>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center;'>🎾 TENNIS</h3>", unsafe_allow_html=True)
     st.write("---")
+    # O rádio agora aparecerá com quadrados devido ao CSS acima
     menu = st.radio(
-        "Navegação",
+        "Menu",
         ["Home", "Serviços", "Cadastros", "Produtos", "Contato"]
     )
     st.write("---")
-    st.caption("Acompanhe suas aulas e agendamentos com facilidade.")
 
 # 4. LÓGICA DE NAVEGAÇÃO
 if menu == "Home":
@@ -127,7 +134,7 @@ if menu == "Home":
         try:
             conn = st.connection("gsheets", type=GSheetsConnection)
         except:
-            st.error("Erro na conexão com a planilha.")
+            st.error("Erro na conexão.")
 
         with st.form("agendamento"):
             aluno = st.text_input("Nome do Aluno")
@@ -156,7 +163,6 @@ if menu == "Home":
                     dados_existentes = conn.read()
                     df_final = pd.concat([dados_existentes, nova_linha], ignore_index=True)
                     conn.update(data=df_final)
-                    
                     st.balloons()
                     st.session_state['confirmado'] = True
                 except Exception as e:
@@ -170,7 +176,10 @@ if menu == "Home":
             img_buffer = BytesIO()
             qr.save(img_buffer, kind='png', scale=7)
             st.image(img_buffer.getvalue(), width=250)
-            st.code("250.197.278-30", language="text") # Linha corrigida
-            st.write("Após o pagamento, envie o comprovante.")
+            st.code("250.197.278-30", language="text")
             st.markdown("</div>", unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
+
+else:
+    st.markdown(f"<h1 style='color:white; text-align:center; margin-top:50px;'>{menu}</h1>", unsafe_allow_html=True)
+    st.info(f"A seção de {menu} está sendo preparada.")

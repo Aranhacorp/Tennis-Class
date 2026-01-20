@@ -8,7 +8,7 @@ from io import BytesIO
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="TENNIS CLASS", layout="wide")
 
-# 2. CSS: DESIGN DA SIDEBAR (REDUZIDA 20%) E CARDS TRANSPARENTES
+# 2. CSS: DESIGN DA SIDEBAR E CARDS TRANSPARENTES
 st.markdown("""
     <style>
     .stApp {
@@ -19,7 +19,7 @@ st.markdown("""
         background-attachment: fixed;
     }
     
-    /* SIDEBAR REDUZIDA EM 20% (225px) */
+    /* SIDEBAR REDUZIDA EM 20% (Aprox. 225px) */
     [data-testid="stSidebar"] {
         background-color: rgba(0, 0, 0, 0.8) !important;
         backdrop-filter: blur(15px);
@@ -30,7 +30,7 @@ st.markdown("""
         border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    /* CARD TRANSPARENTE PADRÃO (Para Home e Contato) */
+    /* CARD TRANSPARENTE PADRÃO (Mesmo padrão para todo o app) */
     .custom-card {
         background-color: rgba(0, 0, 0, 0.7) !important;
         backdrop-filter: blur(10px);
@@ -43,6 +43,11 @@ st.markdown("""
         text-align: center;
     }
 
+    /* Forçar cor branca em textos dentro do card */
+    .custom-card h1, .custom-card h2, .custom-card p, .custom-card span {
+        color: white !important;
+    }
+
     /* Estilo dos Botões do Menu */
     .stButton > button {
         background-color: rgba(255, 255, 255, 0.05) !important;
@@ -53,48 +58,10 @@ st.markdown("""
         width: 100% !important;
     }
 
-    /* Botão WhatsApp */
+    /* Botão Flutuante WhatsApp */
     .whatsapp-float {
         position: fixed;
         width: 60px; height: 60px;
         bottom: 30px; right: 30px;
         background-color: #25d366;
-        color: white !important;
-        border-radius: 50px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 30px; z-index: 1000;
-        text-decoration: none !important;
-    }
-    </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <a href="https://wa.me/5511971425028" class="whatsapp-float" target="_blank"><i class="fa fa-whatsapp"></i></a>
-""", unsafe_allow_html=True)
-
-# 3. LÓGICA DE NAVEGAÇÃO
-if 'menu_selecionado' not in st.session_state:
-    st.session_state.menu_selecionado = "Home"
-
-with st.sidebar:
-    st.markdown("<h3 style='text-align: center; color: white;'>🎾 TENNIS CLASS</h3>", unsafe_allow_html=True)
-    st.markdown("<br>", unsafe_allow_html=True)
-    for item in ["Home", "Serviços", "Produtos", "Cadastro", "Contato"]:
-        if st.button(item, key=f"btn_{item}"):
-            st.session_state.menu_selecionado = item
-            st.rerun()
-        st.markdown(f"<div style='margin-top:-45px; text-align:right; color:rgba(255,255,255,0.4);'>▶</div><br>", unsafe_allow_html=True)
-
-# 4. CONTEÚDO DAS ABAS
-menu = st.session_state.menu_selecionado
-
-if menu == "Home":
-    st.markdown("<h1 style='text-align: center; color: white;'>Agendamento Profissional</h1>", unsafe_allow_html=True)
-    with st.container():
-        st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-        try:
-            conn = st.connection("gsheets", type=GSheetsConnection)
-            with st.form("agendamento"):
-                aluno = st.text_input("Nome do Aluno")
-                servico = st.selectbox("Selecione o Serviço", ["Aula Individual (R$ 250/hora)", "Aula em Dupla (R$ 200/pessoa)", "Aluguel de Quadra (R$ 250/hora)"])
-                data = st.date_input("Data Desejada", format="DD/MM/YYYY")
-                academia = st.selectbox("Academia", ["Play Tennis Ibirapuera", "Fontes e Barbeta", "TOP One", "Arena BTG"])
-                # HORÁRIOS AJUSTADOS: 11 am até 21 pm [cite: image_aef71
+        color: white !

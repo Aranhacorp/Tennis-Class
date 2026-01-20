@@ -8,7 +8,7 @@ from io import BytesIO
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="TENNIS CLASS", layout="wide")
 
-# 2. ESTILO CSS (DARK GLASS DESIGN)
+# 2. CSS PARA DESIGN "DARK GLASS"
 st.markdown("""
     <style>
     .stApp {
@@ -17,37 +17,35 @@ st.markdown("""
         background-size: cover; background-position: center; background-attachment: fixed;
     }
     .header-title {
-        color: white; font-size: 55px; font-weight: bold; text-align: center;
-        margin-bottom: 20px; text-shadow: 3px 3px 6px rgba(0,0,0,0.7);
-    }
-    [data-testid="stSidebar"] {
-        background-color: rgba(0, 0, 0, 0.85) !important;
-        backdrop-filter: blur(15px); border-radius: 20px !important;
-        margin: 20px 0 20px 20px !important; border: 1px solid rgba(255, 255, 255, 0.15);
+        color: white; font-size: 50px; font-weight: bold; text-align: center;
+        margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
     }
     .custom-card {
-        background-color: rgba(0, 0, 0, 0.75) !important; backdrop-filter: blur(12px);
-        padding: 40px; border-radius: 25px; border: 1px solid rgba(255, 255, 255, 0.2);
-        max-width: 850px; margin: auto; text-align: center; color: white !important;
+        background-color: rgba(0, 0, 0, 0.75) !important; backdrop-filter: blur(10px);
+        padding: 30px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.2);
+        max-width: 850px; margin: auto; color: white !important; text-align: center;
+    }
+    [data-testid="stSidebar"] {
+        background-color: rgba(0, 0, 0, 0.8) !important;
     }
     </style>
 """, unsafe_allow_html=True)
 
 # 3. NAVEGAÇÃO
-if 'menu_atual' not in st.session_state:
-    st.session_state.menu_atual = "Home"
+if 'pagina' not in st.session_state:
+    st.session_state.pagina = "Home"
 
 with st.sidebar:
     st.markdown("<h2 style='text-align: center; color: white;'>🎾 MENU</h2>", unsafe_allow_html=True)
     for item in ["Home", "Serviços", "Produtos", "Cadastro", "Contato"]:
         if st.button(item, key=f"btn_{item}", use_container_width=True):
-            st.session_state.menu_atual = item
+            st.session_state.pagina = item
             st.rerun()
 
 st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
 
-# 4. LÓGICA DAS ABAS
-menu = st.session_state.menu_atual
+# 4. LÓGICA DAS PÁGINAS
+menu = st.session_state.pagina
 
 if menu == "Home":
     st.markdown("<h2 style='text-align: center; color: white;'>Agendamento Profissional</h2>", unsafe_allow_html=True)
@@ -55,15 +53,11 @@ if menu == "Home":
         st.markdown('<div class="custom-card">', unsafe_allow_html=True)
         try:
             conn = st.connection("gsheets", type=GSheetsConnection)
-            df_base = conn.read() # Lê a planilha TennisClass_DB
+            df_base = conn.read()
 
             with st.form("agendamento"):
                 aluno = st.text_input("Nome do Aluno")
-                precos = {
-                    "Aula Individual (R$ 250/hora)": 250,
-                    "Aula em Dupla (R$ 200/pessoa)": 200,
-                    "Aluguel de Quadra (R$ 250/hora)": 250
-                }
+                precos = {"Aula Individual": 250, "Aula em Dupla": 200, "Aluguel": 250}
                 servico = st.selectbox("Serviço", list(precos.keys()))
                 n_horas = st.number_input("Número de Horas", min_value=1, max_value=5, value=1)
                 data = st.date_input("Data", format="DD/MM/YYYY")
@@ -71,16 +65,18 @@ if menu == "Home":
                 academia = st.selectbox("Academia", ["Play Tennis Ibirapuera", "Fontes e Barbeta", "TOP One", "Arena BTG"])
 
                 if st.form_submit_button("CONFIRMAR RESERVA"):
-                    if aluno:
+                    if not aluno:
+                        st.error("Informe o nome do aluno.")
+                    else:
                         data_str = data.strftime("%Y-%m-%d")
-                        # VERIFICAÇÃO DE BLOQUEIO
+                        
+                        # BLOQUEIO DE HORÁRIO
                         conflito = df_base[(df_base['Data'].astype(str) == data_str) & 
                                           (df_base['Horario'].astype(str) == horario)]
                         
                         if not conflito.empty:
-                            st.error(f"❌ O horário {horario} no dia {data.strftime('%d/%m/%Y')} já está ocupado.")
+                            st.error(f"❌ Horário {horario} já ocupado em {data.strftime('%d/%m/%Y')}.")
                         else:
-                            # Cálculo Automático de Valor
                             valor_total = precos[servico] * n_horas
                             nova_reserva = pd.DataFrame([{
                                 "Data": data_str, "Horario": horario, "Aluno": aluno, 
@@ -89,47 +85,24 @@ if menu == "Home":
                             }])
                             df_final = pd.concat([df_base, nova_reserva], ignore_index=True)
                             conn.update(data=df_final)
-                            st.balloons() # Feedback visual
-                            st.session_state.sucesso = True
+                            st.balloons()
+                            st.session_state.confirmado = True
                             st.rerun()
 
-            if st.session_state.get('sucesso'):
-                st.success("Reserva realizada com sucesso!") #
+            if st.session_state.get('confirmado'):
+                st.success("Reserva realizada com sucesso!")
                 qr = segno.make("25019727830")
                 img_buffer = BytesIO()
                 qr.save(img_buffer, kind='png', scale=5)
-                st.image(img_buffer.getvalue(), width=200, caption="PIX: 250.197.278-30")
+                st.image(img_buffer.getvalue(), width=200)
 
         except Exception:
-            st.warning("Aguardando conexão com o banco de dados...")
+            st.warning("Aguardando conexão com TennisClass_DB...")
         st.markdown('</div>', unsafe_allow_html=True)
 
-# ABA DE CADASTRO COM GOOGLE FORMS INTEGRADO
+# --- CORREÇÃO DA ABA CADASTRO ---
 elif menu == "Cadastro":
-    st.markdown("<h2 style='text-align: center; color: white;'>Cadastro de Professor</h2>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; color: white;'>Cadastro de Professor</h3>", unsafe_allow_html=True)
     
-    # URL de Incorporação do Google Form
-    # Importante: O link deve terminar com 'embedded=true' para funcionar no app
-    form_url = "https://docs.google.com/forms/d/e/1FAIpQLSfN-d-T_G2V_u_yN0_S_b8O_G2H_u_yN0_S_b/viewform?embedded=true"
-    
-    st.markdown(f"""
-        <div style="display: flex; justify-content: center;">
-            <iframe src="{form_url}" width="800" height="1000" frameborder="0" marginheight="0" marginwidth="0" 
-            style="background-color: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-            Carregando formulário...</iframe>
-        </div>
-    """, unsafe_allow_html=True)
-
-elif menu == "Contato":
-    st.markdown("""
-        <div class="custom-card">
-            <h2>André Aranha</h2>
-            <p style="font-size: 18px;">📧 aranha.corp@gmail.com.br</p>
-            <p style="font-size: 18px;">📞 11 - 97142 5028</p>
-            <br>
-            <a href="https://wa.me/5511971425028" target="_blank" 
-               style="background:#25d366; color:white; padding:15px 30px; border-radius:12px; text-decoration:none; font-weight:bold;">
-               CONTATO VIA WHATSAPP
-            </a>
-        </div>
-    """, unsafe_allow_html=True)
+    # O link abaixo é o link de VISUALIZAÇÃO do formulário (botão 'Enviar' -> ícone de link)
+    form_url = "https

@@ -101,4 +101,21 @@ if menu == "Home":
                 qr.save(img_buffer, kind='png', scale=5)
                 st.image(img_buffer.getvalue(), width=180, caption="PIX: 250.197.278-30")
         except:
-            st.warning("Conect
+            st.warning("Conectando ao banco de dados...")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+# --- PÁGINA CADASTRO: INTEGRAÇÃO DOS 3 FORMS ---
+elif menu == "Cadastro":
+    st.markdown("<h2 style='text-align: center; color: white;'>Central de Cadastros</h2>", unsafe_allow_html=True)
+    
+    # Seletor de Categoria
+    tipo_cad = st.radio(
+        "Quem você deseja cadastrar?",
+        ["Aluno", "Professor", "Academia"],
+        horizontal=True
+    )
+    
+    # Dicionário com os Links Integrados e Parâmetro de Incorporação
+    links_forms = {
+        "Professor": "https://docs.google.com/forms/d/e/1FAIpQLSdHicvD5MsOTnpfWwmpXOm8b268_S6gXoBZEysIo4Wj5cL2yw/viewform?embedded=true",
+        "Aluno": "

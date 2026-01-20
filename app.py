@@ -50,6 +50,13 @@ st.markdown("""
         text-align: center;
     }
 
+    .stButton > button {
+        background-color: rgba(255, 255, 255, 0.05) !important;
+        color: white !important;
+        border-radius: 12px !important;
+        width: 100% !important;
+    }
+
     .whatsapp-float {
         position: fixed; width: 60px; height: 60px; bottom: 30px; right: 30px;
         background-color: #25d366; color: white !important; border-radius: 50px;
@@ -72,10 +79,10 @@ with st.sidebar:
             st.session_state.menu_selecionado = item
             st.rerun()
 
-# 4. TÍTULO NO TOPO
+# 4. TÍTULO NO TOPO (SEM IMAGEM LATERAL)
 st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
 
-# 5. CONTEÚDO
+# 5. CONTEÚDO DINÂMICO
 menu = st.session_state.menu_selecionado
 
 if menu == "Home":
@@ -93,17 +100,46 @@ if menu == "Home":
                 
                 if st.form_submit_button("CONFIRMAR RESERVA"):
                     if aluno:
-                        # Processamento da Planilha
                         data_br = data.strftime("%d/%m/%Y")
                         nova_linha = pd.DataFrame([{"Data": data_br, "Horario": horario, "Aluno": aluno, "Servico": servico, "Academia": academia}])
                         df_final = pd.concat([conn.read(), nova_linha], ignore_index=True)
                         conn.update(data=df_final)
                         
-                        # AÇÃO DE SUCESSO
-                        st.balloons() # Balões ativados
+                        # Ativa os balões e marca como confirmado
+                        st.balloons()
                         st.session_state.confirmado = True
                         st.rerun()
 
-            # MENSAGEM ALTERADA PARA "Reserva realizada com sucesso!"
+            # MENSAGEM DE SUCESSO ATUALIZADA
             if st.session_state.get('confirmado'):
-                st.success("Reserva realizada com sucesso!") # Ajuste solicitado
+                st.success("Reserva realizada com sucesso!")
+                qr = segno.make("25019727830")
+                img_buffer = BytesIO()
+                qr.save(img_buffer, kind='png', scale=5)
+                st.image(img_buffer.getvalue(), width=200)
+                st.code("250.197.278-30")
+        except:
+            st.warning("Aguardando conexão com a planilha de agendamentos.")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+elif menu == "Contato":
+    st.markdown("<h1 style='text-align: center; color: white;'>Fale Conosco</h1>", unsafe_allow_html=True)
+    st.markdown("""
+        <div class="custom-card">
+            <h1 style="color: white !important;">André Aranha</h1>
+            <p style="font-size: 22px; color: white !important;">📧 aranha.corp@gmail.com.br</p>
+            <p style="font-size: 22px; color: white !important;">📞 11 - 97142 5028</p>
+            <br>
+            <a href="https://wa.me/5511971425028" target="_blank" 
+               style="background:#25d366; color:white; padding:15px 35px; border-radius:15px; text-decoration:none; font-weight:bold; display: inline-block;">
+               INICIAR CONVERSA
+            </a>
+        </div>
+    """, unsafe_allow_html=True)
+
+elif menu == "Cadastro":
+    form_url = "https://docs.google.com/forms/d/e/1FAIpQLSfN-d-T_G2V_u_yN0_S_b8O_G2H_u_yN0_S_b8O_G2H_u_yN0_S_b/viewform?embedded=true"
+    st.markdown(f'<iframe src="{form_url}" width="100%" height="700" frameborder="0"></iframe>', unsafe_allow_html=True)
+
+else:
+    st.markdown(f"<h1 style='color: white; text-align: center;'>{menu}</h1>", unsafe_allow_html=True)

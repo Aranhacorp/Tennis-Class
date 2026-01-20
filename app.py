@@ -8,7 +8,7 @@ from io import BytesIO
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="TENNIS CLASS", layout="wide")
 
-# 2. CSS PERSONALIZADO (DARK GLASS DESIGN)
+# 2. CSS PERSONALIZADO (DESIGN DARK GLASS)
 st.markdown("""
     <style>
     .stApp {
@@ -52,10 +52,18 @@ st.markdown("""
         border-radius: 12px !important;
         width: 100% !important;
     }
+    .whatsapp-float {
+        position: fixed; width: 60px; height: 60px; bottom: 30px; right: 30px;
+        background-color: #25d366; color: white !important; border-radius: 50px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 30px; z-index: 1000; text-decoration: none !important;
+    }
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <a href="https://wa.me/5511971425028" class="whatsapp-float" target="_blank"><i class="fa fa-whatsapp"></i></a>
 """, unsafe_allow_html=True)
 
-# 3. CONEXÃO E NAVEGAÇÃO
+# 3. NAVEGAÇÃO
 if 'menu_selecionado' not in st.session_state:
     st.session_state.menu_selecionado = "Home"
 
@@ -66,17 +74,19 @@ with st.sidebar:
             st.session_state.menu_selecionado = item
             st.rerun()
 
+# 4. TÍTULO CENTRALIZADO NO TOPO
 st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
 
-# 4. LÓGICA DE AGENDAMENTO COM BLOQUEIO
-if st.session_state.menu_selecionado == "Home":
+# 5. CONTEÚDO DINÂMICO
+menu = st.session_state.menu_selecionado
+
+if menu == "Home":
     st.markdown("<h2 style='text-align: center; color: white;'>Agendamento Profissional</h2>", unsafe_allow_html=True)
-    
     with st.container():
         st.markdown('<div class="custom-card">', unsafe_allow_html=True)
         try:
             conn = st.connection("gsheets", type=GSheetsConnection)
-            df_base = conn.read() # Lê a planilha TennisClass_DB
+            df_base = conn.read() # Carrega dados existentes
 
             with st.form("agendamento"):
                 aluno = st.text_input("Nome do Aluno")
@@ -93,56 +103,9 @@ if st.session_state.menu_selecionado == "Home":
 
                 if st.form_submit_button("CONFIRMAR RESERVA"):
                     if not aluno:
-                        st.error("Por favor, insira o nome do aluno.")
+                        st.error("Por favor, preencha o nome do aluno.")
                     else:
-                        data_str = data.strftime("%Y-%m-%d") # Formato de busca na planilha
+                        data_str = data.strftime("%Y-%m-%d")
                         
-                        # LÓGICA DE BLOQUEIO: Verifica se já existe reserva para essa Data e Horário
-                        conflito = df_base[(df_base['Data'].astype(str) == data_str) & 
-                                          (df_base['Horario'].astype(str) == horario)]
-                        
-                        if not conflito.empty:
-                            st.error(f"❌ O horário {horario} do dia {data.strftime('%d/%m/%Y')} já está ocupado.")
-                        else:
-                            # Cálculo e Gravação
-                            valor_total = precos[servico] * n_horas
-                            nova_reserva = pd.DataFrame([{
-                                "Data": data_str,
-                                "Horario": horario,
-                                "Aluno": aluno,
-                                "Servico": servico,
-                                "Horas": n_horas,
-                                "Valor": valor_total,
-                                "Status": "Pendente",
-                                "Academia": academia
-                            }])
-                            
-                            df_final = pd.concat([df_base, nova_reserva], ignore_index=True)
-                            conn.update(data=df_final)
-                            
-                            st.balloons() #
-                            st.session_state.confirmado = True
-                            st.rerun()
-
-            if st.session_state.get('confirmado'):
-                st.success("Reserva realizada com sucesso!") #
-                qr = segno.make("25019727830")
-                img_buffer = BytesIO()
-                qr.save(img_buffer, kind='png', scale=5)
-                st.image(img_buffer.getvalue(), width=200)
-                st.code("250.197.278-30")
-                
-        except Exception as e:
-            st.warning("Erro ao conectar com a planilha. Verifique as configurações do GSheets.")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-# Aba Contato (Seguindo o design solicitado)
-elif st.session_state.menu_selecionado == "Contato":
-    st.markdown("""
-        <div class="custom-card">
-            <h1>André Aranha</h1>
-            <p style="font-size: 20px;">📧 aranha.corp@gmail.com.br</p>
-            <p style="font-size: 20px;">📞 11 - 97142 5028</p>
-            <br>
-            <a href="https://wa.me/5511971425028" target="_blank" 
-               style="background:#25d366; color:white; padding:15px 30px; border-radius:10px; text-decoration:none
+                        # VERIFICAÇÃO DE BLOQUEIO [SOLICITADO]
+                        # Compara Data e Horário com

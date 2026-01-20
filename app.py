@@ -8,7 +8,7 @@ from io import BytesIO
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="TENNIS CLASS", layout="wide")
 
-# 2. CSS: DESIGN PADRONIZADO E BARRA LATERAL REDUZIDA
+# 2. CSS: DESIGN "DARK GLASS" E INTERFACE
 st.markdown("""
     <style>
     .stApp {
@@ -19,15 +19,17 @@ st.markdown("""
         background-attachment: fixed;
     }
     
+    /* TÍTULO CENTRALIZADO */
     .header-title {
         color: white;
         font-size: 50px;
         font-weight: bold;
         text-align: center;
-        margin-bottom: 20px;
+        margin-bottom: 10px;
         text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
     }
 
+    /* SIDEBAR REDUZIDA EM 20% */
     [data-testid="stSidebar"] {
         background-color: rgba(0, 0, 0, 0.8) !important;
         backdrop-filter: blur(15px);
@@ -38,6 +40,7 @@ st.markdown("""
         border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
+    /* CARD TRANSPARENTE PADRÃO */
     .custom-card {
         background-color: rgba(0, 0, 0, 0.7) !important;
         backdrop-filter: blur(10px);
@@ -50,13 +53,24 @@ st.markdown("""
         text-align: center;
     }
 
-    .stButton > button {
-        background-color: rgba(255, 255, 255, 0.05) !important;
+    .custom-card h1, .custom-card h2, .custom-card p {
         color: white !important;
-        border-radius: 12px !important;
-        width: 100% !important;
     }
 
+    /* ESTILO DOS BOTÕES */
+    .stButton > button {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+        color: white !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        border-radius: 12px !important;
+        transition: 0.3s;
+    }
+    .stButton > button:hover {
+        background-color: rgba(255, 255, 255, 0.2) !important;
+        border: 1px solid #fff !important;
+    }
+
+    /* WHATSAPP FLUTUANTE */
     .whatsapp-float {
         position: fixed; width: 60px; height: 60px; bottom: 30px; right: 30px;
         background-color: #25d366; color: white !important; border-radius: 50px;
@@ -73,13 +87,13 @@ if 'menu_selecionado' not in st.session_state:
     st.session_state.menu_selecionado = "Home"
 
 with st.sidebar:
-    st.markdown("<h3 style='text-align: center; color: white;'>🎾 TENNIS CLASS</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; color: white;'>🎾 MENU</h3>", unsafe_allow_html=True)
     for item in ["Home", "Serviços", "Produtos", "Cadastro", "Contato"]:
-        if st.button(item, key=f"btn_{item}"):
+        if st.button(item, key=f"btn_{item}", use_container_width=True):
             st.session_state.menu_selecionado = item
             st.rerun()
 
-# 4. TÍTULO NO TOPO (SEM IMAGEM LATERAL)
+# 4. TÍTULO FIXO
 st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
 
 # 5. CONTEÚDO DINÂMICO
@@ -87,59 +101,14 @@ menu = st.session_state.menu_selecionado
 
 if menu == "Home":
     st.markdown("<h2 style='text-align: center; color: white;'>Agendamento Profissional</h2>", unsafe_allow_html=True)
+    
     with st.container():
         st.markdown('<div class="custom-card">', unsafe_allow_html=True)
         try:
             conn = st.connection("gsheets", type=GSheetsConnection)
+            
             with st.form("agendamento"):
                 aluno = st.text_input("Nome do Aluno")
-                servico = st.selectbox("Serviço", ["Aula Individual (R$ 250/hora)", "Aula em Dupla (R$ 200/pessoa)", "Aluguel de Quadra (R$ 250/hora)"])
-                data = st.date_input("Data", format="DD/MM/YYYY")
-                academia = st.selectbox("Academia", ["Play Tennis Ibirapuera", "Fontes e Barbeta", "TOP One", "Arena BTG"])
-                horario = st.selectbox("Horário", [f"{h:02d}:00" for h in range(11, 22)])
                 
-                if st.form_submit_button("CONFIRMAR RESERVA"):
-                    if aluno:
-                        data_br = data.strftime("%d/%m/%Y")
-                        nova_linha = pd.DataFrame([{"Data": data_br, "Horario": horario, "Aluno": aluno, "Servico": servico, "Academia": academia}])
-                        df_final = pd.concat([conn.read(), nova_linha], ignore_index=True)
-                        conn.update(data=df_final)
-                        
-                        # Ativa os balões e marca como confirmado
-                        st.balloons()
-                        st.session_state.confirmado = True
-                        st.rerun()
-
-            # MENSAGEM DE SUCESSO ATUALIZADA
-            if st.session_state.get('confirmado'):
-                st.success("Reserva realizada com sucesso!")
-                qr = segno.make("25019727830")
-                img_buffer = BytesIO()
-                qr.save(img_buffer, kind='png', scale=5)
-                st.image(img_buffer.getvalue(), width=200)
-                st.code("250.197.278-30")
-        except:
-            st.warning("Aguardando conexão com a planilha de agendamentos.")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-elif menu == "Contato":
-    st.markdown("<h1 style='text-align: center; color: white;'>Fale Conosco</h1>", unsafe_allow_html=True)
-    st.markdown("""
-        <div class="custom-card">
-            <h1 style="color: white !important;">André Aranha</h1>
-            <p style="font-size: 22px; color: white !important;">📧 aranha.corp@gmail.com.br</p>
-            <p style="font-size: 22px; color: white !important;">📞 11 - 97142 5028</p>
-            <br>
-            <a href="https://wa.me/5511971425028" target="_blank" 
-               style="background:#25d366; color:white; padding:15px 35px; border-radius:15px; text-decoration:none; font-weight:bold; display: inline-block;">
-               INICIAR CONVERSA
-            </a>
-        </div>
-    """, unsafe_allow_html=True)
-
-elif menu == "Cadastro":
-    form_url = "https://docs.google.com/forms/d/e/1FAIpQLSfN-d-T_G2V_u_yN0_S_b8O_G2H_u_yN0_S_b8O_G2H_u_yN0_S_b/viewform?embedded=true"
-    st.markdown(f'<iframe src="{form_url}" width="100%" height="700" frameborder="0"></iframe>', unsafe_allow_html=True)
-
-else:
-    st.markdown(f"<h1 style='color: white; text-align: center;'>{menu}</h1>", unsafe_allow_html=True)
+                # DICIONÁRIO DE PREÇOS UNITÁRIOS
+                precos =

@@ -8,7 +8,7 @@ from io import BytesIO
 # 1. Configuração da página
 st.set_page_config(page_title="TENNIS CLASS", layout="centered")
 
-# 2. CSS: Fundo, Cards, WhatsApp, Assinatura e Barra Branca
+# 2. CSS: Layout, Assinatura e WhatsApp
 st.markdown("""
     <style>
     .stApp {
@@ -32,13 +32,22 @@ st.markdown("""
         text-shadow: 2px 2px 4px #000000;
         margin: 0;
     }
-    /* Barra Branca Ajustada para 1,2cm (aprox 45px) */
+    /* Barra Branca Retornada para a Medida Anterior (mais larga) */
     .highlight-bar {
         background-color: white;
-        height: 45px;
+        height: 80px;
         width: 100%;
         border-radius: 15px;
-        margin: 10px 0;
+        margin: 15px 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .highlight-text {
+        color: #1e3d59;
+        font-weight: bold;
+        font-size: 1.2rem;
+        text-align: center;
     }
     .logo-img { border-radius: 10px; mix-blend-mode: screen; }
     .main-card {
@@ -66,7 +75,7 @@ st.markdown("""
         justify-content: center;
         text-decoration: none !important;
     }
-    /* Assinatura "By Andre Aranha" no canto inferior esquerdo */
+    /* Assinatura "By Andre Aranha" */
     .signature-float {
         position: fixed;
         bottom: 75px;
@@ -90,13 +99,15 @@ st.markdown("""
     </a>
     """, unsafe_allow_html=True)
 
-# 3. Cabeçalho e Barra Branca
+# 3. Cabeçalho e Barra Branca (Medida Original)
 st.markdown("""
     <div class="header-container">
         <h1>TENNIS CLASS</h1>
         <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/tennis-player-silhouette%20ver2.jpg" width="70" class="logo-img">
     </div>
-    <div class="highlight-bar"></div>
+    <div class="highlight-bar">
+        <span class="highlight-text">Agendamento Profissional</span>
+    </div>
     """, unsafe_allow_html=True)
 
 with st.container():
@@ -111,19 +122,19 @@ with st.container():
     with st.form("agendamento"):
         aluno = st.text_input("Nome do Aluno")
         
-        # Lista de serviços atualizada com valores por hora
+        # Lista de serviços com valores atualizados
         servicos_lista = [
             "Aula Individual (R$ 250/hora)",
-            "Aula em Dupla (R$ 200/hora por pessoa)",
-            "Aula com 3 Alunos (R$ 180/hora por pessoa)",
-            "Aula com 4 Alunos (R$ 150/hora por pessoa)",
+            "Aula em Dupla (R$ 200/hora cada)",
+            "Aula com 3 Alunos (R$ 180/hora cada)",
+            "Aula com 4 Alunos (R$ 150/hora cada)",
             "Aluguel de Quadra (R$ 250/hora)"
         ]
         servico = st.selectbox("Selecione o Serviço", servicos_lista)
         
         data = st.date_input("Data Desejada", format="DD/MM/YYYY")
         
-        # Lógica de horários
+        # Lógica de horários personalizada
         dia_semana = data.weekday() 
         mapa_horarios = {
             0: ["12:00", "13:00", "15:00"],

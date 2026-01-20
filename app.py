@@ -19,23 +19,14 @@ st.markdown("""
         background-attachment: fixed;
     }
     
-    /* CABEÇALHO PERSONALIZADO: TÍTULO + IMAGEM À DIREITA */
-    .header-container {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 20px;
-        margin-bottom: 20px;
-    }
+    /* TÍTULO CENTRALIZADO SEM IMAGEM */
     .header-title {
         color: white;
         font-size: 50px;
         font-weight: bold;
+        text-align: center;
+        margin-bottom: 20px;
         text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-    }
-    .header-logo {
-        width: 60px;
-        border-radius: 10px;
     }
 
     /* SIDEBAR REDUZIDA EM 20% */
@@ -94,16 +85,11 @@ with st.sidebar:
             st.session_state.menu_selecionado = item
             st.rerun()
 
-# 4. CONTEÚDO DINÂMICO
-menu = st.session_state.menu_selecionado
+# 4. TÍTULO NO TOPO (SEM IMAGEM)
+st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
 
-# TOPO DA PÁGINA: NOME + IMAGEM À DIREITA
-st.markdown(f"""
-    <div class="header-container">
-        <div class="header-title">TENNIS CLASS</div>
-        <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/silhueta-feminina-do-tenista-com-raquete_126398-332.jpg" class="header-logo">
-    </div>
-""", unsafe_allow_html=True)
+# 5. CONTEÚDO DINÂMICO
+menu = st.session_state.menu_selecionado
 
 if menu == "Home":
     st.markdown("<h2 style='text-align: center; color: white;'>Agendamento Profissional</h2>", unsafe_allow_html=True)
@@ -125,20 +111,20 @@ if menu == "Home":
                         df_final = pd.concat([conn.read(), nova_linha], ignore_index=True)
                         conn.update(data=df_final)
                         
-                        # BALÕES DE CONFIRMAÇÃO
+                        # CELEBRAÇÃO COM BALÕES
                         st.balloons()
                         st.session_state.confirmado = True
                         st.rerun()
 
             if st.session_state.get('confirmado'):
-                st.success("Reserva realizada!")
+                st.success("Reserva realizada com sucesso!")
                 qr = segno.make("25019727830")
                 img_buffer = BytesIO()
                 qr.save(img_buffer, kind='png', scale=5)
                 st.image(img_buffer.getvalue(), width=200)
                 st.code("250.197.278-30")
         except:
-            st.warning("Conecte a planilha para salvar agendamentos.")
+            st.warning("Aguardando conexão com a planilha de agendamentos.")
         st.markdown('</div>', unsafe_allow_html=True)
 
 elif menu == "Contato":
@@ -155,10 +141,3 @@ elif menu == "Contato":
             </a>
         </div>
     """, unsafe_allow_html=True)
-
-elif menu == "Cadastro":
-    form_url = "https://docs.google.com/forms/d/e/1FAIpQLSfN-d-T_G2V_u_yN0_S_b8O_G2H_u_yN0_S_b8O_G2H_u_yN0_S_b/viewform?embedded=true"
-    st.markdown(f'<iframe src="{form_url}" width="100%" height="700"></iframe>', unsafe_allow_html=True)
-
-else:
-    st.markdown(f"<h1 style='color: white; text-align: center;'>{menu}</h1>", unsafe_allow_html=True)

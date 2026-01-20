@@ -54,7 +54,7 @@ if menu == "Home":
         st.markdown('<div class="custom-card">', unsafe_allow_html=True)
         try:
             conn = st.connection("gsheets", type=GSheetsConnection)
-            df_base = conn.read() # Conexão com TennisClass_DB
+            df_base = conn.read()
 
             with st.form("form_reserva"):
                 aluno = st.text_input("Nome do Aluno")
@@ -74,14 +74,14 @@ if menu == "Home":
                         st.error("Por favor, preencha o nome do aluno.")
                     else:
                         data_str = data.strftime("%Y-%m-%d")
-                        # BLOQUEIO: Verifica conflitos na planilha
+                        # Bloqueio de horários duplicados
                         conflito = df_base[(df_base['Data'].astype(str) == data_str) & 
                                           (df_base['Horario'].astype(str) == horario)]
                         
                         if not conflito.empty:
                             st.error(f"❌ O horário {horario} no dia {data.strftime('%d/%m/%Y')} já está ocupado.")
                         else:
-                            # CÁLCULO E PERSISTÊNCIA
+                            # Cálculo e registro da nova reserva
                             valor_total = precos[servico] * n_horas
                             nova_reserva = pd.DataFrame([{
                                 "Data": data_str, "Horario": horario, "Aluno": aluno, 
@@ -104,18 +104,6 @@ if menu == "Home":
             st.warning("Conectando ao banco de dados...")
         st.markdown('</div>', unsafe_allow_html=True)
 
-# --- PÁGINA CADASTRO: INTEGRAÇÃO DOS 3 FORMS ---
+# --- PÁGINA CADASTRO: SELEÇÃO TRIPLA DE FORMULÁRIOS ---
 elif menu == "Cadastro":
-    st.markdown("<h2 style='text-align: center; color: white;'>Central de Cadastros</h2>", unsafe_allow_html=True)
-    
-    # Seletor de Categoria
-    tipo_cad = st.radio(
-        "Quem você deseja cadastrar?",
-        ["Aluno", "Professor", "Academia"],
-        horizontal=True
-    )
-    
-    # Dicionário com os Links Integrados e Parâmetro de Incorporação
-    links_forms = {
-        "Professor": "https://docs.google.com/forms/d/e/1FAIpQLSdHicvD5MsOTnpfWwmpXOm8b268_S6gXoBZEysIo4Wj5cL2yw/viewform?embedded=true",
-        "Aluno": "
+    st.markdown("<h2 style='text-align: center; color: white;'>Central de Cadastros</h2>", unsafe_

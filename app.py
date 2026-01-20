@@ -8,7 +8,7 @@ from io import BytesIO
 # 1. Configuração da página
 st.set_page_config(page_title="TENNIS CLASS", layout="centered")
 
-# 2. CSS: Fundo, WhatsApp e a BARRA ÚNICA
+# 2. CSS: Fundo, WhatsApp e Estilo da Barra Única
 st.markdown("""
     <style>
     .stApp {
@@ -32,7 +32,7 @@ st.markdown("""
         text-shadow: 2px 2px 4px #000000;
         margin: 0;
     }
-    /* APENAS ESTA BARRA BRANCA DEVE EXISTIR */
+    /* Barra Branca Principal Única */
     .highlight-bar {
         background-color: white;
         height: 80px;
@@ -82,7 +82,7 @@ st.markdown("""
     </a>
     """, unsafe_allow_html=True)
 
-# 3. Cabeçalho Principal (Apenas o título e a barra com texto)
+# 3. Cabeçalho (Removida qualquer div extra que gerasse a barra vazia)
 st.markdown("""
     <div class="header-container">
         <h1>TENNIS CLASS</h1>
@@ -105,6 +105,7 @@ with st.container():
     with st.form("agendamento"):
         aluno = st.text_input("Nome do Aluno")
         
+        # Valores atualizados para incluir /hora
         servicos_lista = [
             "Aula Individual (R$ 250/hora)",
             "Aula em Dupla (R$ 200/hora cada)",
@@ -115,7 +116,7 @@ with st.container():
         servico = st.selectbox("Selecione o Serviço", servicos_lista)
         data = st.date_input("Data Desejada", format="DD/MM/YYYY")
         
-        # Horários das 11 am até 21 pm
+        # Horários atualizados: 11 am e demais pm
         horarios_aula = [
             "11:00 am", "12:00 pm", "13:00 pm", "14:00 pm", "15:00 pm", 
             "16:00 pm", "17:00 pm", "18:00 pm", "19:00 pm", "20:00 pm", "21:00 pm"
@@ -128,7 +129,7 @@ with st.container():
             if aluno:
                 try:
                     data_br = data.strftime("%d/%m/%Y")
-                    # Correção do SyntaxError de concatenação e aspas
+                    # Correção de sintaxe para evitar erros de compilação
                     nova_linha = pd.DataFrame([{
                         "Data": data_br, 
                         "Horario": horario, 
@@ -143,11 +144,11 @@ with st.container():
                     st.balloons() 
                     st.session_state['confirmado'] = True
                     st.session_state['serv_v'] = servico
-                    st.success(f"Reserva realizada para {aluno}!")
+                    st.success(f"Reserva realizada com sucesso para {aluno}!")
                 except Exception as e:
-                    st.error(f"Erro técnico: {e}")
+                    st.error(f"Erro ao salvar dados: {e}")
             else:
-                st.warning("Por favor, informe o nome do aluno.")
+                st.warning("Por favor, insira o nome do aluno.")
 
     if st.session_state.get('confirmado'):
         st.markdown("---")
@@ -161,6 +162,6 @@ with st.container():
         st.image(img_buffer.getvalue(), width=250)
         
         st.code("250.197.278-30", language="text")
-        st.write("Após pagar, envie o comprovante: (11) 97142-5028")
+        st.write("Após o pagamento, envie o comprovante para: (11) 97142-5028")
         st.markdown('</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)

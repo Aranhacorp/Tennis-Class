@@ -8,7 +8,7 @@ from io import BytesIO
 # 1. Configuração da página
 st.set_page_config(page_title="TENNIS CLASS", layout="centered")
 
-# 2. CSS: Layout, Assinatura e WhatsApp
+# 2. CSS: Fundo, Cards, WhatsApp e Barra Branca
 st.markdown("""
     <style>
     .stApp {
@@ -32,6 +32,7 @@ st.markdown("""
         text-shadow: 2px 2px 4px #000000;
         margin: 0;
     }
+    /* Barra Branca Única com Texto */
     .highlight-bar {
         background-color: white;
         height: 80px;
@@ -55,6 +56,7 @@ st.markdown("""
         border-radius: 20px;
         box-shadow: 0 10px 25px rgba(0,0,0,0.3);
     }
+    /* WhatsApp Flutuante (Posição 75px) */
     .whatsapp-float {
         position: fixed;
         width: 60px;
@@ -73,30 +75,15 @@ st.markdown("""
         justify-content: center;
         text-decoration: none !important;
     }
-    .signature-float {
-        position: fixed;
-        bottom: 75px;
-        left: 20px;
-        z-index: 1000;
-    }
-    .signature-img {
-        width: 150px;
-        border-radius: 10px;
-        opacity: 0.9;
-    }
     </style>
     
-    <div class="signature-float">
-        <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/By%20Andre%20Aranha.png" class="signature-img">
-    </div>
-
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
     <a href="https://wa.me/5511971425028" class="whatsapp-float" target="_blank">
         <i class="fa fa-whatsapp"></i>
     </a>
     """, unsafe_allow_html=True)
 
-# 3. Cabeçalho
+# 3. Cabeçalho Principal (Apenas uma barra)
 st.markdown("""
     <div class="header-container">
         <h1>TENNIS CLASS</h1>
@@ -129,8 +116,7 @@ with st.container():
         servico = st.selectbox("Selecione o Serviço", servicos_lista)
         data = st.date_input("Data Desejada", format="DD/MM/YYYY")
         
-        # --- LISTA DE HORÁRIOS ATUALIZADA ---
-        # 11 am e depois todos pm (12 até 21)
+        # Horários das 11 am até 21 pm
         horarios_aula = [
             "11:00 am", "12:00 pm", "13:00 pm", "14:00 pm", "15:00 pm", 
             "16:00 pm", "17:00 pm", "18:00 pm", "19:00 pm", "20:00 pm", "21:00 pm"
@@ -143,16 +129,23 @@ with st.container():
             if aluno:
                 try:
                     data_br = data.strftime("%d/%m/%Y")
-                    nova_linha = pd.DataFrame([{"Data": data_br, "Horario": horario, "Aluno": aluno, "Servico": servico, "Status": "Aguardando Pagamento"}])
+                    nova_linha = pd.DataFrame([{
+                        "Data": data_br, 
+                        "Horario": horario, 
+                        "Aluno": aluno, 
+                        "Servico": servico, 
+                        "Status": "Aguardando Pagamento"
+                    }])
                     dados_existentes = conn.read()
                     df_final = pd.concat([dados_existentes, nova_linha], ignore_index=True)
                     conn.update(data=df_final)
+                    
                     st.balloons() 
                     st.session_state['confirmado'] = True
                     st.session_state['serv_v'] = servico
                     st.success(f"Reserva pré-agendada para {aluno}!")
-                except Exception:
-                    st.error("Erro ao salvar dados.")
+                except Exception as e:
+                    st.error(f"Erro ao salvar: {e}")
             else:
                 st.warning("Preencha o nome do aluno.")
 
@@ -161,11 +154,13 @@ with st.container():
         st.markdown('<div style="text-align: center; color: black;">', unsafe_allow_html=True)
         st.markdown("### 💰 Pagamento via PIX")
         st.write(f"**Serviço:** {st.session_state['serv_v']}")
+        
         qr = segno.make("25019727830")
         img_buffer = BytesIO()
         qr.save(img_buffer, kind='png', scale=7)
         st.image(img_buffer.getvalue(), width=250)
+        
         st.code("250.197.278-30", language="text")
-        st.write("Envie o comprovante para: (11) 97142-5028")
+        st.write("Após o PIX, envie o comprovante para: (11) 97142-5028")
         st.markdown('</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)

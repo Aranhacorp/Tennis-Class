@@ -5,7 +5,7 @@ from datetime import datetime
 import segno
 from io import BytesIO
 
-# 1. CONFIGURAÇÃO DA PÁGINA E DESIGN
+# 1. CONFIGURAÇÃO DA PÁGINA E DESIGN (DARK GLASS)
 st.set_page_config(page_title="TENNIS CLASS", layout="wide")
 
 st.markdown("""
@@ -31,7 +31,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. SISTEMA DE NAVEGAÇÃO
+# 2. CONTROLE DE NAVEGAÇÃO
 if 'pagina' not in st.session_state:
     st.session_state.pagina = "Home"
 
@@ -47,15 +47,16 @@ st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=Tr
 # 3. LÓGICA DE CONTEÚDO
 menu = st.session_state.pagina
 
+# --- PÁGINA HOME: AGENDAMENTO COM CÁLCULO E BLOQUEIO ---
 if menu == "Home":
     st.markdown("<h2 style='text-align: center; color: white;'>Agendamento Profissional</h2>", unsafe_allow_html=True)
     with st.container():
         st.markdown('<div class="custom-card">', unsafe_allow_html=True)
         try:
             conn = st.connection("gsheets", type=GSheetsConnection)
-            df_base = conn.read()
+            df_base = conn.read() # Conexão com TennisClass_DB
 
-            with st.form("agendamento"):
+            with st.form("form_reserva"):
                 aluno = st.text_input("Nome do Aluno")
                 precos = {
                     "Aula Individual (R$ 250/h)": 250,
@@ -69,17 +70,35 @@ if menu == "Home":
                 academia = st.selectbox("Academia", ["Play Tennis Ibirapuera", "Fontes e Barbeta", "TOP One", "Arena BTG"])
 
                 if st.form_submit_button("CONFIRMAR RESERVA"):
-                    if aluno:
+                    if not aluno:
+                        st.error("Por favor, preencha o nome do aluno.")
+                    else:
                         data_str = data.strftime("%Y-%m-%d")
-                        # BLOQUEIO DE HORÁRIO
+                        # BLOQUEIO: Verifica conflitos na planilha
                         conflito = df_base[(df_base['Data'].astype(str) == data_str) & 
                                           (df_base['Horario'].astype(str) == horario)]
                         
                         if not conflito.empty:
-                            st.error(f"❌ Horário {horario} já ocupado em {data.strftime('%d/%m/%Y')}.")
+                            st.error(f"❌ O horário {horario} no dia {data.strftime('%d/%m/%Y')} já está ocupado.")
                         else:
-                            # CÁLCULO DE VALOR
+                            # CÁLCULO E PERSISTÊNCIA
                             valor_total = precos[servico] * n_horas
                             nova_reserva = pd.DataFrame([{
                                 "Data": data_str, "Horario": horario, "Aluno": aluno, 
-                                "Servico":
+                                "Servico": servico, "Horas": n_horas, "Valor": valor_total, 
+                                "Status": "Pendente", "Academia": academia
+                            }])
+                            df_final = pd.concat([df_base, nova_reserva], ignore_index=True)
+                            conn.update(data=df_final)
+                            st.balloons()
+                            st.session_state.sucesso = True
+                            st.rerun()
+
+            if st.session_state.get('sucesso'):
+                st.success("Reserva realizada! Aguardamos o PIX.")
+                qr = segno.make("25019727830")
+                img_buffer = BytesIO()
+                qr.save(img_buffer, kind='png', scale=5)
+                st.image(img_buffer.getvalue(), width=180, caption="PIX: 250.197.278-30")
+        except:
+            st.warning("Conect

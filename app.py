@@ -72,15 +72,14 @@ if menu == "Home":
                 if st.form_submit_button("CONFIRMAR RESERVA"):
                     if aluno:
                         data_str = data.strftime("%Y-%m-%d")
-                        # BLOQUEIO DE HORÁRIO
                         conflito = df_base[(df_base['Data'].astype(str) == data_str) & 
                                           (df_base['Horario'].astype(str) == horario)]
                         
                         if not conflito.empty:
                             st.error(f"❌ Horário {horario} já ocupado em {data.strftime('%d/%m/%Y')}.")
                         else:
-                            # CÁLCULO E PERSISTÊNCIA (CORREÇÃO DE CHAVES E PARÊNTESES)
                             valor_total = precos[servico] * n_horas
+                            # CORREÇÃO: Fechamento adequado de dicionário e DataFrame
                             nova_reserva = pd.DataFrame([{
                                 "Data": data_str, "Horario": horario, "Aluno": aluno, 
                                 "Servico": servico, "Horas": n_horas, "Valor": valor_total, 
@@ -98,12 +97,14 @@ if menu == "Home":
                 img_buffer = BytesIO()
                 qr.save(img_buffer, kind='png', scale=5)
                 st.image(img_buffer.getvalue(), width=180, caption="PIX: 250.197.278-30")
-        except:
+        except Exception:
+            # CORREÇÃO: Fechamento de aspas na mensagem de aviso
             st.warning("Conectando ao banco de dados...")
         st.markdown('</div>', unsafe_allow_html=True)
 
-# --- PÁGINA CADASTRO: CORREÇÃO DA INVERSÃO ALUNO/ACADEMIA ---
+# --- PÁGINA CADASTRO: CORREÇÃO DA INVERSÃO E LINKS ---
 elif menu == "Cadastro":
+    # CORREÇÃO: Fechamento de parênteses no markdown
     st.markdown("<h2 style='text-align: center; color: white;'>Central de Cadastros</h2>", unsafe_allow_html=True)
     
     tipo_selecionado = st.radio(
@@ -112,8 +113,32 @@ elif menu == "Cadastro":
         horizontal=True
     )
     
-    # LINKS CORRIGIDOS E ORDENADOS (Com ?embedded=true para funcionar no app)
+    # LINKS CORRIGIDOS: Cada chave agora aponta para sua URL correta
+    # Inclusão de ?embedded=true para visualização correta
     links_forms = {
         "Professor": "https://docs.google.com/forms/d/e/1FAIpQLSdHicvD5MsOTnpfWwmpXOm8b268_S6gXoBZEysIo4Wj5cL2yw/viewform?embedded=true",
         "Aluno": "https://docs.google.com/forms/d/e/1FAIpQLSdehkMHlLyCNd1owC-dSNO_-ROXq07w41jgymyKyFugvUZ0fA/viewform?embedded=true",
-        "Academia": "
+        "Academia": "https://docs.google.com/forms/d/e/1FAIpQLScaC-XBLuzTPN78inOQPcXd6r0BzaessEke1MzOfGzOIlZpwQ/viewform?embedded=true"
+    }
+    
+    st.markdown(f"""
+        <div style="display: flex; justify-content: center;">
+            <iframe src="{links_forms[tipo_selecionado]}" width="100%" height="800" frameborder="0" marginheight="0" marginwidth="0" 
+            style="background: white; border-radius: 20px; max-width: 850px;">
+            Carregando formulário de {tipo_selecionado}...</iframe>
+        </div>
+    """, unsafe_allow_html=True)
+
+# --- PÁGINA CONTATO ---
+elif menu == "Contato":
+    st.markdown("""
+        <div class="custom-card">
+            <h2>André Aranha</h2>
+            <p>📧 aranha.corp@gmail.com.br | 📞 11 97142 5028</p>
+            <br>
+            <a href="https://wa.me/5511971425028" target="_blank" 
+               style="background:#25d366; color:white; padding:12px 25px; border-radius:10px; text-decoration:none; font-weight:bold;">
+               WHATSAPP
+            </a>
+        </div>
+    """, unsafe_allow_html=True)

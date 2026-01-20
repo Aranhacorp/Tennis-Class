@@ -6,8 +6,7 @@ from datetime import datetime
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="TENNIS CLASS", layout="wide")
 
-# 2. DESIGN: ASSINATURA AMPLIADA E WHATSAPP ELEVADO
-# Os ajustes de 'bottom' e 'width' atendem exatamente aos seus pedidos visuais.
+# 2. CSS: ASSINATURA AMPLIADA, WHATSAPP ELEVADO E ESTILIZAÇÃO
 st.markdown("""
     <style>
     .stApp {
@@ -30,15 +29,15 @@ st.markdown("""
         position: fixed;
         bottom: 25px;
         left: 25px;
-        width: 160px; /* Tamanho ajustado para destaque máximo */
+        width: 180px; /* Tamanho ampliado conforme solicitado */
         z-index: 9999;
         filter: drop-shadow(2px 2px 5px rgba(0,0,0,0.8));
     }
 
-    /* WhatsApp Flutuante - Subido em 1cm no canto direito */
+    /* WhatsApp Flutuante - Subido em 1cm (ajuste para 70px do bottom) */
     .whatsapp-float {
         position: fixed;
-        bottom: 65px; /* Elevado para evitar sobreposição na base */
+        bottom: 70px; 
         right: 25px;
         width: 60px;
         z-index: 9999;
@@ -52,7 +51,7 @@ st.markdown("""
     </a>
 """, unsafe_allow_html=True)
 
-# 3. NAVEGAÇÃO
+# 3. SISTEMA DE NAVEGAÇÃO
 if 'pagina' not in st.session_state:
     st.session_state.pagina = "Home"
 
@@ -65,7 +64,7 @@ with st.sidebar:
 
 st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
 
-# 4. LÓGICA DE CONTEÚDO
+# 4. LÓGICA DAS PÁGINAS
 menu = st.session_state.pagina
 
 # --- PÁGINA HOME: AGENDAMENTO ---
@@ -87,8 +86,8 @@ if menu == "Home":
 
                 if st.form_submit_button("CONFIRMAR RESERVA"):
                     if aluno:
-                        # CORREÇÃO: data_str e DataFrame fechados corretamente para evitar Script Error
                         data_str = data.strftime("%Y-%m-%d")
+                        # Garantindo o fechamento correto do dicionário e DataFrame para evitar erros de execução
                         nova_reserva = pd.DataFrame([{
                             "Data": data_str, "Horario": horario, "Aluno": aluno, 
                             "Servico": servico, "Horas": n_horas, "Status": "Pendente", "Academia": academia
@@ -97,18 +96,18 @@ if menu == "Home":
                         conn.update(data=df_final)
                         st.balloons()
                         st.success("Reserva realizada com sucesso!")
+                    else:
+                        st.error("Por favor, preencha o nome do aluno.")
         except Exception:
-            # CORREÇÃO: String finalizada corretamente
             st.warning("Conectando ao banco de dados...")
         st.markdown('</div>', unsafe_allow_html=True)
 
-# --- PÁGINA CADASTRO ---
+# --- PÁGINA CADASTRO: LINKS CORRIGIDOS ---
 elif menu == "Cadastro":
-    # CORREÇÃO: Markdown fechado corretamente
     st.markdown("<h2 style='text-align: center; color: white;'>Central de Cadastros</h2>", unsafe_allow_html=True)
     tipo_cad = st.radio("Selecione:", ["Aluno", "Professor", "Academia"], horizontal=True)
     
-    # CORREÇÃO: Links mapeados corretamente sem inversão
+    # Links mapeados corretamente para evitar a inversão vista anteriormente
     links_forms = {
         "Professor": "https://docs.google.com/forms/d/e/1FAIpQLSdHicvD5MsOTnpfWwmpXOm8b268_S6gXoBZEysIo4Wj5cL2yw/viewform?embedded=true",
         "Aluno": "https://docs.google.com/forms/d/e/1FAIpQLSdehkMHlLyCNd1owC-dSNO_-ROXq07w41jgymyKyFugvUZ0fA/viewform?embedded=true",
@@ -122,5 +121,14 @@ elif menu == "Cadastro":
         </div>
     """, unsafe_allow_html=True)
 
+# --- PÁGINA CONTATO: RESTAURAÇÃO DO TELEFONE ---
 elif menu == "Contato":
-    st.markdown('<div class="custom-card"><h3>André Aranha</h3><p>📧 aranha.corp@gmail.com.br</p></div>', unsafe_allow_html=True)
+    st.markdown(f"""
+        <div class="custom-card">
+            <h2 style="color: white;">André Aranha</h2>
+            <p style="font-size: 1.2rem;">📧 aranha.corp@gmail.com.br</p>
+            <p style="font-size: 1.2rem;">📞 (11) 97142-5028</p>
+            <br>
+            <p style="font-style: italic; opacity: 0.8;">Tennis Class Professional Services</p>
+        </div>
+    """, unsafe_allow_html=True)

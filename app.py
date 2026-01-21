@@ -6,7 +6,7 @@ from datetime import datetime
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="TENNIS CLASS", layout="wide")
 
-# 2. CSS: CARD BRANCO, ASSINATURA E WHATSAPP
+# 2. CSS: CARD BRANCO, ASSINATURA AMPLIADA E WHATSAPP ELEVADO
 st.markdown("""
     <style>
     .stApp {
@@ -19,14 +19,14 @@ st.markdown("""
         margin-bottom: 20px; text-shadow: 3px 3px 6px rgba(0,0,0,0.7);
     }
     
-    /* Alteração da barra (card) para BRANCA com texto escuro */
+    /* Card BRANCO conforme solicitado */
     .custom-card {
         background-color: rgba(255, 255, 255, 0.95) !important; 
         backdrop-filter: blur(10px);
         padding: 40px; border-radius: 25px; 
         border: 1px solid rgba(0, 0, 0, 0.1);
         max-width: 850px; margin: auto; text-align: center; 
-        color: #1E1E1E !important; /* Texto escuro para contraste no fundo branco */
+        color: #1E1E1E !important;
     }
     
     .service-item {
@@ -35,14 +35,14 @@ st.markdown("""
         font-size: 1.2rem; color: #1E1E1E;
     }
     
-    /* Assinatura ampliada no canto esquerdo */
+    /* Assinatura ampliada (40% maior) */
     .assinatura-aranha {
         position: fixed; bottom: 25px; left: 25px;
         width: 180px; z-index: 9999;
         filter: drop-shadow(2px 2px 5px rgba(0,0,0,0.8));
     }
     
-    /* WhatsApp elevado em 1cm no canto direito */
+    /* WhatsApp elevado em 1cm */
     .whatsapp-float {
         position: fixed; bottom: 70px; right: 25px;
         width: 60px; z-index: 9999;
@@ -82,10 +82,13 @@ if menu == "Home":
             with st.form("agendamento"):
                 st.markdown("<p style='color: #1E1E1E; font-weight: bold;'>Preencha os dados abaixo:</p>", unsafe_allow_html=True)
                 aluno = st.text_input("Nome do Aluno")
-                servico = st.selectbox("Serviço", [
+                
+                # NOME ALTERADO PARA 'PACOTES' CONFORME SOLICITADO
+                pacote = st.selectbox("Pacotes", [
                     "Aula Particular", "Aula em Grupo", "Aula Kids", 
                     "Locação de Quadra", "Treinamento Esportivo", "Evento"
                 ])
+                
                 n_horas = st.number_input("Horas", min_value=1, value=1)
                 data = st.date_input("Data")
                 horario = st.selectbox("Horário", [f"{h:02d}:00" for h in range(8, 22)])
@@ -93,11 +96,12 @@ if menu == "Home":
                 if st.form_submit_button("CONFIRMAR RESERVA"):
                     if aluno:
                         # Correção de sintaxe para evitar Script Error
+                        data_str = data.strftime("%Y-%m-%d")
                         nova_reserva = pd.DataFrame([{
-                            "Data": str(data), 
+                            "Data": data_str, 
                             "Horario": horario, 
                             "Aluno": aluno, 
-                            "Servico": servico, 
+                            "Servico": pacote, 
                             "Status": "Pendente"
                         }])
                         df_final = pd.concat([df_base, nova_reserva], ignore_index=True)
@@ -111,36 +115,3 @@ if menu == "Home":
 # --- PÁGINA SERVIÇOS ---
 elif menu == "Serviços":
     st.markdown("<h2 style='text-align: center; color: white;'>Nossos Serviços</h2>", unsafe_allow_html=True)
-    with st.container():
-        st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-        servicos_lista = [
-            "🎾 Aulas Particulares", "👥 Aulas em Grupo", "👶 Aula Kids", 
-            "🏟️ Locação de Quadra", "🎤 Palestras", "💪 Treinamento Esportivo (Fitness)", 
-            "🏆 Clínicas e Eventos", "🎾 Esportivas com Tênis"
-        ]
-        for s in servicos_lista:
-            st.markdown(f'<div class="service-item">{s}</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-
-# --- PÁGINA CADASTRO ---
-elif menu == "Cadastro":
-    st.markdown("<h2 style='text-align: center; color: white;'>Central de Cadastros</h2>", unsafe_allow_html=True)
-    tipo_cad = st.radio("Selecione:", ["Aluno", "Professor", "Academia"], horizontal=True)
-    
-    # Correção dos links para evitar inversão
-    links_forms = {
-        "Professor": "https://docs.google.com/forms/d/e/1FAIpQLSdHicvD5MsOTnpfWwmpXOm8b268_S6gXoBZEysIo4Wj5cL2yw/viewform?embedded=true",
-        "Aluno": "https://docs.google.com/forms/d/e/1FAIpQLSdehkMHlLyCNd1owC-dSNO_-ROXq07w41jgymyKyFugvUZ0fA/viewform?embedded=true",
-        "Academia": "https://docs.google.com/forms/d/e/1FAIpQLScaC-XBLuzTPN78inOQPcXd6r0BzaessEke1MzOfGzOIlZpwQ/viewform?embedded=true"
-    }
-    st.markdown(f'<iframe src="{links_forms[tipo_cad]}" width="100%" height="800" frameborder="0" style="background:white; border-radius:20px;"></iframe>', unsafe_allow_html=True)
-
-# --- PÁGINA CONTATO ---
-elif menu == "Contato":
-    st.markdown(f"""
-        <div class="custom-card">
-            <h2 style="color: #1E1E1E;">André Aranha</h2>
-            <p style="font-size: 1.2rem;">📧 aranha.corp@gmail.com.br</p>
-            <p style="font-size: 1.2rem;">📞 (11) 97142-5028</p>
-        </div>
-    """, unsafe_allow_html=True)

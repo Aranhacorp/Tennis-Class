@@ -6,7 +6,7 @@ from datetime import datetime
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="TENNIS CLASS", layout="wide")
 
-# 2. CSS: CARD BRANCO, ASSINATURA AMPLIADA E WHATSAPP ELEVADO
+# 2. DESIGN: CARD BRANCO, ASSINATURA E WHATSAPP ELEVADO
 st.markdown("""
     <style>
     .stApp {
@@ -19,7 +19,7 @@ st.markdown("""
         margin-bottom: 20px; text-shadow: 3px 3px 6px rgba(0,0,0,0.7);
     }
     
-    /* Card BRANCO para o conteúdo central */
+    /* Barra/Card central em BRANCO conforme solicitado */
     .custom-card {
         background-color: rgba(255, 255, 255, 0.95) !important; 
         backdrop-filter: blur(10px);
@@ -30,19 +30,19 @@ st.markdown("""
     }
     
     .service-item {
-        background: rgba(0, 0, 0, 0.05); padding: 12px; border-radius: 12px;
-        margin: 8px 0; border: 1px solid rgba(0, 0, 0, 0.1);
-        font-size: 1.1rem; color: #1E1E1E; text-align: left;
+        background: rgba(0, 0, 0, 0.05); padding: 15px; border-radius: 15px;
+        margin: 10px 0; border: 1px solid rgba(0, 0, 0, 0.1);
+        font-size: 1.2rem; color: #1E1E1E; text-align: left;
     }
     
-    /* Assinatura "by Andre Aranha" (Canto Inferior Esquerdo) */
+    /* Assinatura ampliada no canto esquerdo */
     .assinatura-aranha {
         position: fixed; bottom: 25px; left: 25px;
         width: 180px; z-index: 9999;
         filter: drop-shadow(2px 2px 5px rgba(0,0,0,0.8));
     }
     
-    /* WhatsApp elevado (Canto Inferior Direito) */
+    /* WhatsApp elevado no canto direito */
     .whatsapp-float {
         position: fixed; bottom: 70px; right: 25px;
         width: 60px; z-index: 9999;
@@ -68,10 +68,9 @@ with st.sidebar:
             st.rerun()
 
 st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
-
 menu = st.session_state.pagina
 
-# --- PÁGINA HOME: AGENDAMENTO COM ORDEM ESPECÍFICA ---
+# --- PÁGINA HOME: AGENDAMENTO COM PACOTES NA ORDEM SOLICITADA ---
 if menu == "Home":
     st.markdown("<h3 style='text-align: center; color: white;'>Agendamento Profissional</h3>", unsafe_allow_html=True)
     with st.container():
@@ -80,11 +79,11 @@ if menu == "Home":
             conn = st.connection("gsheets", type=GSheetsConnection)
             df_base = conn.read()
             with st.form("agendamento"):
-                st.markdown("<p style='color: #1E1E1E; font-weight: bold;'>Reserve seu horário:</p>", unsafe_allow_html=True)
+                st.markdown("<p style='color: #1E1E1E; font-weight: bold;'>Dados da Reserva:</p>", unsafe_allow_html=True)
                 aluno = st.text_input("Nome do Aluno")
                 
-                # DICIONÁRIO NA ORDEM SOLICITADA
-                pacotes_opcoes = {
+                # ORDEM E VALORES ESPECÍFICOS
+                pacotes_lista = {
                     "Aula Individual Pacote 4 Aulas (R$ 235/hora)": 235,
                     "Aula Individual Pacote 8 Aulas (R$ 225/hora)": 225,
                     "Aula Individual Única (R$ 250/hora)": 250,
@@ -94,26 +93,29 @@ if menu == "Home":
                     "Eventos (Valor a Consultar)": 0
                 }
                 
-                pacote_selecionado = st.selectbox("Pacotes", list(pacotes_opcoes.keys()))
-                n_horas = st.number_input("Quantidade (Horas ou Sessões)", min_value=1, value=1)
+                pacote_selecionado = st.selectbox("Pacotes", list(pacotes_lista.keys()))
+                n_horas = st.number_input("Horas/Sessões", min_value=1, value=1)
                 data = st.date_input("Data")
                 horario = st.selectbox("Horário", [f"{h:02d}:00" for h in range(8, 22)])
                 
                 if st.form_submit_button("CONFIRMAR RESERVA"):
                     if aluno:
-                        data_str = data.strftime("%Y-%m-%d")
-                        v_unit = pacotes_opcoes[pacote_selecionado]
-                        total = v_unit * n_horas if v_unit > 0 else "A Consultar"
+                        v_unit = pacotes_lista[pacote_selecionado]
+                        valor_final = (v_unit * n_horas) if v_unit > 0 else "A Consultar"
                         
                         nova_reserva = pd.DataFrame([{
-                            "Data": data_str, "Horario": horario, "Aluno": aluno, 
-                            "Pacote": pacote_selecionado, "Qtd": n_horas, "Total": total, "Status": "Pendente"
+                            "Data": str(data), 
+                            "Horario": horario, 
+                            "Aluno": aluno, 
+                            "Pacote": pacote_selecionado, 
+                            "Valor Total": valor_final,
+                            "Status": "Pendente"
                         }])
                         df_final = pd.concat([df_base, nova_reserva], ignore_index=True)
                         conn.update(data=df_final)
                         st.balloons()
-                        st.success(f"Reserva enviada com sucesso!")
-        except:
+                        st.success(f"Reserva confirmada para {aluno}!")
+        except Exception:
             st.info("Conectando ao banco de dados...")
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -122,16 +124,10 @@ elif menu == "Serviços":
     st.markdown("<h2 style='text-align: center; color: white;'>Nossos Serviços</h2>", unsafe_allow_html=True)
     with st.container():
         st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-        # LISTA DE SERVIÇOS EM ITENS SCANNABLE
         servicos_display = [
-            "🎾 Aulas Particulares (Individuais)",
-            "👥 Aulas em Grupo (Até 3 pessoas)",
-            "👶 Aula Kids (Metodologia Adaptada)",
-            "🏟️ Locação de Quadra",
-            "🎤 Palestras e Workshop",
-            "💪 Treinamento Esportivo (Fitness focado em Tênis)",
-            "🏆 Clínicas e Eventos Corporativos",
-            "🎾 Esportivas com Tênis"
+            "🎾 Aulas Individuais e Personalizadas", "👥 Grupos de Treinamento", 
+            "👶 Metodologia Kids Adaptada", "🏟️ Gestão e Locação de Quadras", 
+            "🎤 Clínicas e Palestras", "🏆 Organização de Eventos e Torneios"
         ]
         for s in servicos_display:
             st.markdown(f'<div class="service-item">{s}</div>', unsafe_allow_html=True)
@@ -141,9 +137,21 @@ elif menu == "Serviços":
 elif menu == "Cadastro":
     st.markdown("<h2 style='text-align: center; color: white;'>Central de Cadastros</h2>", unsafe_allow_html=True)
     tipo_cad = st.radio("Selecione:", ["Aluno", "Professor", "Academia"], horizontal=True)
+    
     links = {
         "Professor": "https://docs.google.com/forms/d/e/1FAIpQLSdHicvD5MsOTnpfWwmpXOm8b268_S6gXoBZEysIo4Wj5cL2yw/viewform?embedded=true",
         "Aluno": "https://docs.google.com/forms/d/e/1FAIpQLSdehkMHlLyCNd1owC-dSNO_-ROXq07w41jgymyKyFugvUZ0fA/viewform?embedded=true",
         "Academia": "https://docs.google.com/forms/d/e/1FAIpQLScaC-XBLuzTPN78inOQPcXd6r0BzaessEke1MzOfGzOIlZpwQ/viewform?embedded=true"
     }
-    st.markdown(f'<iframe src="{links[tipo_cad]}" width="100%" height="800" frameborder="0" style="background:white;
+    # Corrigido o erro de f-string não fechada
+    st.markdown(f'<iframe src="{links[tipo_cad]}" width="100%" height="800" frameborder="0" style="background:white; border-radius:20px;"></iframe>', unsafe_allow_html=True)
+
+# --- PÁGINA CONTATO ---
+elif menu == "Contato":
+    st.markdown(f"""
+        <div class="custom-card">
+            <h2 style="color: #1E1E1E;">André Aranha</h2>
+            <p style="font-size: 1.2rem;">📧 aranha.corp@gmail.com.br</p>
+            <p style="font-size: 1.2rem;">📞 (11) 97142-5028</p>
+        </div>
+    """, unsafe_allow_html=True)

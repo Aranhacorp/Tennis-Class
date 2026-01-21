@@ -6,7 +6,7 @@ from datetime import datetime
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="TENNIS CLASS", layout="wide")
 
-# 2. CSS: DESIGN PERSONALIZADO E CORREÇÕES VISUAIS
+# 2. DESIGN: CARD BRANCO, ASSINATURA AMPLIADA E WHATSAPP ELEVADO
 st.markdown("""
     <style>
     .stApp {
@@ -19,7 +19,7 @@ st.markdown("""
         margin-bottom: 20px; text-shadow: 3px 3px 6px rgba(0,0,0,0.7);
     }
     
-    /* Barra central BRANCA para melhor legibilidade */
+    /* Card BRANCO para o conteúdo central */
     .custom-card {
         background-color: rgba(255, 255, 255, 0.95) !important; 
         backdrop-filter: blur(10px);
@@ -35,7 +35,7 @@ st.markdown("""
         font-size: 1.2rem; color: #1E1E1E;
     }
     
-    /* Assinatura ampliada no canto esquerdo */
+    /* Assinatura "by Andre Aranha" ampliada */
     .assinatura-aranha {
         position: fixed; bottom: 25px; left: 25px;
         width: 180px; z-index: 9999;
@@ -56,7 +56,7 @@ st.markdown("""
     </a>
 """, unsafe_allow_html=True)
 
-# 3. NAVEGAÇÃO
+# 3. NAVEGAÇÃO LATERIAL
 if 'pagina' not in st.session_state:
     st.session_state.pagina = "Home"
 
@@ -71,7 +71,7 @@ st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=Tr
 
 menu = st.session_state.pagina
 
-# --- PÁGINA HOME: AGENDAMENTO COM NOVOS PACOTES ---
+# --- PÁGINA HOME: AGENDAMENTO COM NOVOS PACOTES E VALORES ---
 if menu == "Home":
     st.markdown("<h3 style='text-align: center; color: white;'>Agendamento Profissional</h3>", unsafe_allow_html=True)
     with st.container():
@@ -80,41 +80,50 @@ if menu == "Home":
             conn = st.connection("gsheets", type=GSheetsConnection)
             df_base = conn.read()
             with st.form("agendamento"):
-                st.markdown("<p style='color: #1E1E1E; font-weight: bold;'>Dados da Reserva:</p>", unsafe_allow_html=True)
+                st.markdown("<p style='color: #1E1E1E; font-weight: bold;'>Preencha os detalhes da sua aula:</p>", unsafe_allow_html=True)
                 aluno = st.text_input("Nome do Aluno")
                 
-                # LISTA DE PACOTES ATUALIZADA
-                pacote_selecionado = st.selectbox("Pacotes", [
-                    "Aula Individual Única", 
-                    "Aula Individual Pacote 4 Aulas", 
-                    "Aula Individual Pacote 8 Aulas", 
-                    "Aula Kids Pacote 4 Aulas", 
-                    "Locação de Quadra", 
-                    "Treinamento Esportivo", 
-                    "Eventos"
-                ])
+                # LISTA DE PACOTES COM VALORES ATUALIZADOS
+                pacotes_opcoes = {
+                    "Aula Individual Única (R$ 260/hora)": 260,
+                    "Aula Individual Pacote 4 Aulas (R$ 240/hora)": 240,
+                    "Aula Individual Pacote 8 Aulas (R$ 230/hora)": 230,
+                    "Aula Kids Pacote 4 Aulas (R$ 230/hora)": 230,
+                    "Aula em Grupo (R$ 200/hora)": 200,
+                    "Locação de Quadra (Valor a Consultar)": 0,
+                    "Treinamento Esportivo (R$ 250/hora)": 250,
+                    "Eventos (Valor a Consultar)": 0
+                }
                 
-                n_horas = st.number_input("Horas/Sessões", min_value=1, value=1)
-                data = st.date_input("Data")
+                pacote_selecionado = st.selectbox("Pacotes", list(pacotes_opcoes.keys()))
+                n_horas = st.number_input("Quantidade (Horas ou Sessões)", min_value=1, value=1)
+                data = st.date_input("Data desejada")
                 horario = st.selectbox("Horário", [f"{h:02d}:00" for h in range(8, 22)])
                 
                 if st.form_submit_button("CONFIRMAR RESERVA"):
                     if aluno:
-                        # Prevenção de erros de sintaxe comuns
                         data_str = data.strftime("%Y-%m-%d")
+                        valor_unitario = pacotes_opcoes[pacote_selecionado]
+                        valor_total = valor_unitario * n_horas
+                        
                         nova_reserva = pd.DataFrame([{
                             "Data": data_str, 
                             "Horario": horario, 
                             "Aluno": aluno, 
-                            "Servico": pacote_selecionado, 
+                            "Pacote": pacote_selecionado, 
+                            "Quantidade": n_horas,
+                            "Total": valor_total if valor_total > 0 else "A Consultar",
                             "Status": "Pendente"
                         }])
+                        
                         df_final = pd.concat([df_base, nova_reserva], ignore_index=True)
                         conn.update(data=df_final)
                         st.balloons()
-                        st.success("Reserva realizada com sucesso!")
+                        st.success(f"Reserva realizada para {aluno}!")
+                    else:
+                        st.error("Por favor, informe o nome do aluno.")
         except Exception:
-            st.info("Conectando ao banco de dados...")
+            st.info("Conectando ao banco de dados Tennis Class...")
         st.markdown('</div>', unsafe_allow_html=True)
 
 # --- PÁGINA SERVIÇOS ---
@@ -134,7 +143,8 @@ elif menu == "Serviços":
 # --- PÁGINA CADASTRO ---
 elif menu == "Cadastro":
     st.markdown("<h2 style='text-align: center; color: white;'>Central de Cadastros</h2>", unsafe_allow_html=True)
-    tipo_cad = st.radio("Selecione o tipo:", ["Aluno", "Professor", "Academia"], horizontal=True)
+    tipo_cad = st.radio("Selecione o perfil para cadastrar:", ["Aluno", "Professor", "Academia"], horizontal=True)
+    
     links_forms = {
         "Professor": "https://docs.google.com/forms/d/e/1FAIpQLSdHicvD5MsOTnpfWwmpXOm8b268_S6gXoBZEysIo4Wj5cL2yw/viewform?embedded=true",
         "Aluno": "https://docs.google.com/forms/d/e/1FAIpQLSdehkMHlLyCNd1owC-dSNO_-ROXq07w41jgymyKyFugvUZ0fA/viewform?embedded=true",
@@ -149,5 +159,7 @@ elif menu == "Contato":
             <h2 style="color: #1E1E1E;">André Aranha</h2>
             <p style="font-size: 1.2rem;">📧 aranha.corp@gmail.com.br</p>
             <p style="font-size: 1.2rem;">📞 (11) 97142-5028</p>
+            <hr style="border: 0.5px solid #ddd">
+            <p style="font-style: italic;">Consultoria e Treinamento em Tênis</p>
         </div>
     """, unsafe_allow_html=True)

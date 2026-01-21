@@ -6,7 +6,7 @@ from datetime import datetime
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="TENNIS CLASS", layout="wide")
 
-# 2. DESIGN E ESTILO CUSTOMIZADO
+# 2. DESIGN E ESTILO (CSS ATUALIZADO)
 st.markdown("""
     <style>
     .stApp {
@@ -23,6 +23,14 @@ st.markdown("""
         padding: 40px; border-radius: 25px; 
         max-width: 850px; margin: auto; text-align: center; 
         color: #1E1E1E !important; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    }
+    /* Estilo para o Total do Pacote (Igual ao título Finalizar Reserva) */
+    .total-pagamento {
+        color: white !important; 
+        font-size: 32px; 
+        font-weight: bold; 
+        margin: 20px 0;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
     }
     .pix-info {
         background-color: #f0f2f6; border: 2px dashed #007bff;
@@ -41,7 +49,7 @@ st.markdown("""
     </a>
 """, unsafe_allow_html=True)
 
-# 3. NAVEGAÇÃO E ACADEMIAS NO MENU LATERAL
+# 3. MENU LATERAL E ACADEMIAS
 if 'pagina' not in st.session_state:
     st.session_state.pagina = "Home"
 
@@ -71,18 +79,15 @@ st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=Tr
 if st.session_state.pagina == "Home":
     st.markdown("<h3 style='text-align: center; color: white;'>Agendamento Profissional</h3>", unsafe_allow_html=True)
     
-    with st.container():
-        st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-        
-        if 'pagamento_ativo' not in st.session_state:
-            st.session_state.pagamento_ativo = False
+    if 'pagamento_ativo' not in st.session_state:
+        st.session_state.pagamento_ativo = False
 
-        # ETAPA 1: SELEÇÃO DE PACOTES
-        if not st.session_state.pagamento_ativo:
+    # ETAPA 1: SELEÇÃO DE PACOTES E DATA BR
+    if not st.session_state.pagamento_ativo:
+        with st.container():
+            st.markdown('<div class="custom-card">', unsafe_allow_html=True)
             with st.form("form_reserva"):
                 aluno = st.text_input("Nome do Aluno")
-                
-                # Definição dos Pacotes e Valores Totais
                 opcoes_pacotes = {
                     "Aula Individual Pacote 4 Aulas (R$ 235/h)": 940,
                     "Aula Individual Pacote 8 Aulas (R$ 225/h)": 1800,
@@ -92,91 +97,87 @@ if st.session_state.pagina == "Home":
                     "Locação de Quadra (Valor a Consultar)": 0,
                     "Eventos (Valor a Consultar)": 0
                 }
-                
                 pacote_sel = st.selectbox("Selecione o Pacote", list(opcoes_pacotes.keys()))
-                
-                # Data e Horário (11h às 21h)
                 data_input = st.date_input("Escolha a Data", format="DD/MM/YYYY")
                 horario = st.selectbox("Escolha o Horário", [f"{h:02d}:00" for h in range(11, 22)])
                 
                 if st.form_submit_button("AVANÇAR PARA PAGAMENTO"):
                     if aluno:
-                        total = opcoes_pacotes[pacote_sel]
                         st.session_state.reserva_temp = {
                             "Aluno": aluno, "Pacote": pacote_sel,
                             "Data": data_input.strftime("%d/%m/%Y"), 
-                            "Horario": horario, "Total": total
+                            "Horario": horario, "Total": opcoes_pacotes[pacote_sel]
                         }
                         st.session_state.pagamento_ativo = True
                         st.rerun()
                     else:
                         st.error("Por favor, preencha o nome do aluno.")
+            st.markdown('</div>', unsafe_allow_html=True)
 
-        # ETAPA 2: APRESENTAÇÃO DO VALOR TOTAL E PIX
+    # ETAPA 2: PAGAMENTO COM VALOR EM BRANCO E GRANDE
+    else:
+        res = st.session_state.reserva_temp
+        # Título da Etapa
+        st.markdown("<h2 style='text-align: center; color: white;'>💳 Finalizar Reserva</h2>", unsafe_allow_html=True)
+        
+        # Valor Total em Branco e Grande
+        if res['Total'] > 0:
+            st.markdown(f"<div class='total-pagamento' style='text-align: center;'>Total do Pacote: R$ {res['Total']:.2f}</div>", unsafe_allow_html=True)
         else:
-            res = st.session_state.reserva_temp
-            st.markdown("### 💳 Finalizar Reserva")
-            st.write(f"**Item:** {res['Pacote']}")
-            
-            # Exibição do Total
-            if res['Total'] > 0:
-                st.markdown(f"<h2 style='color: #1E1E1E;'>Total do Pacote: R$ {res['Total']:.2f}</h2>", unsafe_allow_html=True)
-            else:
-                st.markdown("<h2 style='color: #1E1E1E;'>Valor: A Consultar</h2>", unsafe_allow_html=True)
+            st.markdown("<div class='total-pagamento' style='text-align: center;'>Valor: A Consultar</div>", unsafe_allow_html=True)
 
+        with st.container():
+            st.markdown('<div class="custom-card">', unsafe_allow_html=True)
+            st.write(f"**Item Selecionado:** {res['Pacote']}")
+            
             st.markdown('<div class="pix-info">', unsafe_allow_html=True)
             st.write("🔑 **Chave PIX (E-mail):** aranha.corp@gmail.com.br")
             st.write("👤 **Favorecido:** André Aranha")
             st.markdown('</div>', unsafe_allow_html=True)
             
-            # QR Code Gerado com o Valor do Pacote
-            if res['Total'] > 0:
-                qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=aranha.corp@gmail.com.br_VALOR_{res['Total']}"
-                st.image(qr_url, caption="Escaneie para pagar via PIX", width=180)
+            # QR Code Estático para auxílio
+            qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=aranha.corp@gmail.com.br"
+            st.image(qr_url, width=150)
             
-            arquivo_comprovante = st.file_uploader("Anexe o Comprovante de Pagamento", type=['png', 'jpg', 'jpeg', 'pdf'])
+            arquivo = st.file_uploader("Anexe o Comprovante de Pagamento", type=['png', 'jpg', 'jpeg', 'pdf'])
             
-            col_voltar, col_confirmar = st.columns(2)
-            with col_voltar:
+            c1, c2 = st.columns(2)
+            with c1:
                 if st.button("VOLTAR", use_container_width=True):
                     st.session_state.pagamento_ativo = False
                     st.rerun()
-            with col_confirmar:
+            with c2:
                 if st.button("CONFIRMAR RESERVA", type="primary", use_container_width=True):
-                    if arquivo_comprovante or res['Total'] == 0:
+                    if arquivo or res['Total'] == 0:
                         try:
                             conn = st.connection("gsheets", type=GSheetsConnection)
                             df_base = conn.read(ttl=0)
                             nova_reserva = pd.DataFrame([{
                                 "Data": res['Data'], "Horario": res['Horario'], 
                                 "Aluno": res['Aluno'], "Pacote": res['Pacote'], 
-                                "Total Pago": f"R$ {res['Total']:.2f}" if res['Total'] > 0 else "A Consultar",
-                                "Status": "Pago/Pendente"
+                                "Total": f"R$ {res['Total']:.2f}", "Status": "Pago"
                             }])
                             df_final = pd.concat([df_base, nova_reserva], ignore_index=True)
                             conn.update(data=df_final)
                             st.balloons()
-                            st.success(f"Reserva de {res['Aluno']} para o dia {res['Data']} às {res['Horario']} enviada!")
+                            st.success(f"Reserva confirmada para {res['Data']}!")
                             st.session_state.pagamento_ativo = False
                         except:
-                            st.error("Erro ao conectar com TennisClass_DB. Verifique a conexão.")
+                            st.error("Erro ao conectar com a base de dados.")
                     else:
-                        st.warning("É necessário anexar o comprovante para validar o pacote.")
-        
-        st.markdown('</div>', unsafe_allow_html=True)
+                        st.warning("Por favor, anexe o comprovante.")
+            st.markdown('</div>', unsafe_allow_html=True)
 
-# --- PÁGINA CADASTRO (CORREÇÃO DE LINKS ALUNO/ACADEMIA) ---
+# --- CADASTROS E CONTATO ---
 elif st.session_state.pagina == "Cadastro":
     st.markdown("<h2 style='text-align: center; color: white;'>Central de Cadastros</h2>", unsafe_allow_html=True)
-    perfil = st.radio("Selecione o perfil:", ["Aluno", "Professor", "Academia"], horizontal=True)
-    
-    links_fomularios = {
+    perfil = st.radio("Selecione:", ["Aluno", "Professor", "Academia"], horizontal=True)
+    links = {
         "Professor": "https://docs.google.com/forms/d/e/1FAIpQLSdHicvD5MsOTnpfWwmpXOm8b268_S6gXoBZEysIo4Wj5cL2yw/viewform?embedded=true",
         "Aluno": "https://docs.google.com/forms/d/e/1FAIpQLSdehkMHlLyCNd1owC-dSNO_-ROXq07w41jgymyKyFugvUZ0fA/viewform?embedded=true",
         "Academia": "https://docs.google.com/forms/d/e/1FAIpQLScaC-XBLuzTPN78inOQPcXd6r0BzaessEke1MzOfGzOIlZpwQ/viewform?embedded=true"
     }
-    st.markdown(f'<iframe src="{links_fomularios[perfil]}" width="100%" height="800" frameborder="0" style="background:white; border-radius:20px;"></iframe>', unsafe_allow_html=True)
+    st.markdown(f'<iframe src="{links[perfil]}" width="100%" height="800" frameborder="0" style="background:white; border-radius:20px;"></iframe>', unsafe_allow_html=True)
 
-# --- PÁGINA CONTATO ---
 elif st.session_state.pagina == "Contato":
     st.markdown('<div class="custom-card"><h2>André Aranha</h2><p>📧 aranha.corp@gmail.com.br</p><p>📞 (11) 97142-5028</p></div>', unsafe_allow_html=True)

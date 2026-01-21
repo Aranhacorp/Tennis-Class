@@ -6,7 +6,7 @@ from datetime import datetime
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="TENNIS CLASS", layout="wide")
 
-# 2. CSS: CARD BRANCO, ASSINATURA AMPLIADA E WHATSAPP ELEVADO
+# 2. CSS: DESIGN PERSONALIZADO E CORREÇÕES VISUAIS
 st.markdown("""
     <style>
     .stApp {
@@ -19,7 +19,7 @@ st.markdown("""
         margin-bottom: 20px; text-shadow: 3px 3px 6px rgba(0,0,0,0.7);
     }
     
-    /* Card BRANCO conforme solicitado */
+    /* Barra central BRANCA para melhor legibilidade */
     .custom-card {
         background-color: rgba(255, 255, 255, 0.95) !important; 
         backdrop-filter: blur(10px);
@@ -35,14 +35,14 @@ st.markdown("""
         font-size: 1.2rem; color: #1E1E1E;
     }
     
-    /* Assinatura ampliada (40% maior) */
+    /* Assinatura ampliada no canto esquerdo */
     .assinatura-aranha {
         position: fixed; bottom: 25px; left: 25px;
         width: 180px; z-index: 9999;
         filter: drop-shadow(2px 2px 5px rgba(0,0,0,0.8));
     }
     
-    /* WhatsApp elevado em 1cm */
+    /* WhatsApp elevado para não obstruir a base */
     .whatsapp-float {
         position: fixed; bottom: 70px; right: 25px;
         width: 60px; z-index: 9999;
@@ -71,7 +71,7 @@ st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=Tr
 
 menu = st.session_state.pagina
 
-# --- PÁGINA HOME: AGENDAMENTO ---
+# --- PÁGINA HOME: AGENDAMENTO COM NOVOS PACOTES ---
 if menu == "Home":
     st.markdown("<h3 style='text-align: center; color: white;'>Agendamento Profissional</h3>", unsafe_allow_html=True)
     with st.container():
@@ -80,28 +80,33 @@ if menu == "Home":
             conn = st.connection("gsheets", type=GSheetsConnection)
             df_base = conn.read()
             with st.form("agendamento"):
-                st.markdown("<p style='color: #1E1E1E; font-weight: bold;'>Preencha os dados abaixo:</p>", unsafe_allow_html=True)
+                st.markdown("<p style='color: #1E1E1E; font-weight: bold;'>Dados da Reserva:</p>", unsafe_allow_html=True)
                 aluno = st.text_input("Nome do Aluno")
                 
-                # NOME ALTERADO PARA 'PACOTES' CONFORME SOLICITADO
-                pacote = st.selectbox("Pacotes", [
-                    "Aula Particular", "Aula em Grupo", "Aula Kids", 
-                    "Locação de Quadra", "Treinamento Esportivo", "Evento"
+                # LISTA DE PACOTES ATUALIZADA
+                pacote_selecionado = st.selectbox("Pacotes", [
+                    "Aula Individual Única", 
+                    "Aula Individual Pacote 4 Aulas", 
+                    "Aula Individual Pacote 8 Aulas", 
+                    "Aula Kids Pacote 4 Aulas", 
+                    "Locação de Quadra", 
+                    "Treinamento Esportivo", 
+                    "Eventos"
                 ])
                 
-                n_horas = st.number_input("Horas", min_value=1, value=1)
+                n_horas = st.number_input("Horas/Sessões", min_value=1, value=1)
                 data = st.date_input("Data")
                 horario = st.selectbox("Horário", [f"{h:02d}:00" for h in range(8, 22)])
                 
                 if st.form_submit_button("CONFIRMAR RESERVA"):
                     if aluno:
-                        # Correção de sintaxe para evitar Script Error
+                        # Prevenção de erros de sintaxe comuns
                         data_str = data.strftime("%Y-%m-%d")
                         nova_reserva = pd.DataFrame([{
                             "Data": data_str, 
                             "Horario": horario, 
                             "Aluno": aluno, 
-                            "Servico": pacote, 
+                            "Servico": pacote_selecionado, 
                             "Status": "Pendente"
                         }])
                         df_final = pd.concat([df_base, nova_reserva], ignore_index=True)
@@ -109,9 +114,40 @@ if menu == "Home":
                         st.balloons()
                         st.success("Reserva realizada com sucesso!")
         except Exception:
-            st.info("Aguardando conexão com a planilha...")
+            st.info("Conectando ao banco de dados...")
         st.markdown('</div>', unsafe_allow_html=True)
 
 # --- PÁGINA SERVIÇOS ---
 elif menu == "Serviços":
     st.markdown("<h2 style='text-align: center; color: white;'>Nossos Serviços</h2>", unsafe_allow_html=True)
+    with st.container():
+        st.markdown('<div class="custom-card">', unsafe_allow_html=True)
+        servicos_lista = [
+            "🎾 Aulas Particulares", "👥 Aulas em Grupo", "👶 Aula Kids", 
+            "🏟️ Locação de Quadra", "🎤 Palestras", "💪 Treinamento Esportivo (Fitness)", 
+            "🏆 Clínicas e Eventos", "🎾 Esportivas com Tênis"
+        ]
+        for s in servicos_lista:
+            st.markdown(f'<div class="service-item">{s}</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+# --- PÁGINA CADASTRO ---
+elif menu == "Cadastro":
+    st.markdown("<h2 style='text-align: center; color: white;'>Central de Cadastros</h2>", unsafe_allow_html=True)
+    tipo_cad = st.radio("Selecione o tipo:", ["Aluno", "Professor", "Academia"], horizontal=True)
+    links_forms = {
+        "Professor": "https://docs.google.com/forms/d/e/1FAIpQLSdHicvD5MsOTnpfWwmpXOm8b268_S6gXoBZEysIo4Wj5cL2yw/viewform?embedded=true",
+        "Aluno": "https://docs.google.com/forms/d/e/1FAIpQLSdehkMHlLyCNd1owC-dSNO_-ROXq07w41jgymyKyFugvUZ0fA/viewform?embedded=true",
+        "Academia": "https://docs.google.com/forms/d/e/1FAIpQLScaC-XBLuzTPN78inOQPcXd6r0BzaessEke1MzOfGzOIlZpwQ/viewform?embedded=true"
+    }
+    st.markdown(f'<iframe src="{links_forms[tipo_cad]}" width="100%" height="800" frameborder="0" style="background:white; border-radius:20px;"></iframe>', unsafe_allow_html=True)
+
+# --- PÁGINA CONTATO ---
+elif menu == "Contato":
+    st.markdown(f"""
+        <div class="custom-card">
+            <h2 style="color: #1E1E1E;">André Aranha</h2>
+            <p style="font-size: 1.2rem;">📧 aranha.corp@gmail.com.br</p>
+            <p style="font-size: 1.2rem;">📞 (11) 97142-5028</p>
+        </div>
+    """, unsafe_allow_html=True)

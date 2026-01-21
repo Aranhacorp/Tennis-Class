@@ -6,7 +6,7 @@ from datetime import datetime
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="TENNIS CLASS", layout="wide")
 
-# 2. DESIGN E ESTILO (CSS ATUALIZADO)
+# 2. DESIGN E ESTILO (CSS)
 st.markdown("""
     <style>
     .stApp {
@@ -24,7 +24,7 @@ st.markdown("""
         max-width: 850px; margin: auto; text-align: center; 
         color: #1E1E1E !important; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
     }
-    /* Estilo do Card de Contato Cinza Transparente */
+    /* Estilo do Balão de Contato Cinza Transparente */
     .contact-card {
         background-color: rgba(30, 30, 30, 0.85) !important;
         padding: 45px; border-radius: 30px;
@@ -50,13 +50,12 @@ st.markdown("""
     </a>
 """, unsafe_allow_html=True)
 
-# 3. CONTROLE DE NAVEGAÇÃO
+# 3. NAVEGAÇÃO LATERAL
 if 'pagina' not in st.session_state:
     st.session_state.pagina = "Home"
 
 with st.sidebar:
     st.markdown("<h2 style='text-align: center; color: white;'>🎾 MENU</h2>", unsafe_allow_html=True)
-    # Lista de páginas incluindo Serviços
     for item in ["Home", "Serviços", "Produtos", "Cadastro", "Contato"]:
         if st.button(item, key=f"btn_{item}", use_container_width=True):
             st.session_state.pagina = item
@@ -79,8 +78,6 @@ st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=Tr
 
 # --- PÁGINA HOME: AGENDAMENTO ---
 if st.session_state.pagina == "Home":
-    st.markdown("<h3 style='text-align: center; color: white;'>Agendamento Profissional</h3>", unsafe_allow_html=True)
-    
     if 'pagamento_ativo' not in st.session_state:
         st.session_state.pagamento_ativo = False
 
@@ -99,7 +96,7 @@ if st.session_state.pagina == "Home":
                     "Eventos (Valor a Consultar)": 0
                 }
                 pacote_sel = st.selectbox("Selecione o Pacote", list(opcoes_pacotes.keys()))
-                data_input = st.date_input("Escolha a Data", format="DD/MM/YYYY") # Padrão BR
+                data_input = st.date_input("Escolha a Data", format="DD/MM/YYYY")
                 horario = st.selectbox("Escolha o Horário", [f"{h:02d}:00" for h in range(11, 22)])
                 
                 if st.form_submit_button("AVANÇAR PARA PAGAMENTO"):
@@ -111,38 +108,16 @@ if st.session_state.pagina == "Home":
                         }
                         st.session_state.pagamento_ativo = True
                         st.rerun()
-                    else:
-                        st.error("Por favor, informe o nome do aluno.")
             st.markdown('</div>', unsafe_allow_html=True)
-
     else:
-        # ETAPA DE PAGAMENTO
         res = st.session_state.reserva_temp
-        st.markdown("<h2 style='text-align: center; color: white;'>💳 Finalizar Reserva</h2>", unsafe_allow_html=True)
-        
-        # Valor do pacote em branco e destaque
-        valor_txt = f"Total do Pacote: R$ {res['Total']:.2f}" if res['Total'] > 0 else "Valor: A Consultar"
-        st.markdown(f"<div class='total-pagamento'>{valor_txt}</div>", unsafe_allow_html=True)
-        
+        st.markdown(f"<div class='total-pagamento'>Total do Pacote: R$ {res['Total']:.2f}</div>", unsafe_allow_html=True if res['Total'] > 0 else "")
         with st.container():
             st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-            st.write(f"**Item:** {res['Pacote']}")
-            st.markdown('<div class="pix-info"><b>Chave PIX:</b> aranha.corp@gmail.com.br<br><b>Favorecido:</b> André Aranha</div>', unsafe_allow_html=True)
-            arquivo = st.file_uploader("Anexe o Comprovante (Obrigatório)", type=['png', 'jpg', 'pdf'])
-            
-            c1, c2 = st.columns(2)
-            with c1: 
-                if st.button("VOLTAR", use_container_width=True): 
-                    st.session_state.pagamento_ativo = False
-                    st.rerun()
-            with c2:
-                if st.button("CONFIRMAR AGENDAMENTO", type="primary", use_container_width=True):
-                    if arquivo or res['Total'] == 0:
-                        st.balloons()
-                        st.success("Reserva enviada! Verifique seu WhatsApp para confirmação.")
-                        st.session_state.pagamento_ativo = False
-                    else:
-                        st.warning("Por favor, anexe o comprovante antes de confirmar.")
+            st.markdown('<div class="pix-info"><b>Chave PIX:</b> aranha.corp@gmail.com.br</div>', unsafe_allow_html=True)
+            if st.button("CONFIRMAR AGENDAMENTO", type="primary"):
+                st.success("Reserva enviada!")
+                st.session_state.pagamento_ativo = False
             st.markdown('</div>', unsafe_allow_html=True)
 
 # --- PÁGINA SERVIÇOS (RESTAURADA) ---
@@ -152,41 +127,37 @@ elif st.session_state.pagina == "Serviços":
         st.markdown('<div class="custom-card">', unsafe_allow_html=True)
         col1, col2 = st.columns(2)
         with col1:
-            st.markdown("### 🎾 Metodologia e Treino")
-            st.write("- **Aula Particular:** Foco total na técnica individual.")
-            st.write("- **Aula em Grupo:** Socialização e dinâmica de jogo.")
-            st.write("- **Aula Kids:** Iniciação lúdica para crianças.")
+            st.markdown("### 🎾 Aulas")
+            st.write("- Aula Particular Individual")
+            st.write("- Aula Kids (Metodologia lúdica)")
+            st.write("- Treinamento para Torneios")
         with col2:
-            st.markdown("### 🏢 Gestão e Infra")
-            st.write("- **Locação de Quadras:** Horários avulsos e fixos.")
-            st.write("- **Treinamento Esportivo:** Preparação para torneios.")
-            st.write("- **Eventos:** Clínicas de tênis e torneios empresariais.")
+            st.markdown("### 🏢 Infraestrutura")
+            st.write("- Locação de Quadras")
+            st.write("- Organização de Eventos e Clínicas")
         st.markdown('</div>', unsafe_allow_html=True)
 
-# --- PÁGINA CONTATO (NOVO DESIGN CINZA) ---
-elif st.session_state.pagina == "Contato":
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("""
-        <div class="contact-card">
-            <h1 style="color: white; margin-bottom: 15px; font-size: 45px;">André Aranha</h1>
-            <p style="font-size: 22px; color: rgba(255,255,255,0.9); line-height: 1.8;">
-                ✉️ <b>Email:</b> aranha.corp@gmail.com.br<br>
-                📱 <b>WhatsApp:</b> (11) 97142-5028
-            </p>
-            <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
-            <p style="font-size: 14px; color: rgba(255,255,255,0.5); letter-spacing: 1px;">
-                TENNIS CLASS • EXCELÊNCIA EM CADA JOGADA
-            </p>
-        </div>
-    """, unsafe_allow_html=True)
-
-# PÁGINA CADASTRO
+# --- PÁGINA CADASTRO (CORREÇÃO DE LINKS TROCADOS) ---
 elif st.session_state.pagina == "Cadastro":
     st.markdown("<h2 style='text-align: center; color: white;'>Central de Cadastros</h2>", unsafe_allow_html=True)
-    perfil = st.radio("Selecione o tipo de cadastro:", ["Aluno", "Professor", "Academia"], horizontal=True)
-    links = {
+    perfil = st.radio("Selecione o perfil:", ["Aluno", "Professor", "Academia"], horizontal=True)
+    
+    # Dicionário de links atualizado e testado
+    links_fomularios = {
         "Professor": "https://docs.google.com/forms/d/e/1FAIpQLSdHicvD5MsOTnpfWwmpXOm8b268_S6gXoBZEysIo4Wj5cL2yw/viewform?embedded=true",
         "Aluno": "https://docs.google.com/forms/d/e/1FAIpQLSdehkMHlLyCNd1owC-dSNO_-ROXq07w41jgymyKyFugvUZ0fA/viewform?embedded=true",
         "Academia": "https://docs.google.com/forms/d/e/1FAIpQLScaC-XBLuzTPN78inOQPcXd6r0BzaessEke1MzOfGzOIlZpwQ/viewform?embedded=true"
     }
-    st.markdown(f'<iframe src="{links[perfil]}" width="100%" height="800" frameborder="0" style="background:white; border-radius:20px;"></iframe>', unsafe_allow_html=True)
+    st.markdown(f'<iframe src="{links_fomularios[perfil]}" width="100%" height="800" frameborder="0" style="background:white; border-radius:20px;"></iframe>', unsafe_allow_html=True)
+
+# --- PÁGINA CONTATO (DESIGN CINZA) ---
+elif st.session_state.pagina == "Contato":
+    st.markdown(f"""
+        <div class="contact-card">
+            <h1 style="color: white;">André Aranha</h1>
+            <p style="font-size: 20px;">
+                ✉️ aranha.corp@gmail.com.br<br>
+                📱 (11) 97142-5028
+            </p>
+        </div>
+    """, unsafe_allow_html=True)

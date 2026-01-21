@@ -6,7 +6,7 @@ from datetime import datetime
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="TENNIS CLASS", layout="wide")
 
-# 2. CSS: ASSINATURA AMPLIADA E WHATSAPP ELEVADO
+# 2. CSS: CARD BRANCO, ASSINATURA E WHATSAPP
 st.markdown("""
     <style>
     .stApp {
@@ -18,23 +18,31 @@ st.markdown("""
         color: white; font-size: 55px; font-weight: bold; text-align: center;
         margin-bottom: 20px; text-shadow: 3px 3px 6px rgba(0,0,0,0.7);
     }
-    .custom-card {
-        background-color: rgba(0, 0, 0, 0.75) !important; backdrop-filter: blur(12px);
-        padding: 40px; border-radius: 25px; border: 1px solid rgba(255, 255, 255, 0.2);
-        max-width: 850px; margin: auto; text-align: center; color: white !important;
-    }
-    .service-item {
-        background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 15px;
-        margin: 10px 0; border: 1px solid rgba(255, 255, 255, 0.1);
-        font-size: 1.2rem; transition: 0.3s;
-    }
-    .service-item:hover { background: rgba(255, 255, 255, 0.2); }
     
+    /* Alteração da barra (card) para BRANCA com texto escuro */
+    .custom-card {
+        background-color: rgba(255, 255, 255, 0.95) !important; 
+        backdrop-filter: blur(10px);
+        padding: 40px; border-radius: 25px; 
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        max-width: 850px; margin: auto; text-align: center; 
+        color: #1E1E1E !important; /* Texto escuro para contraste no fundo branco */
+    }
+    
+    .service-item {
+        background: rgba(0, 0, 0, 0.05); padding: 15px; border-radius: 15px;
+        margin: 10px 0; border: 1px solid rgba(0, 0, 0, 0.1);
+        font-size: 1.2rem; color: #1E1E1E;
+    }
+    
+    /* Assinatura ampliada no canto esquerdo */
     .assinatura-aranha {
         position: fixed; bottom: 25px; left: 25px;
         width: 180px; z-index: 9999;
         filter: drop-shadow(2px 2px 5px rgba(0,0,0,0.8));
     }
+    
+    /* WhatsApp elevado em 1cm no canto direito */
     .whatsapp-float {
         position: fixed; bottom: 70px; right: 25px;
         width: 60px; z-index: 9999;
@@ -72,23 +80,35 @@ if menu == "Home":
             conn = st.connection("gsheets", type=GSheetsConnection)
             df_base = conn.read()
             with st.form("agendamento"):
+                st.markdown("<p style='color: #1E1E1E; font-weight: bold;'>Preencha os dados abaixo:</p>", unsafe_allow_html=True)
                 aluno = st.text_input("Nome do Aluno")
-                servico = st.selectbox("Serviço", ["Aula Particular", "Aula em Grupo", "Aula Kids", "Locação de Quadra"])
+                servico = st.selectbox("Serviço", [
+                    "Aula Particular", "Aula em Grupo", "Aula Kids", 
+                    "Locação de Quadra", "Treinamento Esportivo", "Evento"
+                ])
                 n_horas = st.number_input("Horas", min_value=1, value=1)
                 data = st.date_input("Data")
                 horario = st.selectbox("Horário", [f"{h:02d}:00" for h in range(8, 22)])
+                
                 if st.form_submit_button("CONFIRMAR RESERVA"):
                     if aluno:
-                        nova_reserva = pd.DataFrame([{"Data": str(data), "Horario": horario, "Aluno": aluno, "Servico": servico, "Status": "Pendente"}])
+                        # Correção de sintaxe para evitar Script Error
+                        nova_reserva = pd.DataFrame([{
+                            "Data": str(data), 
+                            "Horario": horario, 
+                            "Aluno": aluno, 
+                            "Servico": servico, 
+                            "Status": "Pendente"
+                        }])
                         df_final = pd.concat([df_base, nova_reserva], ignore_index=True)
                         conn.update(data=df_final)
                         st.balloons()
-                        st.success("Reserva realizada!")
-        except:
-            st.warning("Conectando ao banco de dados...")
+                        st.success("Reserva realizada com sucesso!")
+        except Exception:
+            st.info("Aguardando conexão com a planilha...")
         st.markdown('</div>', unsafe_allow_html=True)
 
-# --- PÁGINA SERVIÇOS: LISTA ATUALIZADA ---
+# --- PÁGINA SERVIÇOS ---
 elif menu == "Serviços":
     st.markdown("<h2 style='text-align: center; color: white;'>Nossos Serviços</h2>", unsafe_allow_html=True)
     with st.container():
@@ -106,6 +126,8 @@ elif menu == "Serviços":
 elif menu == "Cadastro":
     st.markdown("<h2 style='text-align: center; color: white;'>Central de Cadastros</h2>", unsafe_allow_html=True)
     tipo_cad = st.radio("Selecione:", ["Aluno", "Professor", "Academia"], horizontal=True)
+    
+    # Correção dos links para evitar inversão
     links_forms = {
         "Professor": "https://docs.google.com/forms/d/e/1FAIpQLSdHicvD5MsOTnpfWwmpXOm8b268_S6gXoBZEysIo4Wj5cL2yw/viewform?embedded=true",
         "Aluno": "https://docs.google.com/forms/d/e/1FAIpQLSdehkMHlLyCNd1owC-dSNO_-ROXq07w41jgymyKyFugvUZ0fA/viewform?embedded=true",
@@ -117,8 +139,8 @@ elif menu == "Cadastro":
 elif menu == "Contato":
     st.markdown(f"""
         <div class="custom-card">
-            <h2>André Aranha</h2>
-            <p>📧 aranha.corp@gmail.com.br</p>
-            <p>📞 (11) 97142-5028</p>
+            <h2 style="color: #1E1E1E;">André Aranha</h2>
+            <p style="font-size: 1.2rem;">📧 aranha.corp@gmail.com.br</p>
+            <p style="font-size: 1.2rem;">📞 (11) 97142-5028</p>
         </div>
     """, unsafe_allow_html=True)

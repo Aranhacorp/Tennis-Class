@@ -24,7 +24,7 @@ st.markdown("""
         max-width: 850px; margin: auto; text-align: center; 
         color: #1E1E1E !important; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
     }
-    /* Estilo do Balão de Contato Cinza Transparente */
+    /* Balão de Contato Cinza Transparente */
     .contact-card {
         background-color: rgba(30, 30, 30, 0.85) !important;
         padding: 45px; border-radius: 30px;
@@ -36,6 +36,10 @@ st.markdown("""
         color: white !important; font-size: 36px; font-weight: bold; 
         margin: 25px 0; text-shadow: 3px 3px 5px rgba(0,0,0,0.5);
         text-align: center;
+    }
+    .qrcode-container {
+        background-color: white; padding: 20px; border-radius: 15px;
+        display: inline-block; margin-bottom: 20px;
     }
     .pix-info {
         background-color: #f0f2f6; border: 2px dashed #007bff;
@@ -50,7 +54,7 @@ st.markdown("""
     </a>
 """, unsafe_allow_html=True)
 
-# 3. NAVEGAÇÃO LATERAL
+# 3. NAVEGAÇÃO
 if 'pagina' not in st.session_state:
     st.session_state.pagina = "Home"
 
@@ -96,7 +100,7 @@ if st.session_state.pagina == "Home":
                     "Eventos (Valor a Consultar)": 0
                 }
                 pacote_sel = st.selectbox("Selecione o Pacote", list(opcoes_pacotes.keys()))
-                data_input = st.date_input("Escolha a Data", format="DD/MM/YYYY")
+                data_input = st.date_input("Escolha a Data", format="DD/MM/YYYY") #
                 horario = st.selectbox("Escolha o Horário", [f"{h:02d}:00" for h in range(11, 22)])
                 
                 if st.form_submit_button("AVANÇAR PARA PAGAMENTO"):
@@ -110,13 +114,21 @@ if st.session_state.pagina == "Home":
                         st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
     else:
+        # ETAPA DE PAGAMENTO COM QR CODE
         res = st.session_state.reserva_temp
         st.markdown(f"<div class='total-pagamento'>Total do Pacote: R$ {res['Total']:.2f}</div>", unsafe_allow_html=True if res['Total'] > 0 else "")
         with st.container():
             st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-            st.markdown('<div class="pix-info"><b>Chave PIX:</b> aranha.corp@gmail.com.br</div>', unsafe_allow_html=True)
-            if st.button("CONFIRMAR AGENDAMENTO", type="primary"):
-                st.success("Reserva enviada!")
+            st.markdown("### Escaneie o QR Code para pagar")
+            # Inserção do QR Code (Substitua pela URL real da sua imagem de QR Code)
+            st.image("https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/QRCode_PIX.png", width=250)
+            
+            st.markdown(f'<div class="pix-info"><b>Chave PIX:</b> aranha.corp@gmail.com.br<br><b>Favorecido:</b> André Aranha</div>', unsafe_allow_html=True)
+            st.file_uploader("Anexe o comprovante aqui", type=['png', 'jpg', 'pdf'])
+            
+            if st.button("CONFIRMAR AGENDAMENTO", type="primary", use_container_width=True):
+                st.balloons()
+                st.success("Tudo pronto! Sua reserva foi enviada.")
                 st.session_state.pagamento_ativo = False
             st.markdown('</div>', unsafe_allow_html=True)
 
@@ -127,37 +139,42 @@ elif st.session_state.pagina == "Serviços":
         st.markdown('<div class="custom-card">', unsafe_allow_html=True)
         col1, col2 = st.columns(2)
         with col1:
-            st.markdown("### 🎾 Aulas")
-            st.write("- Aula Particular Individual")
-            st.write("- Aula Kids (Metodologia lúdica)")
-            st.write("- Treinamento para Torneios")
+            st.markdown("### 🎾 Tênis & Aulas")
+            st.write("- **Aula Particular:** Personalizada para seu nível.")
+            st.write("- **Aula Kids:** Iniciação esportiva divertida.")
+            st.write("- **Grupo:** Dinâmica e socialização.")
         with col2:
             st.markdown("### 🏢 Infraestrutura")
-            st.write("- Locação de Quadras")
-            st.write("- Organização de Eventos e Clínicas")
+            st.write("- **Locação:** Quadras de saibro e rápida.")
+            st.write("- **Eventos:** Torneios e clínicas.")
         st.markdown('</div>', unsafe_allow_html=True)
 
-# --- PÁGINA CADASTRO (CORREÇÃO DE LINKS TROCADOS) ---
+# --- PÁGINA CADASTRO (CORREÇÃO ALUNO X ACADEMIA) ---
 elif st.session_state.pagina == "Cadastro":
     st.markdown("<h2 style='text-align: center; color: white;'>Central de Cadastros</h2>", unsafe_allow_html=True)
-    perfil = st.radio("Selecione o perfil:", ["Aluno", "Professor", "Academia"], horizontal=True)
+    perfil = st.radio("Selecione o perfil desejado:", ["Aluno", "Professor", "Academia"], horizontal=True)
     
-    # Dicionário de links atualizado e testado
-    links_fomularios = {
+    # Mapeamento corrigido
+    links = {
         "Professor": "https://docs.google.com/forms/d/e/1FAIpQLSdHicvD5MsOTnpfWwmpXOm8b268_S6gXoBZEysIo4Wj5cL2yw/viewform?embedded=true",
         "Aluno": "https://docs.google.com/forms/d/e/1FAIpQLSdehkMHlLyCNd1owC-dSNO_-ROXq07w41jgymyKyFugvUZ0fA/viewform?embedded=true",
         "Academia": "https://docs.google.com/forms/d/e/1FAIpQLScaC-XBLuzTPN78inOQPcXd6r0BzaessEke1MzOfGzOIlZpwQ/viewform?embedded=true"
     }
-    st.markdown(f'<iframe src="{links_fomularios[perfil]}" width="100%" height="800" frameborder="0" style="background:white; border-radius:20px;"></iframe>', unsafe_allow_html=True)
+    st.markdown(f'<iframe src="{links[perfil]}" width="100%" height="800" frameborder="0" style="background:white; border-radius:20px;"></iframe>', unsafe_allow_html=True)
 
-# --- PÁGINA CONTATO (DESIGN CINZA) ---
+# --- PÁGINA CONTATO (DESIGN CINZA PADRÃO) ---
 elif st.session_state.pagina == "Contato":
-    st.markdown(f"""
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown("""
         <div class="contact-card">
-            <h1 style="color: white;">André Aranha</h1>
-            <p style="font-size: 20px;">
+            <h1 style="color: white; margin-bottom: 10px;">André Aranha</h1>
+            <p style="font-size: 20px; color: white;">
                 ✉️ aranha.corp@gmail.com.br<br>
                 📱 (11) 97142-5028
+            </p>
+            <hr style="border-color: rgba(255,255,255,0.1); margin: 25px 0;">
+            <p style="font-size: 14px; color: rgba(255,255,255,0.6);">
+                TENNIS CLASS © 2026
             </p>
         </div>
     """, unsafe_allow_html=True)

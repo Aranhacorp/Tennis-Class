@@ -18,23 +18,32 @@ st.markdown("""
         color: white; font-size: 55px; font-weight: bold; text-align: center;
         margin-bottom: 20px; text-shadow: 3px 3px 6px rgba(0,0,0,0.7);
     }
+    
+    /* Card central BRANCO para legibilidade */
     .custom-card {
         background-color: rgba(255, 255, 255, 0.95) !important; 
         backdrop-filter: blur(10px);
         padding: 40px; border-radius: 25px; 
+        border: 1px solid rgba(0, 0, 0, 0.1);
         max-width: 850px; margin: auto; text-align: center; 
         color: #1E1E1E !important;
     }
+    
+    /* Assinatura */
     .assinatura-aranha {
         position: fixed; bottom: 25px; left: 25px;
         width: 180px; z-index: 9999;
     }
+    
+    /* WhatsApp */
     .whatsapp-float {
         position: fixed; bottom: 70px; right: 25px;
         width: 60px; z-index: 9999;
     }
     </style>
+    
     <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/By%20Andre%20Aranha.png" class="assinatura-aranha">
+    
     <a href="https://wa.me/5511971425028" target="_blank">
         <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" class="whatsapp-float">
     </a>
@@ -53,13 +62,13 @@ with st.sidebar:
     
     st.markdown("---")
     st.markdown("<h3 style='color: white;'>🏢 Academias Recomendadas</h3>", unsafe_allow_html=True)
-    academias_data = {
+    academias_info = {
         "Play Tennis Ibirapuera": {"End": "Rua Estado de Israel, 860", "Tel": "11-97752-0488"},
         "Top One tennis": {"End": "Avenida Indianapolis, 647", "Tel": "11-93236-3828"},
         "Fontes & Barbeta Tennis": {"End": "Rua Oscar Gomes Cardim, 535", "Tel": "11-94695-3738"},
         "Arena BTG": {"End": "Rua Major Sylvio de Magalhães Padilha, 16741", "Tel": "11-98854-3860"}
     }
-    for nome, info in academias_data.items():
+    for nome, info in academias_info.items():
         with st.expander(nome):
             st.write(f"📍 {info['End']}")
             st.write(f"📞 {info['Tel']}")
@@ -89,9 +98,9 @@ if menu == "Home":
                 pacote_sel = st.selectbox("Pacotes", list(pacotes_lista.keys()))
                 n_horas = st.number_input("Horas/Sessões", min_value=1, value=1)
                 
-                # DATA NO PADRÃO BRASILEIRO (Exibição e Armazenamento)
-                data_input = st.date_input("Data")
-                data_br = data_input.strftime("%d/%m/%Y")
+                # DATA FORMATADA: DD/MM/AAAA [Ajuste solicitado]
+                data_selecionada = st.date_input("Data")
+                data_formatada = data_selecionada.strftime("%d/%m/%Y")
                 
                 # HORÁRIO: 11:00 às 21:00
                 horario = st.selectbox("Horário", [f"{h:02d}:00" for h in range(11, 22)])
@@ -100,25 +109,31 @@ if menu == "Home":
                     if aluno:
                         v_unit = pacotes_lista[pacote_sel]
                         total = (v_unit * n_horas) if v_unit > 0 else "A Consultar"
-                        nova_reserva = pd.DataFrame([{"Data": data_br, "Horario": horario, "Aluno": aluno, "Pacote": pacote_sel, "Total": total}])
+                        nova_reserva = pd.DataFrame([{
+                            "Data": data_formatada, 
+                            "Horario": horario, 
+                            "Aluno": aluno, 
+                            "Pacote": pacote_sel, 
+                            "Total": total
+                        }])
                         df_final = pd.concat([df_base, nova_reserva], ignore_index=True)
                         conn.update(data=df_final)
                         st.balloons()
-                        st.success(f"Reserva confirmada para {data_br}!")
+                        st.success(f"Reserva realizada com sucesso para o dia {data_formatada}!")
         except:
-            st.info("Conectando ao sistema...")
+            st.info("Conectando ao banco de dados...")
         st.markdown('</div>', unsafe_allow_html=True)
 
-# --- PÁGINA CADASTRO (CORREÇÃO DE LINKS INVERTIDOS) ---
+# --- PÁGINA CADASTRO (LINKS CORRIGIDOS) ---
 elif menu == "Cadastro":
     st.markdown("<h2 style='text-align: center; color: white;'>Central de Cadastros</h2>", unsafe_allow_html=True)
     tipo_cad = st.radio("Selecione o perfil:", ["Aluno", "Professor", "Academia"], horizontal=True)
     
-    # Links corrigidos (Aluno e Academia foram trocados conforme solicitado)
+    # Aluno e Academia agora apontam para os formulários corretos
     links = {
         "Professor": "https://docs.google.com/forms/d/e/1FAIpQLSdHicvD5MsOTnpfWwmpXOm8b268_S6gXoBZEysIo4Wj5cL2yw/viewform?embedded=true",
-        "Aluno": "https://docs.google.com/forms/d/e/1FAIpQLScaC-XBLuzTPN78inOQPcXd6r0BzaessEke1MzOfGzOIlZpwQ/viewform?embedded=true",
-        "Academia": "https://docs.google.com/forms/d/e/1FAIpQLSdehkMHlLyCNd1owC-dSNO_-ROXq07w41jgymyKyFugvUZ0fA/viewform?embedded=true"
+        "Aluno": "https://docs.google.com/forms/d/e/1FAIpQLSdehkMHlLyCNd1owC-dSNO_-ROXq07w41jgymyKyFugvUZ0fA/viewform?embedded=true",
+        "Academia": "https://docs.google.com/forms/d/e/1FAIpQLScaC-XBLuzTPN78inOQPcXd6r0BzaessEke1MzOfGzOIlZpwQ/viewform?embedded=true"
     }
     st.markdown(f'<iframe src="{links[tipo_cad]}" width="100%" height="800" frameborder="0" style="background:white; border-radius:20px;"></iframe>', unsafe_allow_html=True)
 

@@ -45,17 +45,16 @@ st.markdown("""
     </a>
 """, unsafe_allow_html=True)
 
-# 5. MENU LATERAL E ACADEMIAS (RESTAURADOS)
+# 5. MENU LATERAL E ACADEMIAS RECOMENDADAS (RESTAURADOS)
 with st.sidebar:
     st.markdown("<h2 style='text-align: center; color: white;'>🎾 MENU</h2>", unsafe_allow_html=True)
-    for item in ["Home", "Serviços", "Produtos", "Cadastro", "Contato"]:
-        if st.button(item, key=f"btn_{item}", use_container_width=True):
-            st.session_state.pagina = item
-            st.session_state.pagamento_ativo = False
-            st.rerun()
+    if st.button("Home", use_container_width=True):
+        st.session_state.pagina = "Home"
+        st.session_state.pagamento_ativo = False
+        st.rerun()
+    if st.button("Serviços", use_container_width=True): st.session_state.pagina = "Serviços"
+    if st.button("Produtos", use_container_width=True): st.session_state.pagina = "Produtos"
+    if st.button("Cadastro", use_container_width=True): st.session_state.pagina = "Cadastro"
+    if st.button("Contato", use_container_width=True): st.session_state.pagina = "Contato"
     
-    st.markdown("<br><br>🏢 **Academias Recomendadas**", unsafe_allow_html=True)
-    with st.expander("Play Tennis Ibirapuera"): st.write("Rua Joinville, 100")
-    with st.expander("Top One tennis"): st.write("Av. Moema, 123")
-    with st.expander("Fontes & Barbeta Tennis"): st.write("Rua Groenlândia, 456")
-    with st.expander("Arena BTG"): st.write("Av. Faria Lima,
+    st.markdown("<br><br>🏢 **Ac

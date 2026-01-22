@@ -109,15 +109,3 @@ if st.session_state.pagina == "Home":
         
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("Voltar", use_container_width=True):
-                st.session_state.pagamento_ativo = False
-                st.rerun()
-        with col2:
-            if st.button("CONFIRMAR AGENDAMENTO", type="primary", use_container_width=True):
-                try:
-                    # Lê dados atuais e concatena com o novo
-                    df_atual = conn.read(worksheet="Página1")
-                    novo_registro = pd.DataFrame([st.session_state.reserva_temp])
-                    df_final = pd.concat([df_atual, novo_registro], ignore_index=True)
-                    
-                    # Atualiza a

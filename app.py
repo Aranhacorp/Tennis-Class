@@ -9,7 +9,7 @@ st.set_page_config(page_title="TENNIS CLASS", layout="wide")
 # 2. CONEXÃO COM A PLANILHA (TennisClass_DB)
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# 3. ESTILO CSS (CORREÇÃO DE ASPAS E PADRONIZAÇÃO)
+# 3. DESIGN E ESTILO (CSS) - CORREÇÃO DE ASPAS E PADRONIZAÇÃO CINZA
 st.markdown("""
     <style>
     .stApp {
@@ -21,7 +21,6 @@ st.markdown("""
         color: white; font-size: 55px; font-weight: bold; text-align: center;
         margin-bottom: 20px; text-shadow: 3px 3px 6px rgba(0,0,0,0.7);
     }
-    /* Balão Cinza Transparente Padronizado */
     .custom-card, .contact-card {
         background-color: rgba(30, 30, 30, 0.85) !important;
         padding: 40px; border-radius: 25px; 
@@ -41,7 +40,7 @@ st.markdown("""
     </a>
 """, unsafe_allow_html=True)
 
-# 4. INICIALIZAÇÃO DE ESTADO (CORREÇÃO DE ATTRIBUTEERROR)
+# 4. INICIALIZAÇÃO DO ESTADO (PREVINE ATTRIBUTERROR)
 if 'pagina' not in st.session_state:
     st.session_state.pagina = "Home"
 if 'pagamento_ativo' not in st.session_state:
@@ -49,7 +48,7 @@ if 'pagamento_ativo' not in st.session_state:
 if 'reserva_temp' not in st.session_state:
     st.session_state.reserva_temp = {}
 
-# 5. NAVEGAÇÃO LATERAL
+# 5. MENU LATERAL
 with st.sidebar:
     st.markdown("<h2 style='text-align: center; color: white;'>🎾 MENU</h2>", unsafe_allow_html=True)
     for item in ["Home", "Serviços", "Cadastro", "Contato"]:
@@ -60,20 +59,20 @@ with st.sidebar:
 
 st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
 
-# --- PÁGINA HOME: AGENDAMENTO ---
+# --- PÁGINA HOME ---
 if st.session_state.pagina == "Home":
     if not st.session_state.pagamento_ativo:
         st.markdown('<div class="custom-card">', unsafe_allow_html=True)
         with st.form("form_reserva"):
             aluno = st.text_input("Nome do Aluno")
-            opcoes_pacotes = {
-                "Aula Individual Pacote 4 Aulas (R$ 235/h)": 940,
-                "Aula Individual Pacote 8 Aulas (R$ 225/h)": 1800,
-                "Aula Individual Única (R$ 250/h)": 250,
-                "Aula Kids Pacote 4 Aulas (R$ 230/h)": 920,
-                "Aula em Grupo (R$ 200/h)": 600
+            opcoes = {
+                "Aula Individual (R$ 250)": 250,
+                "Pacote 4 Aulas (R$ 940)": 940,
+                "Pacote 8 Aulas (R$ 1800)": 1800,
+                "Aula Kids (R$ 230)": 230,
+                "Aula em Grupo (R$ 200)": 200
             }
-            pacote_sel = st.selectbox("Selecione o Pacote", list(opcoes_pacotes.keys()))
+            pacote_sel = st.selectbox("Selecione o Pacote", list(opcoes.keys()))
             data_input = st.date_input("Escolha a Data")
             horario = st.selectbox("Escolha o Horário", [f"{h:02d}:00" for h in range(11, 22)])
             
@@ -85,19 +84,21 @@ if st.session_state.pagina == "Home":
                         "Aluno": aluno,
                         "Servico": "Aula",
                         "Pacote": pacote_sel,
-                        "Status": "Aguardando Pagamento"
+                        "Status": "Aguardando Pagamento",
+                        "Total": opcoes[pacote_sel]
                     }
-                    st.session_state.total_valor = opcoes_pacotes[pacote_sel]
                     st.session_state.pagamento_ativo = True
                     st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
     else:
-        # TELA DE PAGAMENTO (DESIGN CINZA PADRONIZADO)
-        st.markdown(f"<div class='text-total'>Total: R$ {st.session_state.total_valor:.2f}</div>", unsafe_allow_html=True)
+        # TELA DE PAGAMENTO LIMPA (SEM QR CODE E SEM INSTRUÇÕES)
+        res = st.session_state.reserva_temp
+        st.markdown(f"<div class='text-total'>Total do Pacote: R$ {res['Total']:.2f}</div>", unsafe_allow_html=True)
+        
         st.markdown('<div class="contact-card">', unsafe_allow_html=True)
         st.markdown("### Pagamento via PIX")
-        st.write("Chave E-mail (clique no ícone à direita para copiar):")
-        st.code("aranha.corp@gmail.com.br", language=None)
+        st.write("Chave E-mail:")
+        st.code("aranha.corp@gmail.com.br", language=None) # Botão de cópia automático
         
         st.markdown("<br>", unsafe_allow_html=True)
         st.file_uploader("Anexe o comprovante aqui", type=['png', 'jpg', 'pdf'])
@@ -110,15 +111,21 @@ if st.session_state.pagina == "Home":
         with col2:
             if st.button("CONFIRMAR AGENDAMENTO", type="primary", use_container_width=True):
                 try:
+                    # GRAVAÇÃO NA PLANILHA TennisClass_DB
                     df_atual = conn.read(worksheet="Página1")
-                    novo_df = pd.DataFrame([st.session_state.reserva_temp])
+                    # Removemos a chave 'Total' para não dar erro de coluna se ela não existir na planilha
+                    dados_para_salvar = res.copy()
+                    del dados_para_salvar['Total']
+                    
+                    novo_df = pd.DataFrame([dados_para_salvar])
                     df_final = pd.concat([df_atual, novo_df], ignore_index=True)
                     conn.update(worksheet="Página1", data=df_final)
+                    
                     st.balloons()
-                    st.success("Reserva salva com sucesso na planilha TennisClass_DB!")
+                    st.success("Reserva enviada com sucesso!")
                     st.session_state.pagamento_ativo = False
                 except Exception as e:
-                    st.error(f"Erro ao salvar: {e}")
+                    st.error(f"Erro ao salvar na planilha: {e}")
         st.markdown('</div>', unsafe_allow_html=True)
 
 # --- PÁGINA CADASTRO ---
@@ -126,4 +133,16 @@ elif st.session_state.pagina == "Cadastro":
     st.markdown("<h2 style='text-align: center; color: white;'>Central de Cadastros</h2>", unsafe_allow_html=True)
     perfil = st.radio("Selecione o perfil:", ["Aluno", "Professor", "Academia"], horizontal=True)
     links = {
-        "Professor": "
+        "Professor": "https://docs.google.com/forms/d/e/1FAIpQLSdHicvD5MsOTnpfWwmpXOm8b268_S6gXoBZEysIo4Wj5cL2yw/viewform?embedded=true",
+        "Aluno": "https://docs.google.com/forms/d/e/1FAIpQLSdehkMHlLyCNd1owC-dSNO_-ROXq07w41jgymyKyFugvUZ0fA/viewform?embedded=true",
+        "Academia": "https://docs.google.com/forms/d/e/1FAIpQLScaC-XBLuzTPN78inOQPcXd6r0BzaessEke1MzOfGzOIlZpwQ/viewform?embedded=true"
+    }
+    st.markdown(f'<iframe src="{links[perfil]}" width="100%" height="700" frameborder="0" style="background:white; border-radius:20px;"></iframe>', unsafe_allow_html=True)
+
+# --- PÁGINA CONTATO ---
+elif st.session_state.pagina == "Contato":
+    st.markdown('<div class="contact-card">', unsafe_allow_html=True)
+    st.markdown("## André Aranha")
+    st.write("✉️ aranha.corp@gmail.com.br")
+    st.write("📱 (11) 97142-5028")
+    st.markdown('</div>', unsafe_allow_html=True)

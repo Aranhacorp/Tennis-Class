@@ -6,7 +6,7 @@ import pandas as pd
 st.set_page_config(page_title="TENNIS CLASS", layout="wide")
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# 2. ESTILO CSS (PADRÃO TRANSPARENTE BRANCO)
+# 2. ESTILO CSS (CORREÇÃO DE ASPAS)
 st.markdown("""
     <style>
     .stApp {
@@ -26,23 +26,27 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. NAVEGAÇÃO LATERAL
+# 3. INICIALIZAÇÃO DE ESTADO (CORREÇÃO DE ATTRIBUTERROR)
 if 'pagina' not in st.session_state:
     st.session_state.pagina = "Home"
+if 'pagamento_ativo' not in st.session_state:
+    st.session_state.pagamento_ativo = False
+if 'reserva' not in st.session_state:
+    st.session_state.reserva = {}
 
+# 4. NAVEGAÇÃO LATERAL
 with st.sidebar:
     st.markdown("<h2 style='color: white;'>🎾 MENU</h2>", unsafe_allow_html=True)
     if st.button("Home", use_container_width=True): 
-        st.session_state.pagina = "Home"; st.rerun()
+        st.session_state.pagina = "Home"
+        st.session_state.pagamento_ativo = False
+        st.rerun()
     if st.button("Cadastro", use_container_width=True): 
         st.session_state.pagina = "Cadastro"; st.rerun()
 
 # --- PÁGINA HOME ---
 if st.session_state.pagina == "Home":
-    if 'pagamento_ativo' not in st.session_state:
-        st.session_state.pagamento_ativo = False
-
-    if not st.session_state.pagamento_active:
+    if not st.session_state.pagamento_ativo:
         # FORMULÁRIO DE RESERVA
         st.markdown('<div class="custom-card">', unsafe_allow_html=True)
         with st.form("form_reserva"):
@@ -55,7 +59,7 @@ if st.session_state.pagina == "Home":
             data_aula = st.date_input("Data")
             horario = st.selectbox("Horário", ["11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"])
             
-            if st.form_submit_button("CONFIRMAR RESERVA"):
+            if st.form_submit_button("GERAR PAGAMENTO"):
                 if aluno:
                     st.session_state.reserva = {
                         "Data": data_aula.strftime("%d/%m/%Y"),
@@ -71,29 +75,29 @@ if st.session_state.pagina == "Home":
         st.markdown('</div>', unsafe_allow_html=True)
     
     else:
-        # TELA DE PAGAMENTO (SEM QR CODE)
-        st.markdown(f"<div class='text-total'>Total do Pacote: {st.session_state.reserva['Pacote']}</div>", unsafe_allow_html=True)
+        # TELA DE PAGAMENTO (QR CODE REMOVIDO)
+        st.markdown(f"<div class='text-total'>Total do Pacote: {st.session_state.reserva.get('Pacote', '')}</div>", unsafe_allow_html=True)
         st.markdown('<div class="custom-card">', unsafe_allow_html=True)
         
-        st.write("### Copie a chave PIX para finalizar")
+        st.write("### Copie a chave PIX abaixo")
         chave_pix = "aranha.corp@gmail.com.br"
-        st.code(chave_pix, language=None) # Função de cópia automática
+        st.code(chave_pix, language=None) #
         
         st.file_uploader("Anexe o comprovante", type=['png', 'jpg', 'pdf'])
         
-        if st.button("FINALIZAR E SALVAR", type="primary", use_container_width=True):
+        if st.button("CONFIRMAR AGENDAMENTO", type="primary", use_container_width=True):
             try:
-                # ATUALIZAÇÃO DA PLANILHA
+                # GRAVAÇÃO NA PLANILHA
                 df_atual = conn.read(worksheet="Página1")
-                novo_registro = pd.DataFrame([st.session_state.reserva])
-                df_final = pd.concat([df_atual, novo_registro], ignore_index=True)
+                novo_dado = pd.DataFrame([st.session_state.reserva])
+                df_final = pd.concat([df_atual, novo_dado], ignore_index=True)
                 conn.update(worksheet="Página1", data=df_final)
                 
                 st.balloons()
-                st.success("Pagamento confirmado e dados salvos na TennisClass_DB!")
+                st.success("Dados salvos com sucesso na planilha!")
                 st.session_state.pagamento_ativo = False
             except Exception as e:
-                st.error(f"Erro ao conectar com a planilha: {e}")
+                st.error(f"Erro ao salvar na planilha: {e}")
         
         if st.button("Voltar"):
             st.session_state.pagamento_ativo = False
@@ -102,5 +106,4 @@ if st.session_state.pagina == "Home":
 
 # --- PÁGINA CADASTRO ---
 elif st.session_state.pagina == "Cadastro":
-    st.markdown("<h2 style='text-align: center; color: white;'>Central de Cadastros</h2>", unsafe_allow_html=True)
     st.markdown(f'<iframe src="https://docs.google.com/forms/d/e/1FAIpQLSdehkMHlLyCNd1owC-dSNO_-ROXq07w41jgymyKyFugvUZ0fA/viewform?embedded=true" width="100%" height="800" frameborder="0" style="background:white; border-radius:15px;"></iframe>', unsafe_allow_html=True)

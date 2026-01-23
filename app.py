@@ -37,11 +37,7 @@ st.markdown("""
         margin: 25px 0; text-shadow: 3px 3px 5px rgba(0,0,0,0.5);
         text-align: center;
     }
-    .qrcode-container {
-        background-color: white; padding: 20px; border-radius: 15px;
-        display: inline-block; margin-bottom: 20px;
-    }
-    .pix-info {
+       .pix-info {
         background-color: #f0f2f6; border: 2px dashed #007bff;
         padding: 20px; border-radius: 15px; margin: 20px 0; color: #1E1E1E;
     }
@@ -178,3 +174,4 @@ elif st.session_state.pagina == "Contato":
             </p>
         </div>
     """, unsafe_allow_html=True)
+

@@ -35,7 +35,7 @@ st.markdown("""
         max-width: 850px; margin: auto; text-align: center; 
         color: #1E1E1E !important; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
     }
-    /* Estilo do Balão de Contato Original */
+    /* Balão de Contato Cinza Transparente */
     .contact-card {
         background-color: rgba(30, 30, 30, 0.85) !important;
         padding: 45px; border-radius: 30px;
@@ -45,41 +45,4 @@ st.markdown("""
         box-shadow: 0 20px 40px rgba(0,0,0,0.6);
     }
     .assinatura-aranha { position: fixed; bottom: 25px; left: 25px; width: 180px; z-index: 9999; }
-    .whatsapp-float { position: fixed; bottom: 70px; right: 25px; width: 60px; z-index: 9999; }
-    </style>
-    
-    <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/By%20Andre%20Aranha.png" class="assinatura-aranha">
-    <a href="https://wa.me/5511971425028" target="_blank">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" class="whatsapp-float">
-    </a>
-""", unsafe_allow_html=True)
-
-# 5. MENU LATERAL E ACADEMIAS
-with st.sidebar:
-    st.markdown("<h2 style='text-align: center; color: white;'>🎾 MENU</h2>", unsafe_allow_html=True)
-    for item in ["Home", "Serviços", "Produtos", "Cadastro", "Contato"]:
-        if st.button(item, key=f"btn_{item}", use_container_width=True):
-            st.session_state.pagina = item
-            st.session_state.pagamento_ativo = False
-            st.rerun()
-    
-    st.markdown("---")
-    st.markdown("<h3 style='color: white;'>🏢 Academias</h3>", unsafe_allow_html=True)
-    academias = {
-        "Play Tennis Ibirapuera": "Rua Estado de Israel, 860",
-        "Top One tennis": "Avenida Indianapolis, 647",
-        "Fontes & Barbeta Tennis": "Rua Oscar Gomes Cardim, 535",
-        "Arena BTG": "Rua Major Sylvio de Magalhães Padilha, 16741"
-    }
-    for nome, end in academias.items():
-        with st.expander(nome):
-            st.write(f"📍 {end}")
-
-st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
-
-# 6. PÁGINA HOME (RESERVA E CORREÇÃO DA PLANILHA)
-if st.session_state.pagina == "Home":
-    if not st.session_state.pagamento_ativo:
-        st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-        with st.form("form_reserva"):
-            al
+    .whatsapp-float { position: fixed

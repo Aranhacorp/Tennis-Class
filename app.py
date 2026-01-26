@@ -81,4 +81,82 @@ if st.session_state.pagina == "Home":
             servicos_lista = ["Aula Individual", "Aula em Dupla", "Aula em Grupo", "Aula Kids"]
             servico_sel = st.selectbox("Serviço", servicos_lista)
             pacote_sel = st.selectbox("Pacote", ["Único", "Pacote 4 Aulas", "Pacote 8 Aulas"])
-            academia
+            academia_sel = st.selectbox("Academia", list(academias_info.keys()))
+            data_sel = st.date_input("Data")
+            hora_sel = st.selectbox("Horário", [f"{h:02d}:00" for h in range(7, 22)])
+            
+            if st.form_submit_button("AVANÇAR PARA PAGAMENTO"):
+                if aluno:
+                    st.session_state.reserva_temp = {
+                        "Data": data_sel.strftime("%Y-%m-%d"),
+                        "Horario": hora_sel,
+                        "Aluno": aluno,
+                        "Servico": servico_sel,
+                        "Pacote": pacote_sel,
+                        "Status": "Pendente",
+                        "Academia": academia_sel
+                    }
+                    st.session_state.pagamento_ativo = True
+                    st.rerun()
+                else:
+                    st.warning("Por favor, preencha o nome do aluno.")
+        st.markdown('</div>', unsafe_allow_html=True)
+    else:
+        st.markdown('<div class="custom-card">', unsafe_allow_html=True)
+        st.markdown("### 💳 Pagamento via PIX")
+        st.write("Chave: **aranha.corp@gmail.com.br**")
+        st.file_uploader("Anexe o comprovante (Opcional)", type=['png', 'jpg', 'pdf'])
+        
+        if st.button("CONFIRMAR AGENDAMENTO", type="primary", use_container_width=True):
+            try:
+                # Lê a planilha atual
+                df_atual = conn.read(worksheet="Página1")
+                # Cria o novo registro
+                novo_registro = pd.DataFrame([st.session_state.reserva_temp])
+                # Concatena e atualiza
+                df_final = pd.concat([df_atual, novo_registro], ignore_index=True)
+                conn.update(worksheet="Página1", data=df_final)
+                
+                st.balloons()
+                st.success("Tudo pronto! Sua reserva foi enviada e salva na planilha.")
+                st.session_state.pagamento_ativo = False
+            except Exception as e:
+                st.error(f"Erro ao salvar na planilha: {e}")
+        
+        if st.button("Voltar"):
+            st.session_state.pagamento_ativo = False
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+
+elif st.session_state.pagina == "Serviços":
+    st.markdown('<div class="custom-card">', unsafe_allow_html=True)
+    st.subheader("Nossos Serviços")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write("🎾 **Aulas Individuais**")
+        st.write("👥 **Aulas em Grupo**")
+        st.write("👶 **Aulas Kids**")
+    with col2:
+        st.write("💪 **Treinamento Esportivo**")
+        st.write("🏥 **Fisioterapia Esportiva**")
+        st.write("📅 **Eventos e Clínicas**")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+elif st.session_state.pagina == "Cadastro":
+    perfil = st.radio("Selecione o perfil:", ["Aluno", "Professor", "Academia"], horizontal=True)
+    links = {
+        "Professor": "https://docs.google.com/forms/d/e/1FAIpQLSdHicvD5MsOTnpfWwmpXOm8b268_S6gXoBZEysIo4Wj5cL2yw/viewform?embedded=true",
+        "Aluno": "https://docs.google.com/forms/d/e/1FAIpQLSdehkMHlLyCNd1owC-dSNO_-ROXq07w41jgymyKyFugvUZ0fA/viewform?embedded=true",
+        "Academia": "https://docs.google.com/forms/d/e/1FAIpQLScaC-XBLuzTPN78inOQPcXd6r0BzaessEke1MzOfGzOIlZpwQ/viewform?embedded=true"
+    }
+    st.markdown(f'<iframe src="{links[perfil]}" width="100%" height="800" frameborder="0" style="background:white; border-radius:20px;"></iframe>', unsafe_allow_html=True)
+
+elif st.session_state.pagina == "Contato":
+    st.markdown("""
+        <div class="contact-card">
+            <h1>André Aranha</h1>
+            <p style="font-size: 20px;">✉️ aranha.corp@gmail.com.br<br>📱 (11) 97142-5028</p>
+            <hr style="border-color: rgba(255,255,255,0.1);">
+            <p style="font-size: 12px; color: rgba(255,255,255,0.5);">TENNIS CLASS © 2026</p>
+        </div>
+    """, unsafe_allow_html=True)

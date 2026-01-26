@@ -13,12 +13,10 @@ if 'pagina' not in st.session_state:
     st.session_state.pagina = "Home"
 if 'pagamento_ativo' not in st.session_state:
     st.session_state.pagamento_ativo = False
-if 'reserva_temp' not in st.session_state:
-    st.session_state.reserva_temp = {}
 if 'academia_foco' not in st.session_state:
     st.session_state.academia_foco = None
 
-# 4. DESIGN E ESTILO
+# 4. DESIGN E ESTILO (CSS CORRIGIDO)
 st.markdown("""
 <style>
     .stApp {
@@ -41,16 +39,16 @@ st.markdown("""
         font-size: 13px; margin: -10px 0 15px 35px;
         line-height: 1.4; border-left: 2px solid #ff4b4b; padding-left: 10px;
     }
+    .btn-cadastro {
+        display: block; width: 100%; background-color: #1e5e20; color: white !important;
+        padding: 15px; margin: 10px 0; border-radius: 10px; text-decoration: none; font-weight: bold;
+    }
     .assinatura-aranha { position: fixed; bottom: 20px; left: 20px; width: 150px; z-index: 1000; }
-    .whatsapp-float { position: fixed; bottom: 20px; right: 20px; width: 60px; z-index: 1000; }
 </style>
 <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/By%20Andre%20Aranha.png" class="assinatura-aranha">
-<a href="https://wa.me/5511971425028" target="_blank">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" class="whatsapp-float">
-</a>
 """, unsafe_allow_html=True)
 
-# 5. MENU LATERAL
+# 5. MENU LATERAL E ACADEMIAS
 with st.sidebar:
     st.markdown("<h2 style='color: white; text-align: center;'>🎾 MENU</h2>", unsafe_allow_html=True)
     for item in ["Home", "Serviços", "Produtos", "Cadastro", "Contato"]:
@@ -61,7 +59,7 @@ with st.sidebar:
             st.rerun()
     
     st.markdown("---")
-    st.markdown("<h3 style='color: white; text-align: left;'>🏢 Academias</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='color: white;'>🏢 Academias</h3>", unsafe_allow_html=True)
     info_academias = {
         "Play Tennis Ibirapuera": "R. Joinville, 401 - Vila Mariana<br>📞 (11) 5081-3000",
         "Top One Tennis": "R. João Lourenço, 629 - Vila Nova Conceição<br>📞 (11) 3845-6688",
@@ -76,59 +74,39 @@ with st.sidebar:
 
 st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
 
-# 6. PÁGINAS
+# 6. PÁGINA HOME: RESERVA (FORMATO BRASILEIRO)
 if st.session_state.pagina == "Home":
     st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-    if not st.session_state.pagamento_ativo:
-        with st.form("form_reserva"):
-            aluno = st.text_input("Nome do Aluno")
-            servico = st.selectbox("Serviço", ["Aula Individual (R$ 250)", "Pacote 4 Aulas (R$ 940)", "Pacote 8 Aulas (R$ 1800)"])
-            local = st.selectbox("Local", list(info_academias.keys()))
-            data_aula = st.date_input("Data da Aula", format="DD/MM/YYYY")
-            hora_aula = st.selectbox("Horário", [f"{h:02d}:00" for h in range(7, 22)])
-            if st.form_submit_button("AVANÇAR PARA PAGAMENTO"):
-                st.session_state.pagamento_ativo = True
-                st.rerun()
+    with st.form("reserva"):
+        st.text_input("Nome do Aluno")
+        st.selectbox("Serviço", ["Aula Individual (R$ 250)", "Pacote 4 Aulas", "Pacote 8 Aulas"])
+        st.date_input("Data da Aula", format="DD/MM/YYYY")
+        st.selectbox("Horário", [f"{h:02d}:00" for h in range(7, 22)])
+        st.form_submit_button("AVANÇAR PARA PAGAMENTO")
     st.markdown('</div>', unsafe_allow_html=True)
 
+# 7. SERVIÇOS
 elif st.session_state.pagina == "Serviços":
     st.markdown('<div class="custom-card">', unsafe_allow_html=True)
     st.markdown("## 🎾 Nossos Serviços")
-    st.write("- **Aulas Particulares e em Grupo**")
-    st.write("- **Treinamento de Performance**")
-    st.write("- **Locação de Quadras**")
+    st.write("Aulas particulares, em grupo e clínicas especializadas.")
     st.markdown('</div>', unsafe_allow_html=True)
 
+# 8. CADASTRO (DIRECIONANDO PARA GOOGLE DOCS)
 elif st.session_state.pagina == "Cadastro":
     st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-    st.markdown("### 📝 Portal de Cadastros")
-    tipo_cad = st.tabs(["Aluno", "Academia", "Professor"])
+    st.markdown("### 📝 Selecione o seu Cadastro")
+    st.write("Você será redirecionado para o formulário oficial do Google.")
     
-    with tipo_cad[0]: # CADASTRO ALUNO
-        with st.form("cad_aluno"):
-            st.text_input("Nome Completo")
-            st.text_input("WhatsApp")
-            st.select_slider("Nível de Jogo", options=["Iniciante", "Intermediário", "Avançado"])
-            st.form_submit_button("Cadastrar Aluno")
-
-    with tipo_cad[1]: # CADASTRO ACADEMIA
-        with st.form("cad_academia"):
-            st.text_input("Nome da Academia")
-            st.text_input("Endereço Completo")
-            st.number_input("Quantidade de Quadras", min_value=1)
-            st.form_submit_button("Cadastrar Academia")
-
-    with tipo_cad[2]: # CADASTRO PROFESSOR
-        with st.form("cad_prof"):
-            st.text_input("Nome do Professor")
-            st.text_input("CREF / Certificação")
-            st.multiselect("Especialidades", ["Infantil", "Adulto", "Competição"])
-            st.form_submit_button("Cadastrar Professor")
+    st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSdyHq5Wf1uCjL9fQG-Alp6N7qYqY/viewform" class="btn-cadastro">👤 Cadastro de Aluno de Tênis</a>', unsafe_allow_html=True)
+    st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSfp5uE9Y_rXyXyXyXyXyXyXyXyX/viewform" class="btn-cadastro">🏢 Cadastro de Academia de Tênis</a>', unsafe_allow_html=True)
+    st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSffh7vW9Z_rYvYvYvYvYvYvYvYv/viewform" class="btn-cadastro">🎾 Cadastro de Professor de Tênis</a>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
+# 9. CONTATO (BALÃO CINZA TRANSPARENTE)
 elif st.session_state.pagina == "Contato":
     st.markdown('<div class="custom-card">', unsafe_allow_html=True)
     st.markdown("### 📞 Fale Conosco")
-    st.write("📩 **aranha.corp@gmail.com.br**")
-    st.write("📱 **(11) 97142-5028**")
+    st.write("📩 aranha.corp@gmail.com.br")
+    st.write("📱 (11) 97142-5028")
     st.markdown('</div>', unsafe_allow_html=True)

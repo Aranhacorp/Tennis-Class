@@ -9,7 +9,7 @@ st.set_page_config(page_title="TENNIS CLASS", layout="wide")
 # 2. CONEXÃO COM A PLANILHA (TennisClass_DB)
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# 3. INICIALIZAÇÃO DO ESTADO (PREVINE ERROS DE ATRIBUTO E SUMIÇO)
+# 3. INICIALIZAÇÃO DO ESTADO (PREVINE ERROS E SUMIÇOS)
 if 'pagina' not in st.session_state:
     st.session_state.pagina = "Home"
 if 'pagamento_ativo' not in st.session_state:
@@ -17,7 +17,7 @@ if 'pagamento_ativo' not in st.session_state:
 if 'reserva_temp' not in st.session_state:
     st.session_state.reserva_temp = {}
 
-# 4. DESIGN E ESTILO (CSS) - RESTAURAÇÃO DE ELEMENTOS VISUAIS
+# 4. DESIGN E ESTILO (CSS) - RESTAURAÇÃO TOTAL
 st.markdown("""
     <style>
     .stApp {
@@ -41,10 +41,6 @@ st.markdown("""
         margin: 25px 0; text-shadow: 3px 3px 5px rgba(0,0,0,0.5);
         text-align: center;
     }
-    .pix-info {
-        background-color: #f0f2f6; border: 2px dashed #007bff;
-        padding: 20px; border-radius: 15px; margin: 20px 0; color: #1E1E1E;
-    }
     .assinatura-aranha { position: fixed; bottom: 25px; left: 25px; width: 180px; z-index: 9999; }
     .whatsapp-float { position: fixed; bottom: 70px; right: 25px; width: 60px; z-index: 9999; }
     </style>
@@ -55,7 +51,7 @@ st.markdown("""
     </a>
 """, unsafe_allow_html=True)
 
-# 5. MENU LATERAL E ACADEMIAS (RESTAURADOS)
+# 5. MENU LATERAL
 with st.sidebar:
     st.markdown("<h2 style='text-align: center; color: white;'>🎾 MENU</h2>", unsafe_allow_html=True)
     for item in ["Home", "Serviços", "Produtos", "Cadastro", "Contato"]:
@@ -65,7 +61,7 @@ with st.sidebar:
             st.rerun()
     
     st.markdown("---")
-    st.markdown("<h3 style='color: white;'>🏢 Academias Recomendadas</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='color: white;'>🏢 Academias</h3>", unsafe_allow_html=True)
     academias = {
         "Play Tennis Ibirapuera": "Rua Estado de Israel, 860",
         "Top One tennis": "Avenida Indianapolis, 647",
@@ -78,7 +74,7 @@ with st.sidebar:
 
 st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
 
-# 6. LÓGICA DE AGENDAMENTO E GRAVAÇÃO NA PLANILHA
+# 6. LÓGICA DAS PÁGINAS
 if st.session_state.pagina == "Home":
     if not st.session_state.pagamento_ativo:
         st.markdown('<div class="custom-card">', unsafe_allow_html=True)
@@ -101,7 +97,7 @@ if st.session_state.pagina == "Home":
                         "Aluno": aluno,
                         "Servico": "Aula",
                         "Pacote": pacote_sel,
-                        "Status": "Aguardando Confirmação",
+                        "Status": "Pendente",
                         "Academia": ""
                     }
                     st.session_state.total_valor = pacotes[pacote_sel]
@@ -109,12 +105,12 @@ if st.session_state.pagina == "Home":
                     st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
     else:
-        st.markdown(f"<div class='total-pagamento'>Total do Pacote: R$ {st.session_state.total_valor:.2f}</div>", unsafe_allow_html=True)
+        # TELA DE PAGAMENTO - APENAS CHAVE PIX
+        st.markdown(f"<div class='total-pagamento'>Total: R$ {st.session_state.total_valor:.2f}</div>", unsafe_allow_html=True)
         st.markdown('<div class="custom-card">', unsafe_allow_html=True)
         st.markdown("### 💳 Pagamento via PIX")
-        st.write("Copie a chave abaixo para realizar o pagamento:")
+        st.write("Copie a chave abaixo:")
         st.code("aranha.corp@gmail.com.br", language=None)
-        
         st.file_uploader("Anexe o comprovante", type=['png', 'jpg', 'pdf'])
         
         col1, col2 = st.columns(2)
@@ -125,33 +121,7 @@ if st.session_state.pagina == "Home":
         with col2:
             if st.button("CONFIRMAR AGENDAMENTO", type="primary", use_container_width=True):
                 try:
-                    # GRAVAÇÃO NA PLANILHA TENNISCLASS_DB
                     df_atual = conn.read(worksheet="Página1")
                     nova_linha = pd.DataFrame([st.session_state.reserva_temp])
-                    # Garante a ordem exata das colunas da planilha
-                    colunas = ["Data", "Horario", "Aluno", "Servico", "Pacote", "Status", "Academia"]
-                    nova_linha = nova_linha.reindex(columns=colunas).fillna("")
-                    
-                    df_final = pd.concat([df_atual, nova_linha], ignore_index=True)
-                    conn.update(worksheet="Página1", data=df_final)
-                    
-                    st.balloons()
-                    st.success("Reserva gravada com sucesso na TennisClass_DB!")
-                    st.session_state.pagamento_ativo = False
-                except Exception as e:
-                    st.error(f"Erro ao salvar na planilha: {e}")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-# 7. OUTRAS PÁGINAS (RESTAURADAS)
-elif st.session_state.pagina == "Serviços":
-    st.markdown('<div class="custom-card"><h2>Nossos Serviços</h2><p>Aulas individuais, em dupla e pacotes exclusivos.</p></div>', unsafe_allow_html=True)
-
-elif st.session_state.pagina == "Produtos":
-    st.markdown('<div class="custom-card"><h2>Nossos Produtos</h2><p>Equipamentos de alta performance recomendados por André Aranha.</p></div>', unsafe_allow_html=True)
-
-elif st.session_state.pagina == "Cadastro":
-    st.markdown("<h2 style='text-align: center; color: white;'>Central de Cadastros</h2>", unsafe_allow_html=True)
-    st.markdown('<iframe src="https://docs.google.com/forms/d/e/1FAIpQLSdehkMHlLyCNd1owC-dSNO_-ROXq07w41jgymyKyFugvUZ0fA/viewform?embedded=true" width="100%" height="700" frameborder="0" style="background:white; border-radius:20px;"></iframe>', unsafe_allow_html=True)
-
-elif st.session_state.pagina == "Contato":
-    st.markdown(f'<div class="contact-card"><h1>André Aranha</h1><p>✉️ aranha.corp@gmail.com.br<br>📱 (11) 97142-5028</p><hr><p>TENNIS CLASS © 2026</p></div>', unsafe_allow_html=True)
+                    # Alinhamento exato com as colunas da TennisClass_DB
+                    colunas = ["Data", "Horario", "Aluno", "Servico", "Pacote", "Status", "Academia

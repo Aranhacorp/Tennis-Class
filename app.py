@@ -16,7 +16,7 @@ if 'pagamento_ativo' not in st.session_state:
 if 'academia_foco' not in st.session_state:
     st.session_state.academia_foco = None
 
-# 4. DESIGN E ESTILO (CSS CORRIGIDO)
+# 4. DESIGN E ESTILO (CORREÇÃO DE SINTAXE)
 st.markdown("""
 <style>
     .stApp {
@@ -74,7 +74,7 @@ with st.sidebar:
 
 st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
 
-# 6. PÁGINA HOME: RESERVA (FORMATO BRASILEIRO)
+# 6. PÁGINA HOME: RESERVA
 if st.session_state.pagina == "Home":
     st.markdown('<div class="custom-card">', unsafe_allow_html=True)
     with st.form("reserva"):
@@ -85,18 +85,24 @@ if st.session_state.pagina == "Home":
         st.form_submit_button("AVANÇAR PARA PAGAMENTO")
     st.markdown('</div>', unsafe_allow_html=True)
 
-# 7. SERVIÇOS
+# 7. SERVIÇOS (LISTA ATUALIZADA)
 elif st.session_state.pagina == "Serviços":
     st.markdown('<div class="custom-card">', unsafe_allow_html=True)
     st.markdown("## 🎾 Nossos Serviços")
-    st.write("Aulas particulares, em grupo e clínicas especializadas.")
+    st.write("✓ **Aulas Individuais**")
+    st.write("✓ **Aulas em Grupo**")
+    st.write("✓ **Aulas Kids**")
+    st.write("✓ **Treinamento Competitivo**")
+    st.write("✓ **Clínicas**")
+    st.write("✓ **Treinamento Esportivo (Personal Trainer)**")
+    st.write("✓ **Eventos**")
     st.markdown('</div>', unsafe_allow_html=True)
 
-# 8. CADASTRO (DIRECIONANDO PARA GOOGLE DOCS)
+# 8. CADASTRO (GOOGLE FORMS)
 elif st.session_state.pagina == "Cadastro":
     st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-    st.markdown("### 📝 Selecione o seu Cadastro")
-    st.write("Você será redirecionado para o formulário oficial do Google.")
+    st.markdown("### 📝 Portal de Cadastros")
+    st.write("Selecione o formulário desejado para realizar o seu cadastro:")
     
     st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSdyHq5Wf1uCjL9fQG-Alp6N7qYqY/viewform" class="btn-cadastro">👤 Cadastro de Aluno de Tênis</a>', unsafe_allow_html=True)
     st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSfp5uE9Y_rXyXyXyXyXyXyXyXyX/viewform" class="btn-cadastro">🏢 Cadastro de Academia de Tênis</a>', unsafe_allow_html=True)
@@ -107,6 +113,6 @@ elif st.session_state.pagina == "Cadastro":
 elif st.session_state.pagina == "Contato":
     st.markdown('<div class="custom-card">', unsafe_allow_html=True)
     st.markdown("### 📞 Fale Conosco")
-    st.write("📩 aranha.corp@gmail.com.br")
-    st.write("📱 (11) 97142-5028")
+    st.write("📩 **E-mail:** aranha.corp@gmail.com.br")
+    st.write("📱 **WhatsApp:** (11) 97142-5028")
     st.markdown('</div>', unsafe_allow_html=True)

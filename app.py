@@ -9,7 +9,7 @@ st.set_page_config(page_title="TENNIS CLASS", layout="wide")
 # 2. CONEXÃO COM A PLANILHA (TennisClass_DB)
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# 3. ESTADOS DA SESSÃO (PREVINE ERROS DE NAVEGAÇÃO)
+# 3. ESTADOS DA SESSÃO
 if 'pagina' not in st.session_state:
     st.session_state.pagina = "Home"
 if 'pagamento_ativo' not in st.session_state:
@@ -17,7 +17,7 @@ if 'pagamento_ativo' not in st.session_state:
 if 'reserva_temp' not in st.session_state:
     st.session_state.reserva_temp = {}
 
-# 4. DESIGN E ESTILO (CSS CORRIGIDO PARA EVITAR UNTERMINATED STRING LITERAL)
+# 4. DESIGN E ESTILO (CSS CORRIGIDO)
 st.markdown("""
 <style>
     .stApp {
@@ -35,15 +35,10 @@ st.markdown("""
         max-width: 850px; margin: auto; text-align: center; 
         color: #1E1E1E !important; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
     }
-    .valor-total {
-        background-color: #f0f2f6;
-        padding: 20px;
-        border-radius: 15px;
-        font-size: 28px;
-        font-weight: bold;
-        color: #1a5e20;
-        margin: 20px 0;
-        border: 2px solid #1a5e20;
+    .valor-compra {
+        font-size: 32px; color: #2E7D32; font-weight: bold; 
+        background: #e8f5e9; padding: 20px; border-radius: 15px;
+        margin: 20px 0; border: 2px solid #2E7D32;
     }
     .contact-card {
         background-color: rgba(30, 30, 30, 0.85) !important;
@@ -51,9 +46,4 @@ st.markdown("""
         max-width: 650px; margin: 40px auto; text-align: center;
         color: white !important; border: 1px solid rgba(255, 255, 255, 0.15);
     }
-    .assinatura-aranha { position: fixed; bottom: 25px; left: 25px; width: 180px; z-index: 9999; }
-    .whatsapp-float { position: fixed; bottom: 70px; right: 25px; width: 60px; z-index: 9999; }
-</style>
-<img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/By%20Andre%20Aranha.png" class="assinatura-aranha">
-<a href="https://wa.me/5511971425028" target="_blank">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" class="
+    .assinatura-aranha { position: fixed; bottom:

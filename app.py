@@ -1,7 +1,6 @@
 import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 import pandas as pd
-from datetime import datetime
 
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="TENNIS CLASS", layout="wide")
@@ -19,7 +18,7 @@ if 'reserva_temp' not in st.session_state:
 if 'academia_foco' not in st.session_state:
     st.session_state.academia_foco = None
 
-# 4. DESIGN E ESTILO (CSS INTEGRADO)
+# 4. DESIGN E ESTILO
 st.markdown("""
 <style>
     .stApp {
@@ -42,11 +41,6 @@ st.markdown("""
         font-size: 13px; margin: -10px 0 15px 35px;
         line-height: 1.4; border-left: 2px solid #ff4b4b; padding-left: 10px;
     }
-    .valor-total {
-        font-size: 28px; color: #1e5e20; font-weight: bold;
-        background-color: #e8f5e9; padding: 15px; border-radius: 12px;
-        margin: 15px 0; border: 2px solid #1e5e20;
-    }
     .assinatura-aranha { position: fixed; bottom: 20px; left: 20px; width: 150px; z-index: 1000; }
     .whatsapp-float { position: fixed; bottom: 20px; right: 20px; width: 60px; z-index: 1000; }
 </style>
@@ -56,7 +50,7 @@ st.markdown("""
 </a>
 """, unsafe_allow_html=True)
 
-# 5. MENU LATERAL E ACADEMIAS
+# 5. MENU LATERAL
 with st.sidebar:
     st.markdown("<h2 style='color: white; text-align: center;'>🎾 MENU</h2>", unsafe_allow_html=True)
     for item in ["Home", "Serviços", "Produtos", "Cadastro", "Contato"]:
@@ -82,77 +76,59 @@ with st.sidebar:
 
 st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
 
-# 6. LÓGICA DE PÁGINAS
+# 6. PÁGINAS
 if st.session_state.pagina == "Home":
+    st.markdown('<div class="custom-card">', unsafe_allow_html=True)
     if not st.session_state.pagamento_ativo:
-        st.markdown('<div class="custom-card">', unsafe_allow_html=True)
         with st.form("form_reserva"):
             aluno = st.text_input("Nome do Aluno")
-            precos = {"Aula Individual (R$ 250)": 250, "Pacote 4 Aulas (R$ 940)": 940, "Pacote 8 Aulas (R$ 1800)": 1800}
-            servico = st.selectbox("Selecione o Serviço", list(precos.keys()))
-            local = st.selectbox("Escolha o Local", list(info_academias.keys()))
+            servico = st.selectbox("Serviço", ["Aula Individual (R$ 250)", "Pacote 4 Aulas (R$ 940)", "Pacote 8 Aulas (R$ 1800)"])
+            local = st.selectbox("Local", list(info_academias.keys()))
             data_aula = st.date_input("Data da Aula", format="DD/MM/YYYY")
             hora_aula = st.selectbox("Horário", [f"{h:02d}:00" for h in range(7, 22)])
             if st.form_submit_button("AVANÇAR PARA PAGAMENTO"):
-                if aluno:
-                    st.session_state.reserva_temp = {
-                        "Data": data_aula.strftime("%d/%m/%Y"), "Horario": hora_aula,
-                        "Aluno": aluno, "Servico": servico, "Status": "Pendente",
-                        "Academia": local, "Valor": precos[servico]
-                    }
-                    st.session_state.pagamento_ativo = True
-                    st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-    else:
-        # TELA DE PAGAMENTO
-        st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-        st.markdown("### 💳 Pagamento via PIX")
-        st.markdown(f'<div class="valor-total">VALOR TOTAL: R$ {st.session_state.reserva_temp["Valor"]:.2f}</div>', unsafe_allow_html=True)
-        st.write("Chave PIX: **aranha.corp@gmail.com.br**")
-        st.file_uploader("Anexe o comprovante", type=['png', 'jpg', 'pdf'])
-        c1, c2 = st.columns(2)
-        with c1:
-            if st.button("Voltar", use_container_width=True):
-                st.session_state.pagamento_ativo = False
+                st.session_state.pagamento_ativo = True
                 st.rerun()
-        with c2:
-            if st.button("CONFIRMAR AGENDAMENTO", type="primary", use_container_width=True):
-                try:
-                    df = conn.read(worksheet="Página1")
-                    dados = st.session_state.reserva_temp.copy()
-                    dados.pop("Valor")
-                    df_novo = pd.concat([df, pd.DataFrame([dados])], ignore_index=True)
-                    conn.update(worksheet="Página1", data=df_novo)
-                    st.balloons()
-                    st.success("Reserva confirmada e salva!")
-                    st.session_state.pagamento_ativo = False
-                except: st.error("Erro ao acessar o banco de dados.")
-        st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 elif st.session_state.pagina == "Serviços":
     st.markdown('<div class="custom-card">', unsafe_allow_html=True)
     st.markdown("## 🎾 Nossos Serviços")
-    st.write("### 🎾 Tênis & Aulas")
-    st.write("- **Aula Particular:** Focada no seu desenvolvimento técnico.")
-    st.write("- **Aula em Grupo:** Dinâmica de jogo e socialização.")
-    st.write("- **Tennis Kids:** Metodologia lúdica para crianças.")
+    st.write("- **Aulas Particulares e em Grupo**")
+    st.write("- **Treinamento de Performance**")
+    st.write("- **Locação de Quadras**")
     st.markdown('</div>', unsafe_allow_html=True)
 
 elif st.session_state.pagina == "Cadastro":
     st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-    st.markdown("### 📝 Cadastro de Alunos")
-    with st.form("cadastro_aluno"):
-        nome = st.text_input("Nome Completo")
-        tel = st.text_input("WhatsApp")
-        nivel = st.select_slider("Nível de Jogo", options=["Iniciante", "Intermediário", "Avançado"])
-        if st.form_submit_button("CADASTRAR"):
-            st.success(f"Cadastro de {nome} realizado com sucesso!")
+    st.markdown("### 📝 Portal de Cadastros")
+    tipo_cad = st.tabs(["Aluno", "Academia", "Professor"])
+    
+    with tipo_cad[0]: # CADASTRO ALUNO
+        with st.form("cad_aluno"):
+            st.text_input("Nome Completo")
+            st.text_input("WhatsApp")
+            st.select_slider("Nível de Jogo", options=["Iniciante", "Intermediário", "Avançado"])
+            st.form_submit_button("Cadastrar Aluno")
+
+    with tipo_cad[1]: # CADASTRO ACADEMIA
+        with st.form("cad_academia"):
+            st.text_input("Nome da Academia")
+            st.text_input("Endereço Completo")
+            st.number_input("Quantidade de Quadras", min_value=1)
+            st.form_submit_button("Cadastrar Academia")
+
+    with tipo_cad[2]: # CADASTRO PROFESSOR
+        with st.form("cad_prof"):
+            st.text_input("Nome do Professor")
+            st.text_input("CREF / Certificação")
+            st.multiselect("Especialidades", ["Infantil", "Adulto", "Competição"])
+            st.form_submit_button("Cadastrar Professor")
     st.markdown('</div>', unsafe_allow_html=True)
 
 elif st.session_state.pagina == "Contato":
-    # BALÃO CINZA COM TRANSPARÊNCIA
     st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-    st.markdown("### Contato")
-    st.write("📩 **E-mail:** aranha.corp@gmail.com.br")
-    st.write("📱 **WhatsApp:** (11) 97142-5028")
+    st.markdown("### 📞 Fale Conosco")
+    st.write("📩 **aranha.corp@gmail.com.br**")
+    st.write("📱 **(11) 97142-5028**")
     st.markdown('</div>', unsafe_allow_html=True)

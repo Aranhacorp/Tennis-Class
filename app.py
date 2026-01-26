@@ -9,7 +9,7 @@ st.set_page_config(page_title="TENNIS CLASS", layout="wide")
 # 2. CONEXÃO COM A PLANILHA (TennisClass_DB)
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# 3. INICIALIZAÇÃO DO ESTADO (CRÍTICO PARA FUNCIONAMENTO)
+# 3. INICIALIZAÇÃO DO ESTADO (PREVINE SUMIÇO DE ELEMENTOS)
 if 'pagina' not in st.session_state:
     st.session_state.pagina = "Home"
 if 'pagamento_ativo' not in st.session_state:
@@ -17,7 +17,7 @@ if 'pagamento_ativo' not in st.session_state:
 if 'reserva_temp' not in st.session_state:
     st.session_state.reserva_temp = {}
 
-# 4. DESIGN E ESTILO (CSS) - ORIGINAL
+# 4. DESIGN E ESTILO (CSS ORIGINAL)
 st.markdown("""
     <style>
     .stApp {
@@ -38,7 +38,6 @@ st.markdown("""
     .assinatura-aranha { position: fixed; bottom: 25px; left: 25px; width: 180px; z-index: 9999; }
     .whatsapp-float { position: fixed; bottom: 70px; right: 25px; width: 60px; z-index: 9999; }
     </style>
-    
     <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/By%20Andre%20Aranha.png" class="assinatura-aranha">
     <a href="https://wa.me/5511971425028" target="_blank">
         <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" class="whatsapp-float">
@@ -54,7 +53,7 @@ with st.sidebar:
             st.session_state.pagamento_ativo = False
             st.rerun()
 
-# 6. PÁGINA HOME E SALVAMENTO NA PLANILHA
+# 6. LÓGICA DE PÁGINAS E ATUALIZAÇÃO DA PLANILHA
 if st.session_state.pagina == "Home":
     st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
     if not st.session_state.pagamento_ativo:
@@ -74,58 +73,11 @@ if st.session_state.pagina == "Home":
                         "Aluno": aluno,
                         "Servico": "Aula",
                         "Pacote": pacote_sel,
-                        "Status": "Aguardando Confirmação",
+                        "Status": "Pendente",
                         "Academia": ""
                     }
                     st.session_state.total_valor = pacotes[pacote_sel]
                     st.session_state.pagamento_ativo = True
                     st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
-    else:
-        # TELA DE PAGAMENTO (CHAVE PIX TEXTO)
-        st.markdown(f"<h2 style='text-align: center; color: white;'>Total: R$ {st.session_state.total_valor:.2f}</h2>", unsafe_allow_html=True)
-        st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-        st.write("### 💳 Pagamento via PIX")
-        st.code("aranha.corp@gmail.com.br", language=None)
-        st.file_uploader("Anexe o comprovante", type=['png', 'jpg', 'pdf'])
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("Voltar", use_container_width=True):
-                st.session_state.pagamento_ativo = False
-                st.rerun()
-        with col2:
-            if st.button("CONFIRMAR AGENDAMENTO", type="primary", use_container_width=True):
-                try:
-                    # ATUALIZAÇÃO DA PLANILHA TENNISCLASS_DB
-                    df_atual = conn.read(worksheet="Página1")
-                    nova_linha = pd.DataFrame([st.session_state.reserva_temp])
-                    df_final = pd.concat([df_atual, nova_linha], ignore_index=True)
-                    conn.update(worksheet="Página1", data=df_final)
-                    
-                    st.balloons()
-                    st.success("Reserva salva na TennisClass_DB!")
-                    st.session_state.pagamento_ativo = False
-                except Exception as e:
-                    st.error(f"Erro ao salvar: {e}")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-# 7. PÁGINA CADASTRO (RESTAURADO COMPLETO)
-elif st.session_state.pagina == "Cadastro":
-    st.markdown("<h2 style='text-align: center; color: white;'>Central de Cadastros</h2>", unsafe_allow_html=True)
-    perfil = st.radio("Selecione o perfil desejado:", ["Aluno", "Professor", "Academia"], horizontal=True)
-    
-    links = {
-        "Professor": "https://docs.google.com/forms/d/e/1FAIpQLSdHicvD5MsOTnpfWwmpXOm8b268_S6gXoBZEysIo4Wj5cL2yw/viewform?embedded=true",
-        "Aluno": "https://docs.google.com/forms/d/e/1FAIpQLSdehkMHlLyCNd1owC-dSNO_-ROXq07w41jgymyKyFugvUZ0fA/viewform?embedded=true",
-        "Academia": "https://docs.google.com/forms/d/e/1FAIpQLScaC-XBLuzTPN78inOQPcXd6r0BzaessEke1MzOfGzOIlZpwQ/viewform?embedded=true"
-    }
-    st.markdown(f'<iframe src="{links[perfil]}" width="100%" height="800" frameborder="0" style="background:white; border-radius:20px;"></iframe>', unsafe_allow_html=True)
-
-# 8. OUTRAS PÁGINAS
-elif st.session_state.pagina == "Serviços":
-    st.markdown('<div class="custom-card"><h2>Nossos Serviços</h2><p>Aulas Particulares e Gestão.</p></div>', unsafe_allow_html=True)
-elif st.session_state.pagina == "Produtos":
-    st.markdown('<div class="custom-card"><h2>Nossos Produtos</h2><p>Equipamentos de Tênis.</p></div>', unsafe_allow_html=True)
-elif st.session_state.pagina == "Contato":
-    st.markdown('<div class="custom-card"><h2>Contato</h2><p>Email: aranha.
+    else

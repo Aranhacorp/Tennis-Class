@@ -35,6 +35,7 @@ st.markdown("""
         max-width: 850px; margin: auto; text-align: center; 
         color: #1E1E1E !important; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
     }
+    /* Estilo do Balão de Contato Original */
     .contact-card {
         background-color: rgba(30, 30, 30, 0.85) !important;
         padding: 45px; border-radius: 30px;
@@ -76,93 +77,9 @@ with st.sidebar:
 
 st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
 
-# 6. PÁGINA HOME: AGENDAMENTO E GRAVAÇÃO
+# 6. PÁGINA HOME (RESERVA E CORREÇÃO DA PLANILHA)
 if st.session_state.pagina == "Home":
     if not st.session_state.pagamento_ativo:
         st.markdown('<div class="custom-card">', unsafe_allow_html=True)
         with st.form("form_reserva"):
-            aluno = st.text_input("Nome do Aluno")
-            pacotes = {
-                "Aula Individual (R$ 250)": 250, 
-                "Pacote 4 Aulas (R$ 940)": 940, 
-                "Pacote 8 Aulas (R$ 1800)": 1800
-            }
-            pacote_sel = st.selectbox("Selecione o Pacote", list(pacotes.keys()))
-            data_sel = st.date_input("Escolha a Data")
-            hora_sel = st.selectbox("Horário", [f"{h:02d}:00" for h in range(11, 22)])
-            
-            if st.form_submit_button("AVANÇAR PARA PAGAMENTO"):
-                if aluno:
-                    st.session_state.reserva_temp = {
-                        "Data": data_sel.strftime("%d/%m/%Y"),
-                        "Horario": hora_sel, "Aluno": aluno, "Servico": "Aula",
-                        "Pacote": pacote_sel, "Status": "Pendente", "Academia": ""
-                    }
-                    st.session_state.total_valor = pacotes[pacote_sel]
-                    st.session_state.pagamento_ativo = True
-                    st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-    else:
-        st.markdown(f"<h2 style='text-align: center; color: white;'>Total: R$ {st.session_state.total_valor:.2f}</h2>", unsafe_allow_html=True)
-        st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-        st.markdown("### 💳 Pagamento via PIX")
-        st.code("aranha.corp@gmail.com.br", language=None)
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("Voltar", use_container_width=True):
-                st.session_state.pagamento_ativo = False
-                st.rerun()
-        with col2:
-            if st.button("CONFIRMAR AGENDAMENTO", type="primary", use_container_width=True):
-                try:
-                    # LÓGICA DE GRAVAÇÃO NA PLANILHA
-                    df_atual = conn.read(worksheet="Página1")
-                    nova_linha = pd.DataFrame([st.session_state.reserva_temp])
-                    df_final = pd.concat([df_atual, nova_linha], ignore_index=True)
-                    conn.update(worksheet="Página1", data=df_final)
-                    
-                    st.balloons()
-                    st.success("Reserva salva com sucesso na planilha!")
-                    st.session_state.pagamento_ativo = False
-                except Exception as e:
-                    st.error(f"Erro ao atualizar planilha: {e}")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-# 7. PÁGINA SERVIÇOS (RESTAURADA E COMPLETA)
-elif st.session_state.pagina == "Serviços":
-    st.markdown("<h2 style='text-align: center; color: white;'>Nossos Serviços</h2>", unsafe_allow_html=True)
-    st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("#### 🎾 Tênis")
-        st.write("• Aulas Individuais")
-        st.write("• Aulas em Grupo")
-        st.write("• Aulas Kids")
-        st.write("• Treinamento Esportivo")
-    with c2 := col2:
-        st.markdown("#### 🏃‍♂️ Performance & Saúde")
-        st.write("• Condicionamento Físico (Personal)")
-        st.write("• Fisioterapia Funcional e Esportiva")
-        st.write("• Eventos")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# 8. PÁGINA CADASTRO (RESTAURADO)
-elif st.session_state.pagina == "Cadastro":
-    st.markdown("<h2 style='text-align: center; color: white;'>Central de Cadastros</h2>", unsafe_allow_html=True)
-    perfil = st.radio("Selecione o perfil:", ["Aluno", "Professor", "Academia"], horizontal=True)
-    links = {
-        "Professor": "https://docs.google.com/forms/d/e/1FAIpQLSdHicvD5MsOTnpfWwmpXOm8b268_S6gXoBZEysIo4Wj5cL2yw/viewform?embedded=true",
-        "Aluno": "https://docs.google.com/forms/d/e/1FAIpQLSdehkMHlLyCNd1owC-dSNO_-ROXq07w41jgymyKyFugvUZ0fA/viewform?embedded=true",
-        "Academia": "https://docs.google.com/forms/d/e/1FAIpQLScaC-XBLuzTPN78inOQPcXd6r0BzaessEke1MzOfGzOIlZpwQ/viewform?embedded=true"
-    }
-    st.markdown(f'<iframe src="{links[perfil]}" width="100%" height="700" frameborder="0" style="background:white; border-radius:20px;"></iframe>', unsafe_allow_html=True)
-
-# 9. PÁGINA CONTATO (BALÃO CINZA TRANSPARENTE)
-elif st.session_state.pagina == "Contato":
-    st.markdown("""
-        <div class="contact-card">
-            <h1>André Aranha</h1>
-            <p style="font-size: 20px;">✉️ aranha.corp@gmail.com.br<br>📱 (11) 97142-5028</p>
-        </div>
-    """, unsafe_allow_html=True)
+            al

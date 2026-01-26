@@ -1,6 +1,7 @@
 import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 import pandas as pd
+from datetime import datetime
 
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="TENNIS CLASS", layout="wide")
@@ -16,7 +17,7 @@ if 'pagamento_ativo' not in st.session_state:
 if 'reserva_temp' not in st.session_state:
     st.session_state.reserva_temp = {}
 
-# 4. DESIGN E ESTILO (CORREÇÃO DE ASPAS E SINTAXE)
+# 4. DESIGN E ESTILO (CSS SEM ERROS DE SINTAXE)
 st.markdown("""
 <style>
     .stApp {
@@ -34,10 +35,10 @@ st.markdown("""
         max-width: 800px; margin: auto; text-align: center; 
         color: #333 !important;
     }
-    .valor-compra {
-        font-size: 28px; color: #1e5e20; font-weight: bold;
-        background-color: #e8f5e9; padding: 15px; border-radius: 10px;
-        margin: 15px 0; border: 1px solid #c8e6c9;
+    .valor-destaque {
+        font-size: 30px; color: #1e5e20; font-weight: bold;
+        background-color: #e8f5e9; padding: 15px; border-radius: 12px;
+        margin: 15px 0; border: 2px solid #1e5e20;
     }
     .assinatura-aranha { position: fixed; bottom: 20px; left: 20px; width: 150px; z-index: 1000; }
     .whatsapp-float { position: fixed; bottom: 20px; right: 20px; width: 60px; z-index: 1000; }
@@ -52,85 +53,89 @@ st.markdown("""
 with st.sidebar:
     st.markdown("<h2 style='color: white; text-align: center;'>MENU</h2>", unsafe_allow_html=True)
     for item in ["Home", "Serviços", "Produtos", "Cadastro", "Contato"]:
-        if st.button(item, use_container_width=True):
+        if st.button(item, key=f"btn_{item}", use_container_width=True):
             st.session_state.pagina = item
             st.session_state.pagamento_ativo = False
             st.rerun()
 
 st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
 
-# 6. LÓGICA DE PÁGINAS
+# 6. PÁGINA HOME: AGENDAMENTO
 if st.session_state.pagina == "Home":
     if not st.session_state.pagamento_ativo:
         st.markdown('<div class="custom-card">', unsafe_allow_html=True)
         with st.form("agendamento"):
-            nome = st.text_input("Nome do Aluno")
-            opcoes = {
+            aluno = st.text_input("Nome do Aluno")
+            precos = {
                 "Aula Individual (R$ 250)": 250,
                 "Pacote 4 Aulas (R$ 940)": 940,
                 "Pacote 8 Aulas (R$ 1800)": 1800
             }
-            servico = st.selectbox("Escolha o Plano", list(opcoes.keys()))
-            data = st.date_input("Data da Aula")
-            hora = st.selectbox("Horário", [f"{h:02d}:00" for h in range(7, 22)])
+            servico_sel = st.selectbox("Serviço", list(precos.keys()))
+            academia = st.selectbox("Academia", ["Play Tennis Ibirapuera", "Top One tennis", "Fontes & Barbeta", "Arena BTG"])
+            
+            # 📅 PADRÃO BRASILEIRO NO SELETOR
+            data_sel = st.date_input("Data da Aula", format="DD/MM/YYYY") 
+            
+            hora_sel = st.selectbox("Horário", [f"{h:02d}:00" for h in range(7, 22)])
             
             if st.form_submit_button("AVANÇAR PARA PAGAMENTO"):
-                if nome:
+                if aluno:
                     st.session_state.reserva_temp = {
-                        "Data": data.strftime("%d/%m/%Y"),
-                        "Horario": hora,
-                        "Aluno": nome,
-                        "Servico": servico,
+                        "Data": data_sel.strftime("%d/%m/%Y"), # 📅 GRAVAÇÃO EM PT-BR
+                        "Horario": hora_sel,
+                        "Aluno": aluno,
+                        "Servico": servico_sel,
                         "Status": "Pendente",
-                        "Valor": opcoes[servico]
+                        "Academia": academia,
+                        "Valor": precos[servico_sel]
                     }
                     st.session_state.pagamento_ativo = True
                     st.rerun()
                 else:
                     st.error("Por favor, preencha o nome do aluno.")
         st.markdown('</div>', unsafe_allow_html=True)
+    
     else:
-        # TELA DE PAGAMENTO (VALOR DA COMPRA E SEM QR CODE)
+        # TELA DE PAGAMENTO (VALOR VISÍVEL E SEM QR CODE)
         st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-        st.markdown("### Finalizar Agendamento")
+        st.markdown("### 💳 Pagamento via PIX")
         
-        # Apresenta o valor da compra
-        valor = st.session_state.reserva_temp['Valor']
-        st.markdown(f'<div class="valor-compra">Total do Pedido: R$ {valor:.2f}</div>', unsafe_allow_html=True)
+        # EXIBIÇÃO DO VALOR DA COMPRA
+        valor_total = f"R$ {st.session_state.reserva_temp['Valor']:.2f}"
+        st.markdown(f'<div class="valor-destaque">VALOR TOTAL: {valor_total}</div>', unsafe_allow_html=True)
         
-        st.write("**Pagamento via PIX**")
-        st.code("aranha.corp@gmail.com.br", language=None)
-        st.write("Favorecido: André Aranha")
+        st.write("Chave PIX: **aranha.corp@gmail.com.br**")
+        st.write("Favorecido: **André Aranha**")
         
-        st.file_uploader("Anexe o comprovante (Opcional)", type=['png', 'jpg', 'pdf'])
+        st.file_uploader("Anexe o comprovante", type=['png', 'jpg', 'pdf'])
         
-        if st.button("CONFIRMAR AGENDAMENTO", type="primary", use_container_width=True):
-            try:
-                # Atualização da Planilha TennisClass_DB
-                df_existente = conn.read(worksheet="Página1")
-                # Removemos o valor para manter o padrão das colunas da planilha
-                dados = st.session_state.reserva_temp.copy()
-                dados.pop("Valor")
-                
-                novo_df = pd.concat([df_existente, pd.DataFrame([dados])], ignore_index=True)
-                conn.update(worksheet="Página1", data=novo_df)
-                
-                st.balloons()
-                st.success("Tudo pronto! Sua reserva foi enviada.")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Voltar", use_container_width=True):
                 st.session_state.pagamento_ativo = False
-            except Exception as e:
-                st.error(f"Erro ao salvar: {e}")
-        
-        if st.button("Voltar"):
-            st.session_state.pagamento_ativo = False
-            st.rerun()
+                st.rerun()
+        with col2:
+            if st.button("CONFIRMAR AGENDAMENTO", type="primary", use_container_width=True):
+                try:
+                    # Gravação na Planilha TennisClass_DB
+                    df_atual = conn.read(worksheet="Página1")
+                    dados_salvar = st.session_state.reserva_temp.copy()
+                    dados_salvar.pop("Valor") # Remove o valor para manter colunas da DB
+                    
+                    novo_df = pd.concat([df_atual, pd.DataFrame([dados_salvar])], ignore_index=True)
+                    conn.update(worksheet="Página1", data=novo_df)
+                    
+                    st.balloons()
+                    st.success(f"Reserva para o dia {st.session_state.reserva_temp['Data']} confirmada!")
+                    st.session_state.pagamento_ativo = False
+                except Exception as e:
+                    st.error(f"Erro ao salvar na planilha: {e}")
         st.markdown('</div>', unsafe_allow_html=True)
 
-elif st.session_state.pagina == "Serviços":
-    st.markdown('<div class="custom-card"><h3>Nossos Serviços</h3><p>Aulas Individuais, em Dupla e Kids.</p></div>', unsafe_allow_html=True)
-
+# 7. DEMAIS PÁGINAS (CONTATO, SERVIÇOS)
 elif st.session_state.pagina == "Contato":
-    st.markdown('<div class="custom-card"><h3>Contato</h3><p>Email: aranha.corp@gmail.com.br</p></div>', unsafe_allow_html=True)
+    st.markdown('<div class="custom-card"><h2>Contato</h2><p>Email: aranha.corp@gmail.com.br</p></div>', unsafe_allow_html=True)
 
-elif st.session_state.pagina == "Cadastro":
-    st.markdown('<div class="custom-card"><h3>Cadastro</h3><p>Selecione seu perfil no formulário abaixo.</p></div>', unsafe_allow_html=True)
+elif st.session_state.pagina == "Serviços":
+    st.markdown('<div class="custom-card"><h2>Nossos Serviços</h2><p>Aulas de tênis para todos os níveis.</p></div>', unsafe_allow_html=True)

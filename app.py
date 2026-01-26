@@ -17,7 +17,7 @@ if 'pagamento_ativo' not in st.session_state:
 if 'reserva_temp' not in st.session_state:
     st.session_state.reserva_temp = {}
 
-# 4. DESIGN E ESTILO (CSS CORRIGIDO)
+# 4. DESIGN E ESTILO (CSS INTEGRADO)
 st.markdown("""
 <style>
     .stApp {
@@ -40,6 +40,14 @@ st.markdown("""
         background-color: #e8f5e9; padding: 15px; border-radius: 12px;
         margin: 15px 0; border: 2px solid #1e5e20;
     }
+    /* ALINHAMENTO À ESQUERDA PARA ACADEMIAS NA SIDEBAR */
+    .sidebar-info {
+        text-align: left !important;
+        color: white;
+        font-size: 13px;
+        margin-bottom: 15px;
+        line-height: 1.4;
+    }
     .assinatura-aranha { position: fixed; bottom: 20px; left: 20px; width: 150px; z-index: 1000; }
     .whatsapp-float { position: fixed; bottom: 20px; right: 20px; width: 60px; z-index: 1000; }
 </style>
@@ -49,7 +57,7 @@ st.markdown("""
 </a>
 """, unsafe_allow_html=True)
 
-# 5. MENU LATERAL E ACADEMIAS RECOMENDADAS
+# 5. MENU LATERAL E ACADEMIAS (ALINHADO À ESQUERDA)
 with st.sidebar:
     st.markdown("<h2 style='color: white; text-align: center;'>🎾 MENU</h2>", unsafe_allow_html=True)
     for item in ["Home", "Serviços", "Produtos", "Cadastro", "Contato"]:
@@ -59,11 +67,31 @@ with st.sidebar:
             st.rerun()
     
     st.markdown("---")
-    st.markdown("<h3 style='color: white;'>🏢 Academias Recomendadas</h3>", unsafe_allow_html=True)
-    academias_list = ["Play Tennis Ibirapuera", "Top One tennis", "Fontes & Barbeta Tennis", "Arena BTG"]
-    for acad in academias_list:
-        if st.button(f"📍 {acad}", key=f"acad_{acad}", use_container_width=True):
-            pass # Apenas exibição informativa conforme o Master Code
+    st.markdown("<h3 style='color: white; text-align: left;'>🏢 Academias Recomendadas</h3>", unsafe_allow_html=True)
+    
+    # Lista detalhada conforme solicitado
+    st.markdown("""
+    <div class="sidebar-info">
+        <strong>📍 Play Tennis Ibirapuera</strong><br>
+        R. Joinville, 401 - Vila Mariana<br>
+        📞 (11) 5081-3000
+    </div>
+    <div class="sidebar-info">
+        <strong>📍 Top One Tennis</strong><br>
+        R. João Lourenço, 629 - Vila Nova Conceição<br>
+        📞 (11) 3845-6688
+    </div>
+    <div class="sidebar-info">
+        <strong>📍 Fontes & Barbeta Tennis</strong><br>
+        Av. Professor Ascendino Reis, 724<br>
+        📞 (11) 99911-3000
+    </div>
+    <div class="sidebar-info">
+        <strong>📍 Arena BTG</strong><br>
+        Av. das Nações Unidas, 13797<br>
+        📞 (11) 94555-2200
+    </div>
+    """, unsafe_allow_html=True)
 
 st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
 
@@ -80,11 +108,10 @@ if st.session_state.pagina == "Home":
                 "Aula Kids (R$ 230)": 230
             }
             servico = st.selectbox("Selecione o Serviço", list(precos.keys()))
-            local = st.selectbox("Escolha o Local", academias_list)
+            local = st.selectbox("Escolha o Local", ["Play Tennis Ibirapuera", "Top One Tennis", "Fontes & Barbeta", "Arena BTG"])
             
             # 📅 PADRÃO BRASILEIRO NO SELETOR
             data_aula = st.date_input("Data da Aula", format="DD/MM/YYYY")
-            
             hora_aula = st.selectbox("Horário", [f"{h:02d}:00" for h in range(7, 22)])
             
             if st.form_submit_button("AVANÇAR PARA PAGAMENTO"):
@@ -105,14 +132,9 @@ if st.session_state.pagina == "Home":
         # TELA DE PAGAMENTO (VALOR VISÍVEL)
         st.markdown('<div class="custom-card">', unsafe_allow_html=True)
         st.markdown("### 💳 Pagamento via PIX")
-        
-        # EXIBIÇÃO DO VALOR DA COMPRA
         v_final = f"R$ {st.session_state.reserva_temp['Valor']:.2f}"
         st.markdown(f'<div class="valor-total">VALOR TOTAL: {v_final}</div>', unsafe_allow_html=True)
-        
         st.write("Chave PIX: **aranha.corp@gmail.com.br**")
-        st.write("Favorecido: **André Aranha**")
-        
         st.file_uploader("Anexe o comprovante", type=['png', 'jpg', 'pdf'])
         
         col1, col2 = st.columns(2)
@@ -127,12 +149,10 @@ if st.session_state.pagina == "Home":
                     df_atual = conn.read(worksheet="Página1")
                     dados = st.session_state.reserva_temp.copy()
                     dados.pop("Valor")
-                    
                     df_novo = pd.concat([df_atual, pd.DataFrame([dados])], ignore_index=True)
                     conn.update(worksheet="Página1", data=df_novo)
-                    
                     st.balloons()
-                    st.success("Tudo pronto! Sua reserva foi salva na planilha.")
+                    st.success("Sua reserva foi salva na planilha!")
                     st.session_state.pagamento_ativo = False
                 except Exception as e:
                     st.error(f"Erro ao atualizar planilha: {e}")
@@ -145,15 +165,13 @@ elif st.session_state.pagina == "Serviços":
     st.write("- **Aula Particular:** Focada no seu desenvolvimento técnico.")
     st.write("- **Aula em Grupo:** Socialização e dinâmica de jogo.")
     st.write("- **Tennis Kids:** Metodologia lúdica para crianças.")
-    st.write("- **Eventos e Treinamentos:** Clínicas e torneios personalizados.")
     st.markdown('</div>', unsafe_allow_html=True)
 
 # 8. CADASTRO
 elif st.session_state.pagina == "Cadastro":
     st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-    st.markdown("### 📝 Central de Cadastros")
-    st.write("Realize seu cadastro para participar das nossas aulas e eventos.")
-    st.info("Formulário de cadastro em processamento...")
+    st.markdown("### 📝 Cadastro")
+    st.write("Preencha seus dados para entrar na nossa lista de atletas.")
     st.markdown('</div>', unsafe_allow_html=True)
 
 # 9. CONTATO

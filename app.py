@@ -17,7 +17,7 @@ if 'pagamento_ativo' not in st.session_state:
 if 'reserva_temp' not in st.session_state:
     st.session_state.reserva_temp = {}
 
-# 4. DESIGN E ESTILO (CSS)
+# 4. DESIGN E ESTILO (CSS MASTER)
 st.markdown("""
     <style>
     .stApp {
@@ -31,10 +31,11 @@ st.markdown("""
     }
     .custom-card {
         background-color: rgba(255, 255, 255, 0.98) !important; 
-        padding: 35px; border-radius: 25px; 
-        max-width: 900px; margin: auto; text-align: center; 
+        padding: 40px; border-radius: 25px; 
+        max-width: 850px; margin: auto; text-align: center; 
         color: #1E1E1E !important; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
     }
+    /* BALÃO DE CONTATO CINZA TRANSPARENTE */
     .contact-card {
         background-color: rgba(30, 30, 30, 0.85) !important;
         padding: 45px; border-radius: 30px;
@@ -61,5 +62,43 @@ with st.sidebar:
             st.session_state.pagina = item
             st.session_state.pagamento_ativo = False
             st.rerun()
+    
+    st.markdown("---")
+    st.markdown("<h3 style='color: white;'>🏢 Academias</h3>", unsafe_allow_html=True)
+    academias = {
+        "Play Tennis Ibirapuera": "Rua Estado de Israel, 860",
+        "Top One tennis": "Avenida Indianapolis, 647",
+        "Fontes & Barbeta Tennis": "Rua Oscar Gomes Cardim, 535",
+        "Arena BTG": "Rua Major Sylvio de Magalhães Padilha, 16741"
+    }
+    for nome, end in academias.items():
+        with st.expander(nome):
+            st.write(f"📍 {end}")
 
-st.markdown('<div class="header-
+st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
+
+# 6. PÁGINA HOME (RESERVA E GRAVAÇÃO)
+if st.session_state.pagina == "Home":
+    if not st.session_state.pagamento_ativo:
+        st.markdown('<div class="custom-card">', unsafe_allow_html=True)
+        with st.form("form_reserva"):
+            aluno = st.text_input("Nome do Aluno")
+            pacotes = {"Aula Individual (R$ 250)": 250, "Pacote 4 (R$ 940)": 940, "Pacote 8 (R$ 1800)": 1800}
+            pacote_sel = st.selectbox("Selecione o Pacote", list(pacotes.keys()))
+            data_sel = st.date_input("Escolha a Data")
+            hora_sel = st.selectbox("Horário", [f"{h:02d}:00" for h in range(11, 22)])
+            
+            if st.form_submit_button("AVANÇAR PARA PAGAMENTO"):
+                if aluno:
+                    st.session_state.reserva_temp = {
+                        "Data": data_sel.strftime("%d/%m/%Y"),
+                        "Horario": hora_sel, "Aluno": aluno, "Servico": "Aula",
+                        "Pacote": pacote_sel, "Status": "Pendente", "Academia": ""
+                    }
+                    st.session_state.total_valor = pacotes[pacote_sel]
+                    st.session_state.pagamento_ativo = True
+                    st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+    else:
+        st.markdown(f"<h2 style='text-align: center; color: white;'>Total: R$ {st.session_state.total_valor:.2f}</h2>", unsafe_allow_html=True)
+        st

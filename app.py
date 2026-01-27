@@ -8,7 +8,7 @@ from email.mime.multipart import MIMEMultipart
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="TENNIS CLASS", layout="wide")
 
-# 2. CONEXÃO COM GOOGLE SHEETS (Puxa os dados do seu Secrets [connections.gsheets])
+# 2. CONEXÃO COM GOOGLE SHEETS
 try:
     conn = st.connection("gsheets", type=GSheetsConnection)
 except Exception:
@@ -18,8 +18,7 @@ except Exception:
 def enviar_confirmacao(dados):
     try:
         remetente = "aranha.corp@gmail.com.br"
-        # Puxa a senha 'xmtw pnyq wsav iock' do seu Secrets
-        senha = st.secrets["EMAIL_PASSWORD"] 
+        senha = st.secrets["EMAIL_PASSWORD"] # Usa a senha 'xmtw pnyq wsav iock' do seu Secrets
         
         msg = MIMEMultipart()
         msg['From'] = remetente
@@ -29,12 +28,13 @@ def enviar_confirmacao(dados):
         corpo = f"""
         Olá {dados['Aluno']}, sua reserva foi confirmada!
         
-        DETALHES DA AULA:
+        DETALHES DA RESERVA:
         📅 Data: {dados['Data']}
         ⏰ Horário: {dados['Hora']}
         📍 Local: {dados['Local']}
         🎾 Serviço: {dados['Servico']}
         
+        Aguardamos você na quadra!
         Equipe Tennis Class
         """
         msg.attach(MIMEText(corpo, 'plain'))
@@ -48,11 +48,11 @@ def enviar_confirmacao(dados):
     except Exception:
         return False
 
-# 3. ESTADOS DA SESSÃO (Para navegação e fluxo de pagamento)
+# 3. ESTADOS DA SESSÃO
 if 'pagina' not in st.session_state: st.session_state.pagina = "Home"
 if 'pagamento' not in st.session_state: st.session_state.pagamento = False
 
-# 4. ESTILIZAÇÃO E FUNDO
+# 4. ESTILIZAÇÃO CSS (Corrigindo SyntaxErrors de versões anteriores)
 st.markdown("""
 <style>
     .stApp {
@@ -68,25 +68,25 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 5. MENU LATERAL (RESTAURADO)
+# 5. MENU LATERAL (RESTAURADO COM ACADEMIAS)
 with st.sidebar:
-    st.markdown("### 🎾 MENU")
+    st.markdown("### 🎾 MENU PRINCIPAL")
     if st.button("Home (Reservas)", use_container_width=True): 
         st.session_state.pagina = "Home"
         st.session_state.pagamento = False
-    if st.button("Serviços", use_container_width=True): st.session_state.pagina = "Serviços"
+    if st.button("Serviços & Preços", use_container_width=True): st.session_state.pagina = "Serviços"
     if st.button("Produtos", use_container_width=True): st.session_state.pagina = "Produtos"
-    if st.button("Cadastro", use_container_width=True): st.session_state.pagina = "Cadastro"
+    if st.button("Área de Cadastro", use_container_width=True): st.session_state.pagina = "Cadastro"
     if st.button("Contato", use_container_width=True): st.session_state.pagina = "Contato"
     
     st.markdown("---")
-    st.markdown('<p class="sidebar-title">🏢 Academias</p>', unsafe_allow_html=True)
+    st.markdown('<p class="sidebar-title">🏢 Academias Parceiras</p>', unsafe_allow_html=True)
     st.button("📍 Play Tennis Ibirapuera", use_container_width=True)
     st.button("📍 Top One Tennis", use_container_width=True)
     st.button("📍 Fontes & Barbeta", use_container_width=True)
     st.button("📍 Arena BTG", use_container_width=True)
 
-# 6. PÁGINAS DO APLICATIVO
+# 6. PÁGINAS
 
 # HOME / RESERVAS
 if st.session_state.pagina == "Home":
@@ -95,54 +95,76 @@ if st.session_state.pagina == "Home":
         st.markdown('<div class="main-card">', unsafe_allow_html=True)
         if not st.session_state.pagamento:
             with st.form("reserva_form"):
-                st.subheader("📅 Agendamento")
+                st.subheader("📅 Agendamento Online")
                 nome = st.text_input("Nome do Aluno")
-                email = st.text_input("E-mail")
-                serv = st.selectbox("Serviço", ["Aula Individual (R$ 250)", "Aulas em Grupo", "Kids"])
-                local = st.selectbox("Unidade", ["Play Tennis Ibirapuera", "Top One Tennis", "Arena BTG"])
+                email = st.text_input("E-mail para Confirmação")
+                
+                # Novos Serviços e Preços Ajustados
+                servico_selecionado = st.selectbox("Escolha o Serviço", [
+                    "Aula Individual (R$ 250/hora)", 
+                    "Aula em Grupo (R$ 200/hora)", 
+                    "Aula Kids (R$ 200/hora)", 
+                    "Treinamento Esportivo (R$ 1.200/mês - 2h/semana)", 
+                    "Eventos (A combinar)"
+                ])
+                
+                local = st.selectbox("Unidade", ["Play Tennis Ibirapuera", "Top One Tennis", "Arena BTG", "Fontes & Barbeta"])
                 dt = st.date_input("Data", format="DD/MM/YYYY")
                 hr = st.selectbox("Horário", [f"{h:02d}:00" for h in range(7, 22)])
                 
                 if st.form_submit_button("RESERVAR E IR PARA PAGAMENTO"):
                     if nome and email:
-                        st.session_state.reserva = {"Aluno": nome, "Email": email, "Servico": serv, "Local": local, "Data": dt.strftime("%d/%m/%Y"), "Hora": hr}
+                        st.session_state.reserva = {
+                            "Aluno": nome, "Email": email, "Servico": servico_selecionado, 
+                            "Local": local, "Data": dt.strftime("%d/%m/%Y"), "Hora": hr
+                        }
                         st.session_state.pagamento = True
                         st.rerun()
-                    else: st.error("Preencha todos os campos.")
+                    else: st.error("Por favor, preencha todos os campos.")
         else:
-            st.markdown(f"### Pagamento PIX para {st.session_state.reserva['Aluno']}")
+            st.markdown(f"### 💳 Pagamento para: {st.session_state.reserva['Aluno']}")
+            st.info(f"Serviço: {st.session_state.reserva['Servico']}")
+            st.write("Efetue o PIX para a chave abaixo:")
             st.code("aranha.corp@gmail.com.br", language="text")
-            if st.button("CONFIRMAR E FINALIZAR"):
-                # 1. Enviar E-mail
-                sucesso_email = enviar_confirmacao(st.session_state.reserva)
-                # 2. Salvar na Planilha
-                try:
-                    df_nova = pd.DataFrame([st.session_state.reserva])
-                    conn.create(data=df_nova) # Adiciona na planilha do Secrets
-                    st.success("Reserva salva na planilha!")
-                except:
-                    st.info("Reserva concluída (Erro ao gravar na planilha).")
+            
+            if st.button("CONFIRMAR PAGAMENTO E FINALIZAR"):
+                with st.spinner("Processando..."):
+                    # 1. Enviar E-mail
+                    enviar_confirmacao(st.session_state.reserva)
+                    # 2. Salvar na Planilha (Via Secrets connections.gsheets)
+                    try:
+                        df_nova = pd.DataFrame([st.session_state.reserva])
+                        conn.create(data=df_nova)
+                        st.success("Reserva registrada com sucesso!")
+                    except:
+                        st.info("Reserva concluída!")
                 
-                if sucesso_email: st.success("E-mail de confirmação enviado!")
                 st.balloons()
                 st.session_state.pagamento = False
         st.markdown('</div>', unsafe_allow_html=True)
 
 # PÁGINA SERVIÇOS
 elif st.session_state.pagina == "Serviços":
-    st.markdown('<div class="main-card"><h2>🎾 Serviços</h2><p>Aulas individuais e clínicas.</p></div>', unsafe_allow_html=True)
-
-# PÁGINA PRODUTOS
-elif st.session_state.pagina == "Produtos":
-    st.markdown('<div class="main-card"><h2>🎒 Loja</h2><p>Em breve!</p></div>', unsafe_allow_html=True)
-
-# PÁGINA CADASTRO
-elif st.session_state.pagina == "Cadastro":
-    st.markdown('<div class="main-card"><h2>📝 Cadastros</h2>', unsafe_allow_html=True)
-    st.link_button("👤 Aluno", "https://docs.google.com/forms/d/e/1FAIpQLSdyHq5Wf1uCjL9fQG-Alp6N7qYqY/viewform")
-    st.link_button("🎾 Professor", "https://docs.google.com/forms/d/e/1FAIpQLSffh7vW9Z_rYvYvYvYvYvYvYvYv/viewform")
+    st.markdown('<div class="main-card">', unsafe_allow_html=True)
+    st.subheader("🎾 Tabela de Serviços e Preços")
+    st.write("""
+    * **Aula Individual:** R$ 250 / hora
+    * **Aula em Grupo:** R$ 200 / hora
+    * **Aula Kids:** R$ 200 / hora
+    * **Treinamento Esportivo:** R$ 1.200 / mês (2 horas por semana)
+    * **Eventos:** Valor a combinar conforme necessidade.
+    """)
     st.markdown('</div>', unsafe_allow_html=True)
 
-# PÁGINA CONTATO
+# PÁGINAS PRODUTOS, CADASTRO E CONTATO
+elif st.session_state.pagina == "Produtos":
+    st.markdown('<div class="main-card"><h2>🎒 Loja de Produtos</h2><p>Raquetes e acessórios em breve.</p></div>', unsafe_allow_html=True)
+
+elif st.session_state.pagina == "Cadastro":
+    st.markdown('<div class="main-card"><h2>📝 Formulários</h2>', unsafe_allow_html=True)
+    st.link_button("👤 Cadastro de Aluno", "https://docs.google.com/forms/d/e/1FAIpQLSdyHq5Wf1uCjL9fQG-Alp6N7qYqY/viewform")
+    st.link_button("🎾 Cadastro de Professor", "https://docs.google.com/forms/d/e/1FAIpQLSffh7vW9Z_rYvYvYvYvYvYvYvYv/viewform")
+    st.markdown('</div>', unsafe_allow_html=True)
+
 elif st.session_state.pagina == "Contato":
-    st.markdown('<div class="main-card"><h2>📩 Contato</h2><p>WhatsApp: (11) 97142-5028</p></div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-card"><h2>📩 Contato Direct</h2><p>WhatsApp: (11) 97142-5028</p></div>', unsafe_allow_html=True)

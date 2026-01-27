@@ -18,7 +18,7 @@ if 'reserva_temp' not in st.session_state:
 if 'academia_foco' not in st.session_state:
     st.session_state.academia_foco = None
 
-# 4. DESIGN E ESTILO (CORREÇÃO DE SINTAXE)
+# 4. DESIGN E ESTILO (CSS CORRIGIDO PARA EVITAR SYNTAXERROR)
 st.markdown("""
 <style>
     .stApp {
@@ -39,4 +39,4 @@ st.markdown("""
     .sidebar-detalhe {
         text-align: left !important; color: #f0f0f0;
         font-size: 13px; margin: -10px 0 15px 35px;
-        line-height: 1.4; border-left: 2px solid #ff4b4b
+        line-height: 1.4; border-left: 2px solid #ff4b4b; padding

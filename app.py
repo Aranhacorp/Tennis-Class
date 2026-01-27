@@ -16,6 +16,7 @@ def enviar_confirmacao_email(dados):
     try:
         remetente = "aranha.corp@gmail.com.br"
         # Importante: Use 'Senha de App' do Google nas configurações da conta
+        # Caso não esteja configurado, o app não travará
         senha = st.secrets.get("EMAIL_PASSWORD", "sua_senha_de_app_aqui") 
         
         msg = MIMEMultipart()
@@ -118,7 +119,7 @@ if st.session_state.pagina == "Home":
             email = st.text_input("E-mail do Aluno") # E-mail abaixo do nome
             servico = st.selectbox("Serviço", ["Aula Individual (R$ 250)", "Aulas em Grupo", "Aulas Kids", "Treinamento competitivo", "Clinicas", "Treinamento esportivo", "Eventos"])
             local = st.selectbox("Local", list(info_academias.keys()))
-            data_aula = st.date_input("Data da Aula", format="DD/MM/YYYY") # Padrão BR
+            data_aula = st.date_input("Data da Aula", format="DD/MM/YYYY") # Padrão brasileiro
             hora_aula = st.selectbox("Horário", [f"{h:02d}:00" for h in range(7, 22)])
             
             if st.form_submit_button("AVANÇAR PARA PAGAMENTO"):
@@ -139,11 +140,13 @@ if st.session_state.pagina == "Home":
         st.write("Chave: **aranha.corp@gmail.com.br**")
         if st.button("CONFIRMAR AGENDAMENTO E ENVIAR E-MAIL"):
             st.balloons()
+            # TENTA ENVIAR E-MAIL
             enviado = enviar_confirmacao_email(st.session_state.reserva_temp)
             if enviado:
                 st.success(f"Reserva confirmada! Um e-mail foi enviado para {st.session_state.reserva_temp['Email']}.")
             else:
-                st.info("Reserva salva! (Configure a EMAIL_PASSWORD nos Secrets para ativar o envio automático)")
+                st.info("Reserva realizada com sucesso!")
+                st.warning("Nota: O e-mail automático não foi enviado. Verifique se a 'EMAIL_PASSWORD' está configurada nos Secrets do Streamlit.")
             st.session_state.pagamento_ativo = False
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -151,4 +154,23 @@ if st.session_state.pagina == "Home":
 elif st.session_state.pagina == "Serviços":
     st.markdown('<div class="custom-card">', unsafe_allow_html=True)
     st.markdown("## 🎾 Nossos Serviços")
-    for s in ["Aulas Individuais",
+    for s in ["Aulas Individuais", "Aulas em Grupo", "Aulas Kids", "Treinamento competitivo", "Clinicas", "Treinamento esportivo", "Eventos"]:
+        st.write(f"✓ **{s}**")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# 8. CADASTRO (FORMULÁRIOS GOOGLE)
+elif st.session_state.pagina == "Cadastro":
+    st.markdown('<div class="custom-card">', unsafe_allow_html=True)
+    st.markdown("### 📝 Portal de Cadastros")
+    st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSdyHq5Wf1uCjL9fQG-Alp6N7qYqY/viewform" class="btn-cadastro">👤 Cadastro de Aluno de Tênis</a>', unsafe_allow_html=True)
+    st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSfp5uE9Y_rXyXyXyXyXyXyXyXyX/viewform" class="btn-cadastro">🏢 Cadastro de Academia de Tênis</a>', unsafe_allow_html=True)
+    st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSffh7vW9Z_rYvYvYvYvYvYvYvYv/viewform" class="btn-cadastro">🎾 Cadastro de Professor de Tênis</a>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# 9. CONTATO
+elif st.session_state.pagina == "Contato":
+    st.markdown('<div class="custom-card">', unsafe_allow_html=True)
+    st.markdown("### 📞 Contato")
+    st.write("📩 aranha.corp@gmail.com.br")
+    st.write("📱 (11) 97142-5028")
+    st.markdown('</div>', unsafe_allow_html=True)

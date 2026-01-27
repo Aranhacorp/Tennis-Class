@@ -3,31 +3,29 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-# 1. CONFIGURAÇÃO DA PÁGINA
+# --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="TENNIS CLASS", layout="wide")
 
 # --- FUNÇÃO DE ENVIO DE E-MAIL ---
-def enviar_email_confirmacao(dados):
+def enviar_confirmacao(dados):
     try:
         remetente = "aranha.corp@gmail.com.br"
-        # Puxa a senha que você salvou nos Secrets
         senha = st.secrets["EMAIL_PASSWORD"] 
         
         msg = MIMEMultipart()
         msg['From'] = remetente
         msg['To'] = dados['Email']
-        msg['Subject'] = f"🎾 Reserva Confirmada - {dados['Aluno']}"
+        msg['Subject'] = f"🎾 Reserva Confirmada - Tennis Class"
         
         corpo = f"""
-        Olá {dados['Aluno']}, sua reserva na Tennis Class foi confirmada!
+        Olá {dados['Aluno']}, sua reserva foi confirmada!
         
-        DETALHES DA RESERVA:
+        DETALHES DA AULA:
         📅 Data: {dados['Data']}
         ⏰ Horário: {dados['Hora']}
         📍 Local: {dados['Local']}
         🎾 Serviço: {dados['Servico']}
         
-        Prepare sua raquete!
         Equipe Tennis Class
         """
         msg.attach(MIMEText(corpo, 'plain'))
@@ -35,87 +33,88 @@ def enviar_email_confirmacao(dados):
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
         server.login(remetente, senha)
-        # Envia para o aluno e uma cópia para você
         server.sendmail(remetente, [dados['Email'], remetente], msg.as_string())
         server.quit()
         return True
-    except Exception as e:
+    except Exception:
         return False
 
-# 2. ESTADOS DA SESSÃO
+# --- ESTADOS DA SESSÃO ---
 if 'pagina' not in st.session_state: st.session_state.pagina = "Home"
-if 'pagamento_pendente' not in st.session_state: st.session_state.pagamento_pendente = False
+if 'pagamento' not in st.session_state: st.session_state.pagamento = False
 
-# 3. DESIGN E INTERFACE
+# --- CSS E ESTILIZAÇÃO ---
 st.markdown("""
 <style>
     .stApp {
         background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), 
                     url("https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/Fundo%20APP%20ver2.png");
-        background-size: cover;
+        background-size: cover; background-attachment: fixed;
     }
     .main-card {
         background-color: rgba(255, 255, 255, 0.95);
-        padding: 30px; border-radius: 20px; color: black; text-align: center;
+        padding: 30px; border-radius: 20px; color: black;
     }
+    .sidebar-title { color: white; font-weight: bold; font-size: 20px; margin-bottom: 10px; }
 </style>
 """, unsafe_allow_html=True)
 
-# 4. NAVEGAÇÃO LATERAL
+# --- MENU LATERAL (SIDEBAR) ---
 with st.sidebar:
-    st.markdown("### 🎾 TENNIS CLASS")
-    if st.button("Página de Reservas", use_container_width=True):
-        st.session_state.pagina = "Home"
-        st.session_state.pagamento_pendente = False
-    if st.button("Cadastros Oficiais", use_container_width=True):
-        st.session_state.pagina = "Cadastro"
+    st.markdown("### 🎾 MENU")
+    if st.button("Home", use_container_width=True): st.session_state.pagina = "Home"
+    if st.button("Serviços", use_container_width=True): st.session_state.pagina = "Serviços"
+    if st.button("Produtos", use_container_width=True): st.session_state.pagina = "Produtos"
+    if st.button("Cadastro", use_container_width=True): st.session_state.pagina = "Cadastro"
+    if st.button("Contato", use_container_width=True): st.session_state.pagina = "Contato"
+    
+    st.markdown("---")
+    st.markdown('<p class="sidebar-title">🏢 Academias</p>', unsafe_allow_html=True)
+    st.button("📍 Play Tennis Ibirapuera", use_container_width=True)
+    st.button("📍 Top One Tennis", use_container_width=True)
+    st.button("📍 Fontes & Barbeta Tennis", use_container_width=True)
+    st.button("📍 Arena BTG", use_container_width=True)
 
-# 5. LÓGICA DA PÁGINA DE RESERVAS
+# --- LÓGICA DAS PÁGINAS ---
+
+# PÁGINA HOME (RESERVAS)
 if st.session_state.pagina == "Home":
     st.markdown("<h1 style='text-align:center; color:white;'>TENNIS CLASS</h1>", unsafe_allow_html=True)
-    
     with st.container():
         st.markdown('<div class="main-card">', unsafe_allow_html=True)
-        if not st.session_state.pagamento_pendente:
-            with st.form("form_reserva"):
+        if not st.session_state.pagamento:
+            with st.form("reserva_form"):
+                st.subheader("📅 Agendamento de Aula")
                 col1, col2 = st.columns(2)
                 with col1:
-                    nome_aluno = st.text_input("Nome do Aluno")
-                    email_aluno = st.text_input("E-mail para Confirmação")
+                    nome = st.text_input("Nome do Aluno")
+                    email = st.text_input("E-mail para Confirmação")
                 with col2:
-                    servico = st.selectbox("Serviço", ["Aula Individual (R$ 250)", "Aulas em Grupo", "Aulas Kids"])
+                    serv = st.selectbox("Serviço", ["Aula Individual (R$ 250)", "Aulas em Grupo", "Kids"])
                     local = st.selectbox("Unidade", ["Play Tennis Ibirapuera", "Top One Tennis", "Arena BTG"])
                 
-                data_aula = st.date_input("Data da Aula", format="DD/MM/YYYY")
-                horario = st.selectbox("Horário", [f"{h:02d}:00" for h in range(7, 22)])
+                dt = st.date_input("Data da Aula", format="DD/MM/YYYY")
+                hr = st.selectbox("Horário", [f"{h:02d}:00" for h in range(7, 22)])
                 
                 if st.form_submit_button("RESERVAR E IR PARA PAGAMENTO"):
-                    if nome_aluno and email_aluno:
-                        st.session_state.dados_reserva = {
-                            "Aluno": nome_aluno, "Email": email_aluno, "Servico": servico, 
-                            "Local": local, "Data": data_aula.strftime("%d/%m/%Y"), "Hora": horario
-                        }
-                        st.session_state.pagamento_pendente = True
+                    if nome and email:
+                        st.session_state.reserva = {"Aluno": nome, "Email": email, "Servico": serv, "Local": local, "Data": dt.strftime("%d/%m/%Y"), "Hora": hr}
+                        st.session_state.pagamento = True
                         st.rerun()
-                    else:
-                        st.error("Por favor, preencha o Nome e o E-mail.")
+                    else: st.error("Preencha nome e e-mail.")
         else:
-            st.markdown(f"### Quase lá, {st.session_state.dados_reserva['Aluno']}!")
-            st.write("Realize o PIX para: **aranha.corp@gmail.com.br**")
-            st.write("Após o pagamento, clique no botão abaixo para receber sua confirmação.")
-            if st.button("CONFIRMAR AGENDAMENTO"):
-                if enviar_email_confirmacao(st.session_state.dados_reserva):
-                    st.success("Tudo certo! Verifique sua caixa de entrada.")
+            st.markdown(f"### Pagamento PIX para {st.session_state.reserva['Aluno']}")
+            st.code("aranha.corp@gmail.com.br", language="text")
+            if st.button("CONFIRMAR E ENVIAR E-MAIL"):
+                if enviar_confirmacao(st.session_state.reserva):
+                    st.success("Reserva confirmada e e-mail enviado!")
                     st.balloons()
-                else:
-                    st.warning("Reserva confirmada! (Ocorreu um problema técnico no envio do e-mail, verifique os Secrets).")
-                st.session_state.pagamento_pendente = False
+                st.session_state.pagamento = False
         st.markdown('</div>', unsafe_allow_html=True)
 
-# 6. PÁGINA DE CADASTROS (LINKS GOOGLE FORMS)
-elif st.session_state.pagina == "Cadastro":
-    st.markdown('<div class="main-card">', unsafe_allow_html=True)
-    st.markdown("### 📝 Portal de Cadastros")
-    st.link_button("👤 Cadastro de Aluno", "https://docs.google.com/forms/d/e/1FAIpQLSdyHq5Wf1uCjL9fQG-Alp6N7qYqY/viewform")
-    st.link_button("🎾 Cadastro de Professor", "https://docs.google.com/forms/d/e/1FAIpQLSffh7vW9Z_rYvYvYvYvYvYvYvYv/viewform")
-    st.markdown('</div>', unsafe_allow_html=True)
+# PÁGINA SERVIÇOS
+elif st.session_state.pagina == "Serviços":
+    st.markdown('<div class="main-card"><h2>🎾 Nossos Serviços</h2><p>Aulas particulares, em grupo e clínicas especializadas.</p></div>', unsafe_allow_html=True)
+
+# PÁGINA PRODUTOS
+elif st.session_state.pagina

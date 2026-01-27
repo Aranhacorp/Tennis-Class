@@ -18,7 +18,7 @@ if 'reserva_temp' not in st.session_state:
 if 'academia_foco' not in st.session_state:
     st.session_state.academia_foco = None
 
-# 4. DESIGN E ESTILO (CSS CORRIGIDO)
+# 4. DESIGN E ESTILO (CORREÇÃO DE SINTAXE)
 st.markdown("""
 <style>
     .stApp {
@@ -48,4 +48,4 @@ st.markdown("""
     .assinatura-aranha { position: fixed; bottom: 20px; left: 20px; width: 150px; z-index: 1000; }
     .whatsapp-float { position: fixed; bottom: 20px; right: 20px; width: 60px; z-index: 1000; }
 </style>
-<img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/By%20Andre%20Aranha.png" class="assinatura-aranha">
+<img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/By%20Andre%20Aranha.png"

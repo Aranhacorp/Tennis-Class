@@ -49,13 +49,3 @@ st.markdown("""
     .whatsapp-float { position: fixed; bottom: 20px; right: 20px; width: 60px; z-index: 1000; }
 </style>
 <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/By%20Andre%20Aranha.png" class="assinatura-aranha">
-<a href="https://wa.me/5511971425028" target="_blank">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" class="whatsapp-float">
-</a>
-""", unsafe_allow_html=True)
-
-# 5. MENU LATERAL
-with st.sidebar:
-    st.markdown("<h2 style='color: white; text-align: center;'>🎾 MENU</h2>", unsafe_allow_html=True)
-    for item in ["Home", "Serviços", "Produtos", "Cadastro", "Contato"]:
-        if st.button(item, key=f"btn_{item}", use

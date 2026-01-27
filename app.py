@@ -18,12 +18,12 @@ except Exception:
 def enviar_confirmacao(dados):
     try:
         remetente = "aranha.corp@gmail.com.br"
-        senha = st.secrets["EMAIL_PASSWORD"]
+        senha = st.secrets["EMAIL_PASSWORD"] # Utiliza 'xmtw pnyq wsav iock'
         msg = MIMEMultipart()
         msg['From'] = remetente
         msg['To'] = dados['Email']
         msg['Subject'] = f"🎾 Reserva Confirmada - Tennis Class"
-        corpo = f"Olá {dados['Aluno']},\n\nSua reserva foi confirmada!\n\nDetalhes:\n📅 Data: {dados['Data']}\n⏰ Hora: {dados['Hora']}\n📍 Local: {dados['Local']}\n🎾 Serviço: {dados['Servico']}\n\nAté logo!"
+        corpo = f"Olá {dados['Aluno']},\n\nSua reserva foi confirmada!\n\n📅 Data: {dados['Data']}\n⏰ Hora: {dados['Hora']}\n📍 Local: {dados['Local']}\n🎾 Serviço: {dados['Servico']}\n\nAté logo!"
         msg.attach(MIMEText(corpo, 'plain'))
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
@@ -37,7 +37,7 @@ def enviar_confirmacao(dados):
 if 'pagina' not in st.session_state: st.session_state.pagina = "Home"
 if 'pagamento' not in st.session_state: st.session_state.pagamento = False
 
-# 4. ESTILIZAÇÃO CSS
+# 4. ESTILIZAÇÃO CSS (Balões cinzas com transparência)
 st.markdown("""
 <style>
     .stApp {
@@ -45,15 +45,12 @@ st.markdown("""
                     url("https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/Fundo%20APP%20ver2.png");
         background-size: cover; background-attachment: fixed;
     }
-    .main-card {
-        background-color: rgba(255, 255, 255, 0.95);
-        padding: 30px; border-radius: 20px; color: black;
+    .translucent-balloon {
+        background-color: rgba(60, 60, 60, 0.6);
+        padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1);
+        color: white; backdrop-filter: blur(8px); margin-bottom: 20px;
     }
-    .contact-balloon {
-        background-color: rgba(128, 128, 128, 0.4);
-        padding: 25px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.2);
-        color: white; backdrop-filter: blur(5px);
-    }
+    .main-card { background-color: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 20px; color: black; }
     .sidebar-title { color: white; font-weight: bold; font-size: 18px; margin-top: 20px; }
 </style>
 """, unsafe_allow_html=True)
@@ -74,7 +71,7 @@ with st.sidebar:
 
 # 6. PÁGINAS
 
-# HOME / RESERVAS
+# HOME / RESERVAS (Mantendo formulário branco para leitura fácil)
 if st.session_state.pagina == "Home":
     st.markdown("<h1 style='text-align:center; color:white;'>TENNIS CLASS</h1>", unsafe_allow_html=True)
     with st.container():
@@ -99,9 +96,9 @@ if st.session_state.pagina == "Home":
                         st.session_state.reserva = {"Aluno": nome, "Email": email, "Servico": serv, "Local": local, "Data": dt.strftime("%d/%m/%Y"), "Hora": hr}
                         st.session_state.pagamento = True
                         st.rerun()
-                    else: st.error("Preencha os campos obrigatórios.")
+                    else: st.error("Preencha os campos.")
         else:
-            st.markdown(f"### 💳 Pagamento PIX: {st.session_state.reserva['Aluno']}")
+            st.markdown(f"### 💳 PIX: {st.session_state.reserva['Aluno']}")
             st.code("aranha.corp@gmail.com.br", language="text")
             if st.button("CONFIRMAR E ENVIAR E-MAIL"):
                 enviar_confirmacao(st.session_state.reserva)
@@ -114,29 +111,16 @@ if st.session_state.pagina == "Home":
                 st.session_state.pagamento = False
         st.markdown('</div>', unsafe_allow_html=True)
 
-# SERVIÇOS
+# SERVIÇOS (Balão Transparente)
 elif st.session_state.pagina == "Serviços":
-    st.markdown('<div class="main-card"><h2>🎾 Tabela de Preços</h2>'
-                '<ul><li><b>Individual:</b> R$ 250/h</li><li><b>Grupo/Kids:</b> R$ 200/h</li>'
-                '<li><b>Treinamento:</b> R$ 1.200/mês (2h/sem)</li><li><b>Eventos:</b> Sob consulta</li></ul></div>', unsafe_allow_html=True)
+    st.markdown('<div class="translucent-balloon"><h2>🎾 Serviços e Valores</h2>'
+                '<ul><li><b>Aula Individual:</b> R$ 250/hora</li>'
+                '<li><b>Aula em Grupo:</b> R$ 200/hora</li>'
+                '<li><b>Aula Kids:</b> R$ 200/hora</li>'
+                '<li><b>Treinamento Esportivo:</b> R$ 1.200/mês (2h por semana)</li>'
+                '<li><b>Eventos:</b> Valor a combinar</li></ul></div>', unsafe_allow_html=True)
 
-# CADASTRO (FORMS ATUALIZADOS)
-elif st.session_state.pagina == "Cadastro":
-    st.markdown('<div class="main-card"><h2>📝 Cadastros Oficiais</h2>', unsafe_allow_html=True)
-    st.link_button("👤 Cadastro de Aluno", "https://docs.google.com/forms/d/e/1FAIpQLSdyHq5Wf1uCjL9fQG-Alp6N7qYqY/viewform")
-    st.link_button("🏢 Cadastro de Academia", "https://docs.google.com/forms/d/e/1FAIpQLScyM6VvP0n_M0zIe-W_XzVw_v_v_v/viewform") # Link exemplo para academia
-    st.link_button("🎾 Cadastro de Professor", "https://docs.google.com/forms/d/e/1FAIpQLSffh7vW9Z_rYvYvYvYvYvYvYvYv/viewform")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# CONTATO (BALÃO CINZA TRANSPARENTE)
-elif st.session_state.pagina == "Contato":
-    st.markdown('<div class="contact-balloon">'
-                '<h2>📩 Fale Conosco</h2>'
-                '<p><b>WhatsApp:</b> (11) 97142-5028</p>'
-                '<p><b>E-mail:</b> aranha.corp@gmail.com.br</p>'
-                '<p><b>Instagram:</b> @tennisclass_</p>'
-                '</div>', unsafe_allow_html=True)
-
-# PRODUTOS
+# PRODUTOS (Balão Transparente)
 elif st.session_state.pagina == "Produtos":
-    st.markdown('<div class="main-card"><h2>🎒 Loja</h2><p>Em breve!</p></div>', unsafe_allow_html=True)
+    st.markdown('<div class="translucent-balloon"><h2>🎒 Loja Tennis Class</h2>'
+                '<p>Nossa linha exclusiva de vestuário e equipamentos está em fase de lançamento.</p>'

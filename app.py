@@ -39,13 +39,4 @@ st.markdown("""
     .sidebar-detalhe {
         text-align: left !important; color: #f0f0f0;
         font-size: 13px; margin: -10px 0 15px 35px;
-        line-height: 1.4; border-left: 2px solid #ff4b4b; padding-left: 10px;
-    }
-    .btn-cadastro {
-        display: block; width: 100%; background-color: #1e5e20; color: white !important;
-        padding: 15px; margin: 10px 0; border-radius: 10px; text-decoration: none; font-weight: bold;
-    }
-    .assinatura-aranha { position: fixed; bottom: 20px; left: 20px; width: 150px; z-index: 1000; }
-    .whatsapp-float { position: fixed; bottom: 20px; right: 20px; width: 60px; z-index: 1000; }
-</style>
-<img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/By%20Andre%20Aranha.png"
+        line-height: 1.4; border-left: 2px solid #ff4b4b

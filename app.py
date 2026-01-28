@@ -4,6 +4,7 @@ import pandas as pd
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import urllib.parse
 
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="TENNIS CLASS", layout="wide", page_icon="🎾")
@@ -11,21 +12,21 @@ st.set_page_config(page_title="TENNIS CLASS", layout="wide", page_icon="🎾")
 # 2. CONEXÃO COM A PLANILHA (TennisClass_DB)
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# 3. ESTADOS DA SESSÃO (Essencial para navegação sem erros)
+# 3. ESTADOS DA SESSÃO
 if 'pagina' not in st.session_state: st.session_state.pagina = "Home"
 if 'pagamento_ativo' not in st.session_state: st.session_state.pagamento_ativo = False
 if 'reserva_temp' not in st.session_state: st.session_state.reserva_temp = {}
 if 'academia_foco' not in st.session_state: st.session_state.academia_foco = None
 
-# 4. FUNÇÃO DE ENVIO DE E-MAIL (SMTP Gmail)
+# 4. FUNÇÕES AUXILIARES (E-mail e PIX)
 def enviar_confirmacao(dados):
     remetente = "aranha.corp@gmail.com"
-    senha = "xmtw pnyq wsav iock" # Senha de App Validada
+    senha = "xmtw pnyq wsav iock" 
     try:
         msg = MIMEMultipart()
         msg['From'], msg['To'] = remetente, dados['Email_Aluno']
         msg['Subject'] = "Reserva Confirmada - TENNIS CLASS"
-        corpo = f"Olá {dados['Aluno']},\n\nReserva confirmada!\nLocal: {dados['Academia']}\nData: {dados['Data']} às {dados['Horario']}\nServiço: {dados['Servico']}"
+        corpo = f"Olá {dados['Aluno']},\n\nSua reserva foi confirmada!\nLocal: {dados['Academia']}\nData: {dados['Data']} às {dados['Horario']}\nServiço: {dados['Servico']}\n\nObrigado!"
         msg.attach(MIMEText(corpo, 'plain'))
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
@@ -35,7 +36,12 @@ def enviar_confirmacao(dados):
         return True
     except: return False
 
-# 5. ESTILIZAÇÃO CSS, WHATSAPP E ASSINATURA
+def gerar_pix_url(chave, nome, cidade, valor):
+    # Payload simplificado para exibição de QR Code via API pública
+    payload = f"00020101021126370014br.gov.bcb.pix0119{chave}5204000053039865404{valor}5802BR5912{nome}6009SAO PAULO62070503***6304"
+    return payload
+
+# 5. ESTILO CSS E ELEMENTOS FLUTUANTES (Assinatura e WhatsApp)
 st.markdown("""
 <style>
     .stApp {
@@ -43,8 +49,4 @@ st.markdown("""
                     url("https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/Fundo%20APP%20ver2.png");
         background-size: cover; background-position: center; background-attachment: fixed;
     }
-    .header-title { color: white; font-size: 50px; font-weight: bold; text-align: center; margin-bottom: 20px; }
-    .custom-card { background-color: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 20px; color: #333; }
-    .translucent-balloon { background-color: rgba(60, 60, 60, 0.85); padding: 25px; border-radius: 15px; color: white; backdrop-filter: blur(10px); margin-bottom: 15px; }
-    .btn-cadastro { display: block; width: 100%; background-color: #1e5e20; color: white !important; padding: 15px; margin: 10px 0; border-radius: 10px; text-decoration: none; font-weight: bold; text-align: center; }
-    .sidebar-detalhe { color
+    .header-title { color: white; font-size: 50px; font-weight: bold; text-align: center; margin-bottom: 20px; text-shadow: 2px 2

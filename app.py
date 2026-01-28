@@ -35,7 +35,7 @@ def enviar_confirmacao(dados):
         return True
     except: return False
 
-# 5. DESIGN, ASSINATURA E WHATSAPP FLUTUANTE
+# 5. DESIGN, CSS E ELEMENTOS FLUTUANTES
 st.markdown("""
 <style>
     .stApp {
@@ -46,11 +46,30 @@ st.markdown("""
     .header-title { color: white; font-size: 50px; font-weight: bold; text-align: center; margin-bottom: 20px; text-shadow: 2px 2px 4px black; }
     .custom-card { background-color: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 20px; color: #333; }
     .translucent-balloon { background-color: rgba(50, 50, 50, 0.85); padding: 25px; border-radius: 15px; color: white; backdrop-filter: blur(10px); margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
-    .btn-cadastro { display: block; width: 100%; background-color: #1e5e20; color: white !important; padding: 15px; margin: 10px 0; border-radius: 10px; text-decoration: none; font-weight: bold; text-align: center; }
+    
+    /* Botão de Cadastro Estilizado para Horizontal */
+    .btn-cadastro-horiz {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-color: #1e5e20;
+        color: white !important;
+        padding: 20px;
+        border-radius: 15px;
+        text-decoration: none;
+        font-weight: bold;
+        text-align: center;
+        transition: 0.3s;
+        height: 150px;
+        border: 2px solid rgba(255,255,255,0.1);
+    }
+    .btn-cadastro-horiz:hover { background-color: #2e7d32; transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+    .icon-cadastro { font-size: 40px; margin-bottom: 10px; }
+
     .sidebar-detalhe { color: #f0f0f0; font-size: 13px; margin: -10px 0 15px 35px; border-left: 2px solid #ff4b4b; padding-left: 10px; }
     .assinatura-footer { position: fixed; bottom: 20px; left: 20px; width: 150px; z-index: 1000; }
     .whatsapp-footer { position: fixed; bottom: 20px; right: 20px; width: 60px; z-index: 1000; transition: 0.3s; }
-    .whatsapp-footer:hover { transform: scale(1.1); }
 </style>
 <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/By%20Andre%20Aranha.png" class="assinatura-footer">
 <a href="https://wa.me/5511971425028" target="_blank">
@@ -58,12 +77,12 @@ st.markdown("""
 </a>
 """, unsafe_allow_html=True)
 
-# 6. MENU LATERAL E ACADEMIAS (Endereços Atualizados)
+# 6. MENU LATERAL E ACADEMIAS
 info_academias = {
     "PLAY TENNIS Ibirapuera": "R. Estado de Israel, 860 - Vila Clementino, SP<br>📞 (11) 97752-0488",
     "TOP One Tennis": "Av. Indianópolis, 647 - Indianópolis, SP<br>📞 (11) 93236-3828",
     "MELL Tennis": "Rua Oscar Gomes Cardim, 535 - Vila Cordeiro, SP<br>📞 (11) 97142-5028",
-    "ARENA BTG Morumbi": "Av. Major Sylvio de Magalhães Padilha, 16741 - Morumbi, SP<br>📞 (11) 98854-3860"
+    "ARENA BTG Morumbi": "Av. Major Sylvio de Magalhães Padilha, 16741 - SP<br>📞 (11) 98854-3860"
 }
 
 with st.sidebar:
@@ -80,7 +99,6 @@ with st.sidebar:
         if st.button(f"📍 {nome}", key=f"side_{nome}", use_container_width=True):
             st.session_state.academia_foco = nome if st.session_state.academia_foco != nome else None
         if st.session_state.academia_foco == nome:
-            # Corrigido: fechamento da f-string para evitar o erro da image_96fe63
             st.markdown(f'<div class="sidebar-detalhe">{info_academias[nome]}</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
@@ -93,7 +111,7 @@ if st.session_state.pagina == "Home":
             st.subheader("📅 Agendar Aula")
             aluno = st.text_input("Nome do Aluno")
             email = st.text_input("E-mail para Confirmação")
-            servico = st.selectbox("Serviço", ["Aula Individual (R$ 250/h)", "Aula em Grupo (R$ 200/h)", "Aula Kids (R$ 200/h)", "Treinamento (R$ 1.200/mês)"])
+            servico = st.selectbox("Serviço", ["Aula Individual (R$ 250/h)", "Aula em Grupo (R$ 200/h)", "Aula Kids (R$ 200/h)", "Treinamento competitivo: R$ 1.400 / mês (8 horas de treino)"])
             local = st.selectbox("Unidade", list(info_academias.keys()))
             data_aula = st.date_input("Data", format="DD/MM/YYYY")
             hora_aula = st.selectbox("Horário", [f"{h:02d}:00" for h in range(7, 22)])
@@ -121,15 +139,13 @@ if st.session_state.pagina == "Home":
         if st.button("CONFIRMAR AGENDAMENTO FINAL"):
             try:
                 df_existente = conn.read(worksheet="Página1")
-                # Corrigido: Parênteses fechados corretamente para evitar erro da image_cc07f4
                 df_novo = pd.concat([df_existente, pd.DataFrame([st.session_state.reserva_temp])], ignore_index=True)
                 conn.update(worksheet="Página1", data=df_novo)
                 enviar_confirmacao(st.session_state.reserva_temp)
                 st.success("Reserva salva e e-mail enviado!")
                 st.balloons()
                 st.session_state.pagamento_ativo = False
-            except Exception as e:
-                st.error(f"Erro ao salvar: {e}")
+            except Exception as e: st.error(f"Erro ao salvar: {e}")
     st.markdown('</div>', unsafe_allow_html=True)
 
 elif st.session_state.pagina == "Serviços":
@@ -137,17 +153,27 @@ elif st.session_state.pagina == "Serviços":
     st.markdown("## 🎾 Tabela de Preços")
     st.write("- **Individual:** R$ 250/h")
     st.write("- **Grupo/Kids:** R$ 200/h")
-    st.write("- **Treinamento:** R$ 1.200/mês")
+    st.write("- **Treinamento competitivo:** R$ 1.400 / mês (8 horas de treino)")
     st.write("- **Eventos:** Sob consulta")
     st.markdown('</div>', unsafe_allow_html=True)
 
 elif st.session_state.pagina == "Cadastro":
     st.markdown('<div class="translucent-balloon">', unsafe_allow_html=True)
-    st.subheader("📝 Portal de Cadastros")
-    # Links Corrigidos baseados nos formulários do seu painel
-    st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSd7N_E2vP6P-fS9jR_Wk7K-G_X_v/viewform" class="btn-cadastro">👤 Cadastro de Aluno de tênis</a>', unsafe_allow_html=True)
-    st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSdyHq5Wf1uCjL9fQG-Alp6N7qYqY/viewform" class="btn-cadastro">🏢 Cadastro de Academia de tênis</a>', unsafe_allow_html=True)
-    st.markdown('<a href="https://docs.google.com/forms/d/1q4HQq9uY1ju2ZsgOcFb7BF0LtKstpe3fYwjur4WwMLY/viewform" class="btn-cadastro">🎾 Cadastro de Professor de tênis</a>', unsafe_allow_html=True)
+    st.subheader("📝 Portal de Cadastros Oficiais")
+    st.write("Selecione o tipo de cadastro abaixo:")
+    
+    # LAYOUT HORIZONTAL COM COLUNAS
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown(f'''<a href="https://docs.google.com/forms/d/e/1FAIpQLSd7N_E2vP6P-fS9jR_Wk7K-G_X_v/viewform" class="btn-cadastro-horiz">
+            <div class="icon-cadastro">👤</div><div>Aluno de Tênis</div></a>''', unsafe_allow_html=True)
+    with c2:
+        st.markdown(f'''<a href="https://docs.google.com/forms/d/e/1FAIpQLSdyHq5Wf1uCjL9fQG-Alp6N7qYqY/viewform" class="btn-cadastro-horiz">
+            <div class="icon-cadastro">🏢</div><div>Academia de Tênis</div></a>''', unsafe_allow_html=True)
+    with c3:
+        # Link do Professor identificado na image_975fe5
+        st.markdown(f'''<a href="https://docs.google.com/forms/d/1q4HQq9uY1ju2ZsgOcFb7BF0LtKstpe3fYwjur4WwMLY/viewform" class="btn-cadastro-horiz">
+            <div class="icon-cadastro">🎾</div><div>Professor de Tênis</div></a>''', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 elif st.session_state.pagina == "Contato":

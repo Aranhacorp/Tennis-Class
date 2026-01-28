@@ -58,12 +58,12 @@ st.markdown("""
 </a>
 """, unsafe_allow_html=True)
 
-# 6. MENU LATERAL E ACADEMIAS
+# 6. MENU LATERAL E ACADEMIAS (ATUALIZADO)
 info_academias = {
-    "Play Tennis Ibirapuera": "R. Joinville, 401 - Vila Mariana | 📞 (11) 5081-3000",
-    "Top One Tennis": "R. João Lourenço, 629 - Vila Nova Conceição | 📞 (11) 3845-6688",
-    "Fontes & Barbeta Tennis": "Av. Prof. Ascendino Reis, 724 | 📞 (11) 99911-3000",
-    "Arena BTG": "Av. das Nações Unidas, 13797 | 📞 (11) 94555-2200"
+    "PLAY TENNIS Ibirapuera": "R. Estado de Israel, 860 - Vila Clementino, SP<br>📞 (11) 97752-0488",
+    "TOP One Tennis": "Av. Indianópolis, 647 - Indianópolis, SP<br>📞 (11) 93236-3828",
+    "MELL Tennis": "Rua Oscar Gomes Cardim, 535 - Vila Cordeiro, SP<br>📞 (11) 97142-5028",
+    "ARENA BTG Morumbi": "Av. Major Sylvio de Magalhães Padilha, 16741<br>📞 (11) 98854-3860"
 }
 
 with st.sidebar:
@@ -88,7 +88,7 @@ st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=Tr
 if st.session_state.pagina == "Home":
     st.markdown('<div class="custom-card">', unsafe_allow_html=True)
     if not st.session_state.pagamento_ativo:
-        with st.form("form_reserva"): # Correção de indentação
+        with st.form("form_reserva"):
             st.subheader("📅 Agendar Aula")
             aluno = st.text_input("Nome do Aluno")
             email = st.text_input("E-mail para Confirmação")
@@ -103,26 +103,25 @@ if st.session_state.pagina == "Home":
                         "Data": data_aula.strftime("%Y-%m-%d"), "Horario": hora_aula,
                         "Aluno": aluno, "Servico": servico, "Status": "Pendente",
                         "Academia": local, "Email_Aluno": email
-                    } # Fechamento correto de chave
+                    }
                     st.session_state.pagamento_ativo = True
                     st.rerun()
     else:
         st.subheader("💳 Pagamento via PIX")
         col_qr, col_info = st.columns([1, 1])
         with col_qr:
-            # Gerador de QR Code simplificado via API pública
             qr_url = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=aranha.corp@gmail.com"
             st.image(qr_url, caption="Escaneie para Pagar")
         with col_info:
             st.write(f"**Valor:** {st.session_state.reserva_temp['Servico']}")
             st.info("Chave PIX: aranha.corp@gmail.com")
-            st.code("aranha.corp@gmail.com", language="text") # Copia e Cola
+            st.code("aranha.corp@gmail.com", language="text")
         
         if st.button("CONFIRMAR AGENDAMENTO FINAL"):
             try:
                 df_existente = conn.read(worksheet="Página1")
                 df_novo = pd.concat([df_existente, pd.DataFrame([st.session_state.reserva_temp])], ignore_index=True)
-                conn.update(worksheet="Página1", data=df_novo) # Fechamento de parêntese
+                conn.update(worksheet="Página1", data=df_novo)
                 enviar_confirmacao(st.session_state.reserva_temp)
                 st.success("Reserva salva e e-mail enviado!")
                 st.balloons()
@@ -130,16 +129,16 @@ if st.session_state.pagina == "Home":
             except Exception as e: st.error(f"Erro ao salvar: {e}")
     st.markdown('</div>', unsafe_allow_html=True)
 
-elif st.session_state.pagina == "Serviços": #
+elif st.session_state.pagina == "Serviços":
     st.markdown('<div class="translucent-balloon">', unsafe_allow_html=True)
     st.markdown("## 🎾 Tabela de Preços")
     st.write("- **Individual:** R$ 250/h")
     st.write("- **Grupo/Kids:** R$ 200/h")
     st.write("- **Treinamento:** R$ 1.200/mês")
     st.write("- **Eventos:** Sob consulta")
-    st.markdown('</div>', unsafe_allow_html=True) # Fechamento correto de markdown
+    st.markdown('</div>', unsafe_allow_html=True)
 
-elif st.session_state.pagina == "Cadastro": #
+elif st.session_state.pagina == "Cadastro":
     st.markdown('<div class="translucent-balloon">', unsafe_allow_html=True)
     st.subheader("📝 Portal de Cadastros")
     st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSdyHq5Wf1uCjL9fQG-Alp6N7qYqY/viewform" class="btn-cadastro">👤 Cadastro de Aluno</a>', unsafe_allow_html=True)
@@ -149,10 +148,10 @@ elif st.session_state.pagina == "Cadastro": #
 
 elif st.session_state.pagina == "Contato":
     st.markdown('<div class="translucent-balloon">', unsafe_allow_html=True)
-    st.subheader("📞 Fale com Andre Aranha")
+    st.subheader("📞 Contato Profissional")
     st.write("📩 aranha.corp@gmail.com")
     st.write("📱 (11) 97142-5028")
     st.markdown('</div>', unsafe_allow_html=True)
 
-elif st.session_state.pagina == "Produtos": # Correção de aspas triplas
+elif st.session_state.pagina == "Produtos":
     st.markdown('<div class="translucent-balloon"><h3>🎒 Loja Tennis Class</h3><p>Equipamentos em breve.</p></div>', unsafe_allow_html=True)

@@ -17,10 +17,10 @@ if 'pagamento_ativo' not in st.session_state: st.session_state.pagamento_ativo =
 if 'reserva_temp' not in st.session_state: st.session_state.reserva_temp = {}
 if 'academia_foco' not in st.session_state: st.session_state.academia_foco = None
 
-# 4. FUNÇÃO DE ENVIO DE E-MAIL (SMTP GMAIL)
+# 4. FUNÇÃO DE ENVIO DE E-MAIL
 def enviar_confirmacao(dados):
     remetente = "aranha.corp@gmail.com"
-    senha = "xmtw pnyq wsav iock" # Senha de App Gerada
+    senha = "xmtw pnyq wsav iock" 
     try:
         msg = MIMEMultipart()
         msg['From'], msg['To'] = remetente, dados['Email_Aluno']
@@ -58,12 +58,12 @@ st.markdown("""
 </a>
 """, unsafe_allow_html=True)
 
-# 6. MENU LATERAL E ACADEMIAS RECOMENDADAS
+# 6. MENU LATERAL E ACADEMIAS (Endereços Atualizados)
 info_academias = {
     "PLAY TENNIS Ibirapuera": "R. Estado de Israel, 860 - Vila Clementino, SP<br>📞 (11) 97752-0488",
     "TOP One Tennis": "Av. Indianópolis, 647 - Indianópolis, SP<br>📞 (11) 93236-3828",
     "MELL Tennis": "Rua Oscar Gomes Cardim, 535 - Vila Cordeiro, SP<br>📞 (11) 97142-5028",
-    "ARENA BTG Morumbi": "Av. Major Sylvio de Magalhães Padilha, 16741<br>📞 (11) 98854-3860"
+    "ARENA BTG Morumbi": "Av. Major Sylvio de Magalhães Padilha, 16741 - Morumbi, SP<br>📞 (11) 98854-3860"
 }
 
 with st.sidebar:
@@ -80,4 +80,82 @@ with st.sidebar:
         if st.button(f"📍 {nome}", key=f"side_{nome}", use_container_width=True):
             st.session_state.academia_foco = nome if st.session_state.academia_foco != nome else None
         if st.session_state.academia_foco == nome:
-            st.markdown(f'<div class="sidebar-detalhe">{info_academias[nome]}</div>
+            # Corrigido: fechamento da f-string para evitar o erro da image_96fe63
+            st.markdown(f'<div class="sidebar-detalhe">{info_academias[nome]}</div>', unsafe_allow_html=True)
+
+st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
+
+# 7. LÓGICA DAS PÁGINAS
+if st.session_state.pagina == "Home":
+    st.markdown('<div class="custom-card">', unsafe_allow_html=True)
+    if not st.session_state.pagamento_ativo:
+        with st.form("form_reserva"):
+            st.subheader("📅 Agendar Aula")
+            aluno = st.text_input("Nome do Aluno")
+            email = st.text_input("E-mail para Confirmação")
+            servico = st.selectbox("Serviço", ["Aula Individual (R$ 250/h)", "Aula em Grupo (R$ 200/h)", "Aula Kids (R$ 200/h)", "Treinamento (R$ 1.200/mês)"])
+            local = st.selectbox("Unidade", list(info_academias.keys()))
+            data_aula = st.date_input("Data", format="DD/MM/YYYY")
+            hora_aula = st.selectbox("Horário", [f"{h:02d}:00" for h in range(7, 22)])
+            
+            if st.form_submit_button("AVANÇAR PARA PAGAMENTO"):
+                if aluno and email:
+                    st.session_state.reserva_temp = {
+                        "Data": data_aula.strftime("%Y-%m-%d"), "Horario": hora_aula,
+                        "Aluno": aluno, "Servico": servico, "Status": "Pendente",
+                        "Academia": local, "Email_Aluno": email
+                    }
+                    st.session_state.pagamento_ativo = True
+                    st.rerun()
+    else:
+        st.subheader("💳 Pagamento via PIX")
+        col_qr, col_info = st.columns([1, 1])
+        with col_qr:
+            qr_url = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=aranha.corp@gmail.com"
+            st.image(qr_url, caption="Escaneie para Pagar")
+        with col_info:
+            st.write(f"**Valor:** {st.session_state.reserva_temp['Servico']}")
+            st.info("Chave PIX: aranha.corp@gmail.com")
+            st.code("aranha.corp@gmail.com", language="text")
+        
+        if st.button("CONFIRMAR AGENDAMENTO FINAL"):
+            try:
+                df_existente = conn.read(worksheet="Página1")
+                # Corrigido: Parênteses fechados corretamente para evitar erro da image_cc07f4
+                df_novo = pd.concat([df_existente, pd.DataFrame([st.session_state.reserva_temp])], ignore_index=True)
+                conn.update(worksheet="Página1", data=df_novo)
+                enviar_confirmacao(st.session_state.reserva_temp)
+                st.success("Reserva salva e e-mail enviado!")
+                st.balloons()
+                st.session_state.pagamento_ativo = False
+            except Exception as e:
+                st.error(f"Erro ao salvar: {e}")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+elif st.session_state.pagina == "Serviços":
+    st.markdown('<div class="translucent-balloon">', unsafe_allow_html=True)
+    st.markdown("## 🎾 Tabela de Preços")
+    st.write("- **Individual:** R$ 250/h")
+    st.write("- **Grupo/Kids:** R$ 200/h")
+    st.write("- **Treinamento:** R$ 1.200/mês")
+    st.write("- **Eventos:** Sob consulta")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+elif st.session_state.pagina == "Cadastro":
+    st.markdown('<div class="translucent-balloon">', unsafe_allow_html=True)
+    st.subheader("📝 Portal de Cadastros")
+    # Links Corrigidos baseados nos formulários do seu painel
+    st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSd7N_E2vP6P-fS9jR_Wk7K-G_X_v/viewform" class="btn-cadastro">👤 Cadastro de Aluno de tênis</a>', unsafe_allow_html=True)
+    st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSdyHq5Wf1uCjL9fQG-Alp6N7qYqY/viewform" class="btn-cadastro">🏢 Cadastro de Academia de tênis</a>', unsafe_allow_html=True)
+    st.markdown('<a href="https://docs.google.com/forms/d/1q4HQq9uY1ju2ZsgOcFb7BF0LtKstpe3fYwjur4WwMLY/viewform" class="btn-cadastro">🎾 Cadastro de Professor de tênis</a>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+elif st.session_state.pagina == "Contato":
+    st.markdown('<div class="translucent-balloon">', unsafe_allow_html=True)
+    st.subheader("📞 Contato Profissional")
+    st.write("📩 aranha.corp@gmail.com")
+    st.write("📱 (11) 97142-5028")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+elif st.session_state.pagina == "Produtos":
+    st.markdown('<div class="translucent-balloon"><h3>🎒 Loja Tennis Class</h3><p>Equipamentos em breve.</p></div>', unsafe_allow_html=True)

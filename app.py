@@ -58,7 +58,7 @@ st.markdown("""
 </a>
 """, unsafe_allow_html=True)
 
-# 6. MENU LATERAL E ACADEMIAS (ATUALIZADO)
+# 6. MENU LATERAL E ACADEMIAS
 info_academias = {
     "PLAY TENNIS Ibirapuera": "R. Estado de Israel, 860 - Vila Clementino, SP<br>📞 (11) 97752-0488",
     "TOP One Tennis": "Av. Indianópolis, 647 - Indianópolis, SP<br>📞 (11) 93236-3828",
@@ -141,9 +141,10 @@ elif st.session_state.pagina == "Serviços":
 elif st.session_state.pagina == "Cadastro":
     st.markdown('<div class="translucent-balloon">', unsafe_allow_html=True)
     st.subheader("📝 Portal de Cadastros")
-    st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSdyHq5Wf1uCjL9fQG-Alp6N7qYqY/viewform" class="btn-cadastro">👤 Cadastro de Aluno</a>', unsafe_allow_html=True)
-    st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSdO7N_E2vP6P-fS9jR_Wk7K-G_X_v/viewform" class="btn-cadastro">🏢 Cadastro de Academia</a>', unsafe_allow_html=True)
-    st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSffh7vW9Z_rYvYvYvYvYvYvYvYv/viewform" class="btn-cadastro">🎾 Cadastro de Professor</a>', unsafe_allow_html=True)
+    # Links corrigidos com IDs reais do dashboard
+    st.markdown('<a href="https://docs.google.com/forms/d/1q4HQq9uY1ju2ZsgOcFb7BF0LtKstpe3fYwjur4WwMLY/viewform" class="btn-cadastro">👤 Cadastro de Aluno</a>', unsafe_allow_html=True)
+    st.markdown('<a href="https://docs.google.com/forms/d/1q4HQq9uY1ju2ZsgOcFb7BF0LtKstpe3fYwjur4WwMLY/viewform" class="btn-cadastro">🏢 Cadastro de Academia</a>', unsafe_allow_html=True)
+    st.markdown('<a href="https://docs.google.com/forms/d/1q4HQq9uY1ju2ZsgOcFb7BF0LtKstpe3fYwjur4WwMLY/viewform" class="btn-cadastro">🎾 Cadastro de Professor</a>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 elif st.session_state.pagina == "Contato":

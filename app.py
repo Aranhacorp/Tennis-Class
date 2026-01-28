@@ -18,7 +18,7 @@ if 'reserva_temp' not in st.session_state:
 if 'academia_foco' not in st.session_state:
     st.session_state.academia_foco = None
 
-# 4. DESIGN E ESTILO (CSS CORRIGIDO PARA EVITAR SYNTAXERROR)
+# 4. DESIGN E ESTILO
 st.markdown("""
 <style>
     .stApp {
@@ -36,6 +36,11 @@ st.markdown("""
         max-width: 800px; margin: auto; text-align: center; 
         color: #333 !important; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }
+    .translucent-balloon {
+        background-color: rgba(60, 60, 60, 0.65);
+        padding: 25px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);
+        color: white; backdrop-filter: blur(10px); margin-bottom: 20px;
+    }
     .sidebar-detalhe {
         text-align: left !important; color: #f0f0f0;
         font-size: 13px; margin: -10px 0 15px 35px;
@@ -44,6 +49,7 @@ st.markdown("""
     .btn-cadastro {
         display: block; width: 100%; background-color: #1e5e20; color: white !important;
         padding: 15px; margin: 10px 0; border-radius: 10px; text-decoration: none; font-weight: bold;
+        text-align: center;
     }
     .assinatura-aranha { position: fixed; bottom: 20px; left: 20px; width: 150px; z-index: 1000; }
     .whatsapp-float { position: fixed; bottom: 20px; right: 20px; width: 60px; z-index: 1000; }
@@ -80,77 +86,24 @@ with st.sidebar:
 
 st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
 
-# 6. PÁGINA HOME: RESERVA (DATA BR E E-MAIL ABAIXO DO NOME)
+# 6. PÁGINA HOME: RESERVA E GRAVAÇÃO NO SHEETS
 if st.session_state.pagina == "Home":
     st.markdown('<div class="custom-card">', unsafe_allow_html=True)
     if not st.session_state.pagamento_ativo:
         with st.form("reserva"):
+            st.subheader("📅 Agendamento de Aula")
             aluno = st.text_input("Nome do Aluno")
-            email = st.text_input("E-mail do Aluno") # AJUSTE: ABAIXO DO NOME
+            email = st.text_input("E-mail do Aluno")
             
             servico = st.selectbox("Selecione o Serviço", [
-                "Aula Individual (R$ 250)", "Aulas em Grupo", "Aulas Kids", 
-                "Treinamento competitivo", "Clinicas", 
-                "Treinamento esportivo (personal trainer)", "Eventos"
+                "Aula Individual (R$ 250/h)", "Aula em Grupo (R$ 200/h)", 
+                "Aula Kids (R$ 200/h)", "Treinamento competitivo", 
+                "Treinamento esportivo (R$ 1.200/mês)", "Clinicas", "Eventos"
             ])
             local = st.selectbox("Escolha o Local", list(info_academias.keys()))
-            
-            # AJUSTE: DATA PADRÃO BRASILEIRO
             data_aula = st.date_input("Data da Aula", format="DD/MM/YYYY")
-            
             hora_aula = st.selectbox("Horário", [f"{h:02d}:00" for h in range(7, 22)])
             
             if st.form_submit_button("AVANÇAR PARA PAGAMENTO"):
                 if aluno and email:
                     st.session_state.reserva_temp = {
-                        "Data": data_aula.strftime("%d/%m/%Y"),
-                        "Horario": hora_aula,
-                        "Aluno": aluno,
-                        "Email": email,
-                        "Servico": servico,
-                        "Academia": local
-                    }
-                    st.session_state.pagamento_ativo = True
-                    st.rerun()
-                else:
-                    st.warning("Por favor, preencha o Nome e o E-mail para continuar.")
-    else:
-        # TELA DE PAGAMENTO
-        st.markdown("### 💳 Pagamento via PIX")
-        st.write(f"**Aluno:** {st.session_state.reserva_temp['Aluno']}")
-        st.write("Chave PIX: **aranha.corp@gmail.com.br**")
-        if st.button("CONFIRMAR AGENDAMENTO"):
-            st.balloons()
-            st.success("Reserva enviada com sucesso!")
-            st.session_state.pagamento_ativo = False
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# 7. SERVIÇOS
-elif st.session_state.pagina == "Serviços":
-    st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-    st.markdown("## 🎾 Nossos Serviços")
-    servicos_lista = [
-        "Aulas Individuais", "Aulas em Grupo", "Aulas Kids", 
-        "Treinamento competitivo", "Clinicas", 
-        "Treinamento esportivo (personal trainer)", "Eventos"
-    ]
-    for s in servicos_lista:
-        st.write(f"✓ **{s}**")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# 8. CADASTRO (DIRETO PARA GOOGLE FORMS)
-elif st.session_state.pagina == "Cadastro":
-    st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-    st.markdown("### 📝 Portal de Cadastros")
-    st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSdyHq5Wf1uCjL9fQG-Alp6N7qYqY/viewform" class="btn-cadastro">👤 Cadastro de Aluno de Tênis</a>', unsafe_allow_html=True)
-    st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSfp5uE9Y_rXyXyXyXyXyXyXyXyX/viewform" class="btn-cadastro">🏢 Cadastro de Academia de Tênis</a>', unsafe_allow_html=True)
-    st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSffh7vW9Z_rYvYvYvYvYvYvYvYv/viewform" class="btn-cadastro">🎾 Cadastro de Professor de Tênis</a>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# 9. CONTATO
-elif st.session_state.pagina == "Contato":
-    st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-    st.markdown("### 📞 Contato")
-    st.write("📩 aranha.corp@gmail.com.br")
-    st.write("📱 (11) 97142-5028")
-    st.markdown('</div>', unsafe_allow_html=True)

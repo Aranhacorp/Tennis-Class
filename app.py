@@ -15,8 +15,9 @@ if 'pagina' not in st.session_state: st.session_state.pagina = "Home"
 if 'pagamento_ativo' not in st.session_state: st.session_state.pagamento_ativo = False
 if 'reserva_temp' not in st.session_state: st.session_state.reserva_temp = {}
 if 'inicio_timer' not in st.session_state: st.session_state.inicio_timer = None
+if 'admin_autenticado' not in st.session_state: st.session_state.admin_autenticado = False
 
-# 4. DESIGN CSS (Removidos balões verdes do Cadastro)
+# 4. DESIGN CSS 
 st.markdown("""
 <style>
     .stApp {
@@ -26,16 +27,21 @@ st.markdown("""
     }
     .header-title { color: white; font-size: 50px; font-weight: bold; text-align: center; margin-bottom: 20px; text-shadow: 2px 2px 4px black; }
     .custom-card { background-color: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 20px; color: #333; }
-    .translucent-balloon { background-color: rgba(50, 50, 50, 0.85); padding: 25px; border-radius: 15px; color: white; backdrop-filter: blur(10px); margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
     
-    /* Estilo de ícones de cadastro sem fundo verde */
+    /* Balão Cinza com Transparência para Contato e Preços */
+    .translucent-balloon { 
+        background-color: rgba(50, 50, 50, 0.85); padding: 25px; border-radius: 15px; 
+        color: white; backdrop-filter: blur(10px); margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); 
+    }
+    
+    /* Cadastro: Apenas ícones e nomes */
     .btn-cadastro-clean {
         display: flex; flex-direction: column; align-items: center; justify-content: center;
         color: white !important; text-decoration: none; font-weight: bold; text-align: center;
         transition: 0.3s; padding: 20px;
     }
-    .btn-cadastro-clean:hover { transform: scale(1.15); color: #4CAF50 !important; }
-    .icon-large { font-size: 100px; margin-bottom: 15px; }
+    .btn-cadastro-clean:hover { transform: scale(1.1); color: #4CAF50 !important; }
+    .icon-large { font-size: 80px; margin-bottom: 10px; }
     
     .assinatura-footer { position: fixed; bottom: 20px; left: 20px; width: 150px; z-index: 1000; }
 </style>
@@ -45,7 +51,8 @@ st.markdown("""
 # 5. MENU LATERAL
 with st.sidebar:
     st.markdown("<h2 style='color: white; text-align: center;'>🎾 MENU</h2>", unsafe_allow_html=True)
-    for item in ["Home", "Preços", "Cadastro", "Dashboard", "Contato"]:
+    menu = ["Home", "Preços", "Cadastro", "Dashboard", "Contato"]
+    for item in menu:
         if st.button(item, key=f"nav_{item}", use_container_width=True):
             st.session_state.pagina = item
             st.session_state.pagamento_ativo = False
@@ -81,7 +88,7 @@ if st.session_state.pagina == "Home":
                     st.session_state.inicio_timer = time.time()
                     st.rerun()
     else:
-        # CRONÔMETRO REGRESSIVO DINÂMICO
+        # CRONÔMETRO REGRESSIVO DINÂMICO 5 MINUTOS
         timer_placeholder = st.empty()
         st.subheader("💳 Pagamento via PIX")
         st.image("https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=aranha.corp@gmail.com")
@@ -99,37 +106,28 @@ if st.session_state.pagina == "Home":
                 st.rerun()
             except: st.error("Erro ao atualizar Planilha.")
 
-        # Loop do cronômetro ativo
         while st.session_state.pagamento_ativo:
-            passado = time.time() - st.session_state.inicio_timer
-            restante = 300 - passado
+            restante = 300 - (time.time() - st.session_state.inicio_timer)
             if restante <= 0:
                 st.session_state.pagamento_ativo = False
-                st.error("Tempo esgotado! Inicie novamente.")
-                time.sleep(2)
                 st.rerun()
             m, s = divmod(int(restante), 60)
             timer_placeholder.error(f"⏱️ Tempo restante para o PIX: {m:02d}:{s:02d}")
             time.sleep(1)
     st.markdown('</div>', unsafe_allow_html=True)
 
+elif st.session_state.pagina == "Preços":
+    # TABELA DE PREÇOS RECUPERADA
+    st.markdown('<div class="translucent-balloon">', unsafe_allow_html=True)
+    st.markdown("### 🎾 Tabela de Preços")
+    st.write("• **Individual:** R$ 250/h")
+    st.write("• **Grupo/Kids:** R$ 200/h")
+    st.write("• **Treinamento competitivo:** R$ 1.400 / mês (8 horas de treino)")
+    st.write("• **Eventos:** Sob consulta")
+    st.markdown('</div>', unsafe_allow_html=True)
+
 elif st.session_state.pagina == "Cadastro":
     st.markdown('<div class="translucent-balloon">', unsafe_allow_html=True)
     st.subheader("📝 Portal de Cadastros")
-    # APENAS ÍCONES E NOMES SEM BALÕES VERDES
     col1, col2, col3 = st.columns(3)
-    with col1:
-        st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSd7N_E2vP6P-fS9jR_Wk7K-G_X_v/viewform" class="btn-cadastro-clean"><div class="icon-large">👤</div>Aluno</a>', unsafe_allow_html=True)
-    with col2:
-        st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSdyHq5Wf1uCjL9fQG-Alp6N7qYqY/viewform" class="btn-cadastro-clean"><div class="icon-large">🏢</div>Academia</a>', unsafe_allow_html=True)
-    with col3:
-        st.markdown('<a href="https://docs.google.com/forms/d/1q4HQq9uY1ju2ZsgOcFb7BF0LtKstpe3fYwjur4WwMLY/viewform" class="btn-cadastro-clean"><div class="icon-large">🎾</div>Professor</a>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-elif st.session_state.pagina == "Contato":
-    # BALÃO CINZA TRANSLÚCIDO
-    st.markdown('<div class="translucent-balloon">', unsafe_allow_html=True)
-    st.subheader("📞 Canais de Atendimento")
-    st.write("📧 **E-mail:** aranha.corp@gmail.com")
-    st.write("📱 **WhatsApp:** (11) 97142-5028")
-    st.markdown('</div>', unsafe_allow_html=True)
+    with col1: st.markdown('<a href="

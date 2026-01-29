@@ -16,7 +16,7 @@ if 'reserva_temp' not in st.session_state: st.session_state.reserva_temp = {}
 if 'inicio_timer' not in st.session_state: st.session_state.inicio_timer = None
 if 'admin_autenticado' not in st.session_state: st.session_state.admin_autenticado = False
 
-# 4. CSS GLOBAL (Blindagem contra erros de aspas)
+# 4. CSS GLOBAL E COMPONENTES FIXOS
 st.markdown("""
 <style>
     .stApp {
@@ -35,6 +35,7 @@ st.markdown("""
     .icon-text { font-size: 80px; margin-bottom: 10px; }
     .label-text { font-size: 20px; font-weight: bold; letter-spacing: 2px; }
     
+    /* WHATSAPP FLUTUANTE */
     .whatsapp-float {
         position: fixed; width: 60px; height: 60px; bottom: 40px; right: 40px;
         background-color: #25d366; color: #FFF; border-radius: 50px; text-align: center;
@@ -50,3 +51,121 @@ st.markdown("""
 </a>
 <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/By%20Andre%20Aranha.png" class="assinatura-footer">
 """, unsafe_allow_html=True)
+
+# 5. MENU LATERAL E ACADEMIAS RECOMENDADAS
+with st.sidebar:
+    st.markdown("<h2 style='color: white; text-align: center;'>🎾 MENU</h2>", unsafe_allow_html=True)
+    for item in ["Home", "Preços", "Cadastro", "Dashboard", "Contato"]:
+        if st.button(item, key=f"nav_{item}", use_container_width=True):
+            st.session_state.pagina = item
+            st.session_state.pagamento_ativo = False
+            st.rerun()
+    
+    st.markdown("---")
+    st.markdown("### 🏢 ACADEMIAS RECOMENDADAS")
+    
+    academias = {
+        "PLAY TENNIS Ibirapuera": "R. Estado de Israel, 860 - Vila Clementino, SP\n📞 (11) 97752-0488",
+        "TOP One Tennis": "Av. Indianópolis, 647 - Indianópolis, SP\n📞 (11) 93236-3828",
+        "MELL Tennis": "Rua Oscar Gomes Cardim, 535 - Vila Cordeiro, SP\n📞 (11) 97142-5028",
+        "ARENA BTG Morumbi": "Av. Maj. Sylvio de Magalhães Padilha, 16741\n📞 (11) 98854-3860"
+    }
+    
+    for nome, info in academias.items():
+        st.markdown(f"📍 **{nome}**\n<div class='sidebar-detalhe'>{info}</div>", unsafe_allow_html=True)
+
+st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
+
+# 6. LÓGICA DE PÁGINAS
+
+# --- HOME ---
+if st.session_state.pagina == "Home":
+    st.markdown('<div class="custom-card">', unsafe_allow_html=True)
+    if not st.session_state.pagamento_ativo:
+        with st.form("reserva_form"):
+            st.subheader("📅 Agendar Aula")
+            aluno = st.text_input("Nome do Aluno")
+            email = st.text_input("E-mail")
+            servico = st.selectbox("Serviço", [
+                "Aula particular R$ 250/hora", "Aula em grupo R$ 200/hora", 
+                "Aula Kids R$ 200/hora", "Personal trainer R$ 250/hora",
+                "Treinamento competitivo R$ 1.400/mes", "Eventos (Valor a combinar)"
+            ])
+            unidade_escolhida = st.selectbox("Unidade", list(academias.keys()))
+            c1, c2 = st.columns(2)
+            with c1: data_aula = st.date_input("Data", format="DD/MM/YYYY")
+            with c2: hora_aula = st.selectbox("Horário", [f"{h:02d}:00" for h in range(7, 23)])
+            
+            if st.form_submit_button("AVANÇAR PARA PAGAMENTO", use_container_width=True):
+                if aluno and email:
+                    st.session_state.reserva_temp = {
+                        "Data": data_aula.strftime("%d/%m/%Y"), "Horário": hora_aula, 
+                        "Aluno": aluno, "Serviço": servico, "Unidade": unidade_escolhida, "Status": "Pendente"
+                    }
+                    st.session_state.pagamento_ativo = True
+                    st.session_state.inicio_timer = time.time()
+                    st.rerun()
+                else:
+                    st.warning("Preencha todos os campos obrigatórios.")
+    else:
+        st.subheader("💳 Pagamento via PIX")
+        st.image("https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=aranha.corp@gmail.com")
+        st.code("aranha.corp@gmail.com", language="text")
+        timer_placeholder = st.empty()
+        if st.button("CONFIRMAR PAGAMENTO", type="primary"):
+            try:
+                df = conn.read(worksheet="Página1")
+                df_novo = pd.concat([df, pd.DataFrame([st.session_state.reserva_temp])], ignore_index=True)
+                conn.update(worksheet="Página1", data=df_novo)
+                st.success("✅ Pagamento enviado para análise!")
+                st.session_state.pagamento_ativo = False
+                time.sleep(2); st.rerun()
+            except: st.error("Erro ao conectar com a base de dados.")
+        
+        restante = 300 - (time.time() - st.session_state.inicio_timer)
+        if restante <= 0: st.session_state.pagamento_ativo = False; st.rerun()
+        m, s = divmod(int(restante), 60)
+        timer_placeholder.warning(f"⏱️ Tempo restante: {m:02d}:{s:02d}")
+        time.sleep(1); st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# --- PREÇOS ---
+elif st.session_state.pagina == "Preços":
+    st.markdown('<div class="translucent-balloon">', unsafe_allow_html=True)
+    st.markdown("### 🎾 Tabela de Preços")
+    st.markdown("""
+    * **Aula particular:** R$ 250/hora
+    * **Aula em grupo:** R$ 200/hora
+    * **Aula Kids:** R$ 200/hora
+    * **Treinamento competitivo:** R$ 1.400/mês
+    * **Personal trainer:** R$ 250/hora
+    * **Eventos:** Valor a combinar
+    """)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# --- CADASTRO (DESIGN CLEAN) ---
+elif st.session_state.pagina == "Cadastro":
+    st.markdown('<div class="translucent-balloon">', unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center;'>📝 Portal de Cadastros</h2><br>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown("""<a href="https://docs.google.com/forms/d/e/1FAIpQLSd7N_E2vP6P-fS9jR_Wk7K-G_X_v/viewform" class="clean-link" target="_blank">
+        <div class="icon-text">👤</div><div class="label-text">ALUNO</div></a>""", unsafe_allow_html=True)
+    with col2:
+        st.markdown("""<a href="https://docs.google.com/forms/d/e/1FAIpQLSdyHq5Wf1uCjL9fQG-Alp6N7qYqY/viewform" class="clean-link" target="_blank">
+        <div class="icon-text">🏢</div><div class="label-text">ACADEMIA</div></a>""", unsafe_allow_html=True)
+    with col3:
+        st.markdown("""<a href="https://docs.google.com/forms/d/1q4HQq9uY1ju2ZsgOcFb7BF0LtKstpe3fYwjur4WwMLY/viewform" class="clean-link" target="_blank">
+        <div class="icon-text">🎾</div><div class="label-text">PROFESSOR</div></a>""", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# --- DASHBOARD ---
+elif st.session_state.pagina == "Dashboard":
+    st.markdown('<div class="custom-card">', unsafe_allow_html=True)
+    if not st.session_state.admin_autenticado:
+        senha = st.text_input("Chave Mestra", type="password")
+        if st.button("Acessar"):
+            if senha == "aranha2026": st.session_state.admin_autenticado = True; st.rerun()
+            else: st.error("Acesso Negado")
+    else:
+        st.dataframe(conn.read(works

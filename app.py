@@ -8,7 +8,7 @@ from email.mime.multipart import MIMEMultipart
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="TENNIS CLASS", layout="wide", page_icon="🎾")
 
-# 2. CONEXÃO COM A PLANILHA (TennisClass_DB)
+# 2. CONEXÃO COM A PLANILHA
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 # 3. ESTADOS DA SESSÃO
@@ -26,7 +26,7 @@ def enviar_confirmacao(dados):
         msg = MIMEMultipart()
         msg['From'], msg['To'] = remetente, dados['Email_Aluno']
         msg['Subject'] = "Reserva Confirmada - TENNIS CLASS"
-        corpo = f"Olá {dados['Aluno']},\n\nSua reserva foi confirmada!\nLocal: {dados['Academia']}\nData: {dados['Data']} às {dados['Horario']}\nServiço: {dados['Servico']}"
+        corpo = f"Olá {dados['Aluno']},\n\nSua reserva foi confirmada!\nLocal: {dados['Academia']}\nServiço: {dados['Servico']}"
         msg.attach(MIMEText(corpo, 'plain'))
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
@@ -36,7 +36,7 @@ def enviar_confirmacao(dados):
         return True
     except: return False
 
-# 5. DESIGN, CSS E ELEMENTOS FLUTUANTES
+# 5. DESIGN E CSS
 st.markdown("""
 <style>
     .stApp {
@@ -48,16 +48,16 @@ st.markdown("""
     .custom-card { background-color: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 20px; color: #333; }
     .translucent-balloon { background-color: rgba(50, 50, 50, 0.85); padding: 25px; border-radius: 15px; color: white; backdrop-filter: blur(10px); margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
     
-    .btn-cadastro-horiz {
+    .btn-cadastro-clean {
         display: flex; flex-direction: column; align-items: center; justify-content: center;
-        background-color: #1e5e20; color: white !important; padding: 20px; border-radius: 15px;
-        text-decoration: none; font-weight: bold; text-align: center; transition: 0.3s; height: 150px;
+        background-color: #1e5e20; color: white !important; padding: 25px; border-radius: 15px;
+        text-decoration: none; font-weight: bold; text-align: center; transition: 0.3s; height: 180px;
     }
-    .btn-cadastro-horiz:hover { background-color: #2e7d32; transform: translateY(-5px); }
-    .icon-cadastro { font-size: 40px; margin-bottom: 10px; }
+    .btn-cadastro-clean:hover { background-color: #2e7d32; transform: scale(1.05); }
+    .icon-large { font-size: 60px; margin-bottom: 15px; }
 
     .assinatura-footer { position: fixed; bottom: 20px; left: 20px; width: 150px; z-index: 1000; }
-    .whatsapp-footer { position: fixed; bottom: 20px; right: 20px; width: 60px; z-index: 1000; transition: 0.3s; }
+    .whatsapp-footer { position: fixed; bottom: 20px; right: 20px; width: 60px; z-index: 1000; }
 </style>
 <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/By%20Andre%20Aranha.png" class="assinatura-footer">
 <a href="https://wa.me/5511971425028" target="_blank">
@@ -75,18 +75,10 @@ info_academias = {
 
 with st.sidebar:
     st.markdown("<h2 style='color: white; text-align: center;'>🎾 MENU</h2>", unsafe_allow_html=True)
-    for item in ["Home", "Serviços", "Cadastro", "Dashboard", "Contato"]:
+    for item in ["Home", "Preços", "Cadastro", "Dashboard", "Contato"]:
         if st.button(item, key=f"nav_{item}", use_container_width=True):
             st.session_state.pagina = item
             st.rerun()
-    
-    st.markdown("---")
-    st.markdown("<h3 style='color: white;'>🏢 Academias</h3>", unsafe_allow_html=True)
-    for nome in info_academias.keys():
-        if st.button(f"📍 {nome}", key=f"side_{nome}", use_container_width=True):
-            st.session_state.academia_foco = nome if st.session_state.academia_foco != nome else None
-        if st.session_state.academia_foco == nome:
-            st.markdown(f'<div style="color:white; padding-left:20px;">{info_academias[nome]}</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
 
@@ -96,70 +88,79 @@ if st.session_state.pagina == "Home":
     if not st.session_state.pagamento_ativo:
         with st.form("form_reserva"):
             st.subheader("📅 Agendar Aula")
-            aluno, email = st.text_input("Nome"), st.text_input("E-mail")
-            servico = st.selectbox("Serviço", ["Aula Individual (R$ 250/h)", "Aula em Grupo (R$ 200/h)", "Aula Kids (R$ 200/h)", "Treinamento competitivo: R$ 1.400 / mês (8 horas de treino)"])
+            aluno = st.text_input("Nome do Aluno")
+            email = st.text_input("E-mail para Confirmação")
+            servico = st.selectbox("Escolha o Serviço", [
+                "Aulas particulares R$ 250/hora", 
+                "Aulas em Grupo R$ 200/hora", 
+                "Aula Kids R$ 200/hora", 
+                "Treinamento competitivo R$ 1.400/mes", 
+                "Eventos valor a combinar"
+            ])
             local = st.selectbox("Unidade", list(info_academias.keys()))
-            data_aula = st.date_input("Data", format="DD/MM/YYYY")
-            hora_aula = st.selectbox("Horário", [f"{h:02d}:00" for h in range(7, 22)])
+            data_aula = st.date_input("Data da Aula", format="DD/MM/YYYY")
             
             if st.form_submit_button("AVANÇAR PARA PAGAMENTO"):
                 if aluno and email:
-                    st.session_state.reserva_temp = {"Data": str(data_aula), "Horario": hora_aula, "Aluno": aluno, "Servico": servico, "Status": "Pendente", "Academia": local, "Email_Aluno": email}
+                    st.session_state.reserva_temp = {
+                        "Data": str(data_aula), "Aluno": aluno, "Servico": servico, 
+                        "Status": "Pendente", "Academia": local, "Email_Aluno": email
+                    }
                     st.session_state.pagamento_ativo = True
                     st.rerun()
     else:
         st.subheader("💳 Pagamento via PIX")
-        st.info("Chave PIX: aranha.corp@gmail.com")
+        # Geração dinâmica do QR Code baseada no serviço
+        qr_url = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=aranha.corp@gmail.com"
+        st.image(qr_url, caption="Escaneie para Pagar")
+        st.info(f"Serviço selecionado: {st.session_state.reserva_temp['Servico']}")
+        st.code("aranha.corp@gmail.com", language="text")
+        
         if st.button("CONFIRMAR AGENDAMENTO"):
             try:
                 df = conn.read(worksheet="Página1")
                 df_novo = pd.concat([df, pd.DataFrame([st.session_state.reserva_temp])], ignore_index=True)
                 conn.update(worksheet="Página1", data=df_novo)
                 enviar_confirmacao(st.session_state.reserva_temp)
-                st.success("Sucesso! E-mail enviado.")
-                st.balloons()
+                st.success("Reserva confirmada! Verifique seu e-mail.")
                 st.session_state.pagamento_ativo = False
-            except Exception as e: st.error(f"Erro: {e}")
+                st.balloons()
+            except Exception as e: st.error(f"Erro ao salvar: {e}")
     st.markdown('</div>', unsafe_allow_html=True)
 
-elif st.session_state.pagina == "Serviços":
+elif st.session_state.pagina == "Preços":
     st.markdown('<div class="translucent-balloon">', unsafe_allow_html=True)
     st.markdown("## 🎾 Tabela de Preços")
-    st.write("- Individual: R$ 250/h\n- Grupo/Kids: R$ 200/h")
-    st.write("- **Treinamento competitivo: R$ 1.400 / mês (8 horas de treino)**")
+    st.write("• **Aulas particulares:** R$ 250/hora")
+    st.write("• **Aulas em Grupo:** R$ 200/hora")
+    st.write("• **Aula Kids:** R$ 200/hora")
+    st.write("• **Treinamento competitivo:** R$ 1.400/mes")
+    st.write("• **Eventos:** Valor a combinar")
     st.markdown('</div>', unsafe_allow_html=True)
 
 elif st.session_state.pagina == "Cadastro":
     st.markdown('<div class="translucent-balloon">', unsafe_allow_html=True)
     st.subheader("📝 Portal de Cadastros")
     c1, c2, c3 = st.columns(3)
-    links = [
-        ("https://docs.google.com/forms/d/e/1FAIpQLSd7N_E2vP6P-fS9jR_Wk7K-G_X_v/viewform", "👤 Aluno"),
-        ("https://docs.google.com/forms/d/e/1FAIpQLSdyHq5Wf1uCjL9fQG-Alp6N7qYqY/viewform", "🏢 Academia"),
-        ("https://docs.google.com/forms/d/1q4HQq9uY1ju2ZsgOcFb7BF0LtKstpe3fYwjur4WwMLY/viewform", "🎾 Professor")
-    ]
-    for col, (link, label) in zip([c1, c2, c3], links):
-        col.markdown(f'<a href="{link}" class="btn-cadastro-horiz"><div class="icon-cadastro">{label.split()[0]}</div>{label}</a>', unsafe_allow_html=True)
+    with c1:
+        st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSd7N_E2vP6P-fS9jR_Wk7K-G_X_v/viewform" class="btn-cadastro-clean"><div class="icon-large">👤</div>Aluno</a>', unsafe_allow_html=True)
+    with c2:
+        st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSdyHq5Wf1uCjL9fQG-Alp6N7qYqY/viewform" class="btn-cadastro-clean"><div class="icon-large">🏢</div>Academia</a>', unsafe_allow_html=True)
+    with c3:
+        st.markdown('<a href="https://docs.google.com/forms/d/1q4HQq9uY1ju2ZsgOcFb7BF0LtKstpe3fYwjur4WwMLY/viewform" class="btn-cadastro-clean"><div class="icon-large">🎾</div>Professor</a>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 elif st.session_state.pagina == "Dashboard":
     st.markdown('<div class="custom-card">', unsafe_allow_html=True)
     st.subheader("📊 Painel Administrativo")
     if not st.session_state.admin_autenticado:
-        senha = st.text_input("Senha de Acesso", type="password")
-        if st.button("Entrar"):
+        senha = st.text_input("Senha", type="password")
+        if st.button("Acessar"):
             if senha == "aranha2026": 
                 st.session_state.admin_autenticado = True
                 st.rerun()
-            else: st.error("Senha incorreta!")
     else:
-        if st.button("Sair do Painel"):
-            st.session_state.admin_autenticado = False
-            st.rerun()
         df_dash = conn.read(worksheet="Página1")
-        st.write(f"Total de Agendamentos: **{len(df_dash)}**")
         st.dataframe(df_dash, use_container_width=True)
+        if st.button("Sair"): st.session_state.admin_autenticado = False; st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
-
-elif st.session_state.pagina == "Contato":
-    st.markdown('<div class="translucent-balloon">📩 aranha.corp@gmail.com <br> 📱 (11) 97142-5028</div>', unsafe_allow_html=True)

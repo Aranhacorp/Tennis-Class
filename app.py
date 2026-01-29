@@ -16,7 +16,7 @@ if 'reserva_temp' not in st.session_state: st.session_state.reserva_temp = {}
 if 'inicio_timer' not in st.session_state: st.session_state.inicio_timer = None
 if 'admin_autenticado' not in st.session_state: st.session_state.admin_autenticado = False
 
-# 4. DESIGN CSS (Corrigido para evitar erros de renderização)
+# 4. DESIGN CSS E ÍCONE WHATSAPP
 st.markdown("""
 <style>
     .stApp {
@@ -37,9 +37,22 @@ st.markdown("""
     .btn-cadastro-clean:hover { transform: scale(1.1); color: #4CAF50 !important; }
     .icon-large { font-size: 80px; margin-bottom: 10px; }
     
+    /* WhatsApp Flutuante */
+    .whatsapp-float {
+        position: fixed; width: 60px; height: 60px; bottom: 40px; right: 40px;
+        background-color: #25d366; color: #FFF; border-radius: 50px; text-align: center;
+        font-size: 30px; box-shadow: 2px 2px 3px #999; z-index: 1000;
+        display: flex; align-items: center; justify-content: center; text-decoration: none;
+    }
+    
     .assinatura-footer { position: fixed; bottom: 20px; left: 20px; width: 150px; z-index: 1000; }
     .sidebar-detalhe { font-size: 12px; color: #ccc; margin-bottom: 10px; }
 </style>
+
+<a href="https://wa.me/5511971425028" class="whatsapp-float" target="_blank">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" width="40">
+</a>
+
 <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/By%20Andre%20Aranha.png" class="assinatura-footer">
 """, unsafe_allow_html=True)
 
@@ -63,110 +76,4 @@ with st.sidebar:
     }
     for nome, endereco in academias_info.items():
         st.markdown(f"📍 **{nome}**")
-        st.markdown(f'<div class="sidebar-detalhe">{endereco}</div>', unsafe_allow_html=True)
-
-st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
-
-# 6. LÓGICA DAS PÁGINAS
-if st.session_state.pagina == "Home":
-    st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-    if not st.session_state.pagamento_ativo:
-        with st.form("form_reserva"):
-            st.subheader("📅 Agendar Aula")
-            aluno = st.text_input("Nome do Aluno")
-            email = st.text_input("E-mail para Confirmação")
-            servico = st.selectbox("Escolha o Serviço", ["Aulas particulares R$ 250/hora", "Aulas em Grupo R$ 200/hora", "Aula Kids R$ 200/hora", "Treinamento competitivo R$ 1.400/mes"])
-            local = st.selectbox("Unidade", list(academias_info.keys()))
-            
-            c1, c2 = st.columns(2)
-            with c1: data_aula = st.date_input("Data", format="DD/MM/YYYY")
-            with c2: 
-                horas = [f"{h:02d}:00" for h in range(7, 23)]
-                horario_aula = st.selectbox("Horário", horas)
-            
-            if st.form_submit_button("AVANÇAR PARA PAGAMENTO"):
-                if aluno and email:
-                    st.session_state.reserva_temp = {
-                        "Data": data_aula.strftime("%d/%m/%Y"), "Horário": horario_aula,
-                        "Aluno": aluno, "Serviço": servico, "Status": "Pendente", "Unidade": local, "Email": email
-                    }
-                    st.session_state.pagamento_ativo = True
-                    st.session_state.inicio_timer = time.time()
-                    st.rerun()
-    else:
-        # CRONÔMETRO DE 5 MINUTOS
-        timer_placeholder = st.empty()
-        st.subheader("💳 Pagamento via PIX")
-        st.image("https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=aranha.corp@gmail.com")
-        st.code("aranha.corp@gmail.com", language="text")
-        
-        if st.button("CONFIRMAR PAGAMENTO"):
-            try:
-                df = conn.read(worksheet="Página1")
-                df_novo = pd.concat([df, pd.DataFrame([st.session_state.reserva_temp])], ignore_index=True)
-                conn.update(worksheet="Página1", data=df_novo)
-                st.success("Reserva Registrada!")
-                st.balloons()
-                st.session_state.pagamento_ativo = False
-                time.sleep(2)
-                st.rerun()
-            except: st.error("Erro ao salvar os dados.")
-
-        while st.session_state.pagamento_ativo:
-            restante = 300 - (time.time() - st.session_state.inicio_timer)
-            if restante <= 0:
-                st.session_state.pagamento_ativo = False
-                st.rerun()
-            m, s = divmod(int(restante), 60)
-            timer_placeholder.error(f"⏱️ Tempo restante para o PIX: {m:02d}:{s:02d}")
-            time.sleep(1)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-elif st.session_state.pagina == "Preços":
-    # TABELA DE PREÇOS RESTAURADA
-    st.markdown('<div class="translucent-balloon">', unsafe_allow_html=True)
-    st.markdown("### 🎾 Tabela de Preços")
-    st.write("• **Individual:** R$ 250/h")
-    st.write("• **Grupo/Kids:** R$ 200/h")
-    st.write("• **Treinamento competitivo:** R$ 1.400 / mês (8 horas de treino)")
-    st.write("• **Eventos:** Sob consulta")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-elif st.session_state.pagina == "Cadastro":
-    # PORTAL DE CADASTROS CLEAN (Apenas Ícones e Nomes)
-    st.markdown('<div class="translucent-balloon">', unsafe_allow_html=True)
-    st.subheader("📝 Portal de Cadastros")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSd7N_E2vP6P-fS9jR_Wk7K-G_X_v/viewform" class="btn-cadastro-clean"><div class="icon-large">👤</div>Aluno</a>', unsafe_allow_html=True)
-    with col2:
-        st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSdyHq5Wf1uCjL9fQG-Alp6N7qYqY/viewform" class="btn-cadastro-clean"><div class="icon-large">🏢</div>Academia</a>', unsafe_allow_html=True)
-    with col3:
-        st.markdown('<a href="https://docs.google.com/forms/d/1q4HQq9uY1ju2ZsgOcFb7BF0LtKstpe3fYwjur4WwMLY/viewform" class="btn-cadastro-clean"><div class="icon-large">🎾</div>Professor</a>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-elif st.session_state.pagina == "Dashboard":
-    # ACESSO AO DASHBOARD RESTAURADO
-    st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-    st.subheader("📊 Dashboard Administrativo")
-    if not st.session_state.admin_autenticado:
-        senha = st.text_input("Senha", type="password")
-        if st.button("Acessar"):
-            if senha == "aranha2026":
-                st.session_state.admin_autenticado = True
-                st.rerun()
-            else: st.error("Acesso negado.")
-    else:
-        df_admin = conn.read(worksheet="Página1")
-        st.dataframe(df_admin, use_container_width=True)
-        if st.button("Logout"):
-            st.session_state.admin_autenticado = False
-            st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
-
-elif st.session_state.pagina == "Contato":
-    st.markdown('<div class="translucent-balloon">', unsafe_allow_html=True)
-    st.subheader("📞 Canais de Atendimento")
-    st.write("📧 **E-mail:** aranha.corp@gmail.com")
-    st.write("📱 **WhatsApp:** (11) 97142-5028")
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown(f'

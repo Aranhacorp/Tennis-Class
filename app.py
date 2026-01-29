@@ -5,11 +5,12 @@ import smtplib
 import time
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from datetime import datetime
 
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="TENNIS CLASS", layout="wide", page_icon="🎾")
 
-# 2. CONEXÃO COM A PLANILHA
+# 2. CONEXÃO COM A PLANILHA (TennisClass_DB)
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 # 3. ESTADOS DA SESSÃO
@@ -26,8 +27,8 @@ def enviar_confirmacao(dados):
     try:
         msg = MIMEMultipart()
         msg['From'], msg['To'] = remetente, dados['Email_Aluno']
-        msg['Subject'] = "Reserva Confirmada - TENNIS CLASS"
-        corpo = f"Olá {dados['Aluno']},\n\nSua reserva foi confirmada!\nLocal: {dados['Academia']}\nServiço: {dados['Servico']}"
+        msg['Subject'] = "Reserva Recebida - TENNIS CLASS"
+        corpo = f"Olá {dados['Aluno']},\n\nRecebemos seu pedido de reserva para {dados['Data']} às {dados['Horário']}.\nStatus: {dados['Status']}\nLocal: {dados['Unidade']}"
         msg.attach(MIMEText(corpo, 'plain'))
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
@@ -37,7 +38,7 @@ def enviar_confirmacao(dados):
         return True
     except: return False
 
-# 5. DESIGN E CSS (Revisado para evitar duplicidade e erros de string)
+# 5. DESIGN E CSS (Correção de erros de string das imagens 9a2d20 e 96fe63)
 st.markdown("""
 <style>
     .stApp {
@@ -53,7 +54,6 @@ st.markdown("""
         display: flex; flex-direction: column; align-items: center; justify-content: center;
         background-color: #1e5e20; color: white !important; padding: 25px; border-radius: 15px;
         text-decoration: none; font-weight: bold; text-align: center; transition: 0.3s; height: 180px;
-        border: 2px solid rgba(255,255,255,0.1);
     }
     .btn-cadastro-single:hover { background-color: #2e7d32; transform: scale(1.05); }
     .icon-box { font-size: 60px; margin-bottom: 10px; }
@@ -73,7 +73,7 @@ with st.sidebar:
     for item in ["Home", "Preços", "Cadastro", "Dashboard", "Contato"]:
         if st.button(item, key=f"nav_{item}", use_container_width=True):
             st.session_state.pagina = item
-            st.session_state.pagamento_ativo = False # Reseta fluxo se mudar de aba
+            st.session_state.pagamento_ativo = False
             st.rerun()
 
 st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
@@ -87,56 +87,61 @@ if st.session_state.pagina == "Home":
             aluno = st.text_input("Nome do Aluno")
             email = st.text_input("E-mail para Confirmação")
             servico = st.selectbox("Escolha o Serviço", [
-                "Aulas particulares R$ 250/hora", 
-                "Aulas em Grupo R$ 200/hora", 
-                "Aula Kids R$ 200/hora", 
-                "Treinamento competitivo R$ 1.400/mes", 
-                "Eventos valor a combinar"
+                "Aulas particulares R$ 250/hora", "Aulas em Grupo R$ 200/hora", 
+                "Aula Kids R$ 200/hora", "Treinamento competitivo R$ 1.400/mes", "Eventos valor a combinar"
             ])
             local = st.selectbox("Unidade", ["PLAY TENNIS Ibirapuera", "TOP One Tennis", "MELL Tennis", "ARENA BTG Morumbi"])
+            col_data, col_hora = st.columns(2)
+            with col_data: data_aula = st.date_input("Data", format="DD/MM/YYYY")
+            with col_hora: horario_aula = st.time_input("Horário")
+            
             if st.form_submit_button("AVANÇAR PARA PAGAMENTO"):
                 if aluno and email:
-                    st.session_state.reserva_temp = {"Aluno": aluno, "Servico": servico, "Academia": local, "Email_Aluno": email}
+                    # Mapeamento exato para as colunas da Planilha
+                    st.session_state.reserva_temp = {
+                        "Data": data_aula.strftime("%d/%m/%Y"),
+                        "Horário": horario_aula.strftime("%H:%M"),
+                        "Aluno": aluno,
+                        "Serviço": servico,
+                        "Status": "Pendente",
+                        "Unidade": local,
+                        "Email_Aluno": email
+                    }
                     st.session_state.pagamento_ativo = True
                     st.session_state.inicio_timer = time.time()
                     st.rerun()
-                else: st.warning("Preencha todos os campos!")
     else:
-        # LÓGICA DO TIMER (5 MINUTOS)
-        passado = time.time() - st.session_state.inicio_timer
-        restante = 300 - passado
+        # TIMER DE 5 MINUTOS
+        restante = 300 - (time.time() - st.session_state.inicio_timer)
         if restante <= 0:
-            st.error("Tempo esgotado! Inicie o agendamento novamente.")
+            st.error("Tempo esgotado!")
             st.session_state.pagamento_ativo = False
-            time.sleep(2)
             st.rerun()
         
-        mins, secs = divmod(int(restante), 60)
-        st.error(f"⏱️ Tempo restante para o PIX: {mins:02d}:{secs:02d}")
-        
+        m, s = divmod(int(restante), 60)
+        st.error(f"⏱️ Tempo para PIX: {m:02d}:{s:02d}")
         st.subheader("💳 Pagamento via PIX")
-        st.image("https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=aranha.corp@gmail.com", caption="Escaneie para Pagar")
-        st.info(f"Chave PIX: aranha.corp@gmail.com")
+        st.image("https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=aranha.corp@gmail.com")
         st.code("aranha.corp@gmail.com", language="text")
         
         if st.button("CONFIRMAR AGENDAMENTO"):
             try:
                 df = conn.read(worksheet="Página1")
+                # Garante que as colunas do DF batem com o dicionário
                 df_novo = pd.concat([df, pd.DataFrame([st.session_state.reserva_temp])], ignore_index=True)
                 conn.update(worksheet="Página1", data=df_novo)
                 enviar_confirmacao(st.session_state.reserva_temp)
-                st.success("Tudo pronto! Agendamento confirmado e e-mail enviado.")
-                st.balloons()
+                st.success("Agendamento Registrado na Planilha!")
                 st.session_state.pagamento_ativo = False
-            except Exception as e: st.error(f"Erro ao salvar: {e}")
+                st.balloons()
+            except Exception as e: st.error(f"Erro no DB: {e}")
     st.markdown('</div>', unsafe_allow_html=True)
 
 elif st.session_state.pagina == "Preços":
     st.markdown('<div class="translucent-balloon">', unsafe_allow_html=True)
     st.markdown("## 💰 Tabela de Preços")
     st.write("• **Aulas particulares:** R$ 250/hora")
-    st.write("• **Aulas em Grupo:** R$ 200/hora")
-    st.write("• **Aula Kids:** R$ 200/hora")
+    st.write("• **Aulas em Grupo/Kids:** R$ 200/hora")
     st.write("• **Treinamento competitivo:** R$ 1.400/mes")
     st.write("• **Eventos:** Valor a combinar")
     st.markdown('</div>', unsafe_allow_html=True)
@@ -144,31 +149,21 @@ elif st.session_state.pagina == "Preços":
 elif st.session_state.pagina == "Cadastro":
     st.markdown('<div class="translucent-balloon">', unsafe_allow_html=True)
     st.subheader("📝 Portal de Cadastros")
-    # APENAS 3 COLUNAS, 1 ÍCONE POR CADASTRO
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSd7N_E2vP6P-fS9jR_Wk7K-G_X_v/viewform" class="btn-cadastro-single"><div class="icon-box">👤</div>Aluno</a>', unsafe_allow_html=True)
-    with col2:
-        st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSdyHq5Wf1uCjL9fQG-Alp6N7qYqY/viewform" class="btn-cadastro-single"><div class="icon-box">🏢</div>Academia</a>', unsafe_allow_html=True)
-    with col3:
-        st.markdown('<a href="https://docs.google.com/forms/d/1q4HQq9uY1ju2ZsgOcFb7BF0LtKstpe3fYwjur4WwMLY/viewform" class="btn-cadastro-single"><div class="icon-box">🎾</div>Professor</a>', unsafe_allow_html=True)
+    c1, c2, c3 = st.columns(3) # Apenas 1 linha com 3 colunas
+    with c1: st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSd7N_E2vP6P-fS9jR_Wk7K-G_X_v/viewform" class="btn-cadastro-single"><div class="icon-box">👤</div>Aluno</a>', unsafe_allow_html=True)
+    with c2: st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSdyHq5Wf1uCjL9fQG-Alp6N7qYqY/viewform" class="btn-cadastro-single"><div class="icon-box">🏢</div>Academia</a>', unsafe_allow_html=True)
+    with c3: st.markdown('<a href="https://docs.google.com/forms/d/1q4HQq9uY1ju2ZsgOcFb7BF0LtKstpe3fYwjur4WwMLY/viewform" class="btn-cadastro-single"><div class="icon-box">🎾</div>Professor</a>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 elif st.session_state.pagina == "Dashboard":
     st.markdown('<div class="custom-card">', unsafe_allow_html=True)
     if not st.session_state.admin_autenticado:
-        senha = st.text_input("Acesso Restrito", type="password")
+        senha = st.text_input("Senha", type="password")
         if st.button("Entrar"):
-            if senha == "aranha2026": 
-                st.session_state.admin_autenticado = True
-                st.rerun()
-            else: st.error("Senha inválida!")
+            if senha == "aranha2026": st.session_state.admin_autenticado = True; st.rerun()
     else:
-        st.subheader("📊 Relatório de Agendamentos")
+        st.subheader("📊 Planilha TennisClass_DB")
         df_dash = conn.read(worksheet="Página1")
         st.dataframe(df_dash, use_container_width=True)
         if st.button("Logout"): st.session_state.admin_autenticado = False; st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
-
-elif st.session_state.pagina == "Contato":
-    st.markdown('<div class="translucent-balloon">📞 (11) 97142-5028 <br> 📩 aranha.corp@gmail.com</div>', unsafe_allow_html=True)

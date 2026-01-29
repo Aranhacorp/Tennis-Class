@@ -2,7 +2,6 @@ import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 import time
-from datetime import datetime
 
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="TENNIS CLASS", layout="wide", page_icon="🎾")
@@ -17,7 +16,7 @@ if 'reserva_temp' not in st.session_state: st.session_state.reserva_temp = {}
 if 'inicio_timer' not in st.session_state: st.session_state.inicio_timer = None
 if 'admin_autenticado' not in st.session_state: st.session_state.admin_autenticado = False
 
-# 4. DESIGN CSS (Visual Clean e Premium)
+# 4. DESIGN CSS (Corrigido para evitar erros de renderização)
 st.markdown("""
 <style>
     .stApp {
@@ -29,17 +28,17 @@ st.markdown("""
     .custom-card { background-color: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 20px; color: #333; }
     .translucent-balloon { background-color: rgba(50, 50, 50, 0.85); padding: 25px; border-radius: 15px; color: white; backdrop-filter: blur(10px); margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
     
-    /* Cadastro: Apenas ícones e nomes flutuantes */
+    /* Cadastro: Estilo Clean apenas ícones */
     .btn-cadastro-clean {
         display: flex; flex-direction: column; align-items: center; justify-content: center;
         color: white !important; text-decoration: none; font-weight: bold; text-align: center;
-        transition: 0.3s; padding: 10px;
+        transition: 0.3s; padding: 20px;
     }
-    .btn-cadastro-clean:hover { transform: scale(1.15); color: #4CAF50 !important; }
-    .icon-large { font-size: 90px; margin-bottom: 10px; }
+    .btn-cadastro-clean:hover { transform: scale(1.1); color: #4CAF50 !important; }
+    .icon-large { font-size: 80px; margin-bottom: 10px; }
     
     .assinatura-footer { position: fixed; bottom: 20px; left: 20px; width: 150px; z-index: 1000; }
-    .sidebar-detalhe { font-size: 12px; color: #ccc; padding-left: 20px; margin-top: -10px; margin-bottom: 10px; }
+    .sidebar-detalhe { font-size: 12px; color: #ccc; margin-bottom: 10px; }
 </style>
 <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/By%20Andre%20Aranha.png" class="assinatura-footer">
 """, unsafe_allow_html=True)
@@ -47,24 +46,24 @@ st.markdown("""
 # 5. MENU LATERAL
 with st.sidebar:
     st.markdown("<h2 style='color: white; text-align: center;'>🎾 MENU</h2>", unsafe_allow_html=True)
-    menu = ["Home", "Preços", "Cadastro", "Dashboard", "Contato"]
-    for item in menu:
-        if st.button(item, key=f"nav_{item}", use_container_width=True):
-            st.session_state.pagina = item
+    opcoes = ["Home", "Preços", "Cadastro", "Dashboard", "Contato"]
+    for opcao in opcoes:
+        if st.button(opcao, key=f"btn_{opcao}", use_container_width=True):
+            st.session_state.pagina = opcao
             st.session_state.pagamento_ativo = False
             st.rerun()
     
     st.markdown("---")
     st.markdown("### 🏢 Academias")
-    academias = {
-        "PLAY TENNIS Ibirapuera": "R. Estado de Israel, 860 - Vila Clementino, SP | (11) 97752-0488",
+    academias_info = {
+        "PLAY TENNIS Ibirapuera": "R. Estado de Israel, 860 - Vila Clementino, SP",
         "TOP One Tennis": "Unidade Premium",
         "MELL Tennis": "Unidade Zona Sul",
         "ARENA BTG Morumbi": "Unidade Morumbi"
     }
-    for nome, info in academias.items():
+    for nome, endereco in academias_info.items():
         st.markdown(f"📍 **{nome}**")
-        st.markdown(f'<div class="sidebar-detalhe">{info}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="sidebar-detalhe">{endereco}</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
 
@@ -77,7 +76,7 @@ if st.session_state.pagina == "Home":
             aluno = st.text_input("Nome do Aluno")
             email = st.text_input("E-mail para Confirmação")
             servico = st.selectbox("Escolha o Serviço", ["Aulas particulares R$ 250/hora", "Aulas em Grupo R$ 200/hora", "Aula Kids R$ 200/hora", "Treinamento competitivo R$ 1.400/mes"])
-            local = st.selectbox("Unidade", list(academias.keys()))
+            local = st.selectbox("Unidade", list(academias_info.keys()))
             
             c1, c2 = st.columns(2)
             with c1: data_aula = st.date_input("Data", format="DD/MM/YYYY")
@@ -95,7 +94,7 @@ if st.session_state.pagina == "Home":
                     st.session_state.inicio_timer = time.time()
                     st.rerun()
     else:
-        # CRONÔMETRO REGRESSIVO 5 MINUTOS
+        # CRONÔMETRO DE 5 MINUTOS
         timer_placeholder = st.empty()
         st.subheader("💳 Pagamento via PIX")
         st.image("https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=aranha.corp@gmail.com")
@@ -106,12 +105,12 @@ if st.session_state.pagina == "Home":
                 df = conn.read(worksheet="Página1")
                 df_novo = pd.concat([df, pd.DataFrame([st.session_state.reserva_temp])], ignore_index=True)
                 conn.update(worksheet="Página1", data=df_novo)
-                st.success("Reserva Registrada com sucesso!")
+                st.success("Reserva Registrada!")
                 st.balloons()
                 st.session_state.pagamento_ativo = False
                 time.sleep(2)
                 st.rerun()
-            except Exception: st.error("Erro ao conectar com a base de dados.")
+            except: st.error("Erro ao salvar os dados.")
 
         while st.session_state.pagamento_ativo:
             restante = 300 - (time.time() - st.session_state.inicio_timer)
@@ -119,12 +118,55 @@ if st.session_state.pagina == "Home":
                 st.session_state.pagamento_ativo = False
                 st.rerun()
             m, s = divmod(int(restante), 60)
-            timer_placeholder.error(f"⏱️ Tempo para PIX: {m:02d}:{s:02d}")
+            timer_placeholder.error(f"⏱️ Tempo restante para o PIX: {m:02d}:{s:02d}")
             time.sleep(1)
     st.markdown('</div>', unsafe_allow_html=True)
 
 elif st.session_state.pagina == "Preços":
-    # TABELA DE PREÇOS COMPLETA
+    # TABELA DE PREÇOS RESTAURADA
     st.markdown('<div class="translucent-balloon">', unsafe_allow_html=True)
     st.markdown("### 🎾 Tabela de Preços")
-    st.write("• **Individual:** R$
+    st.write("• **Individual:** R$ 250/h")
+    st.write("• **Grupo/Kids:** R$ 200/h")
+    st.write("• **Treinamento competitivo:** R$ 1.400 / mês (8 horas de treino)")
+    st.write("• **Eventos:** Sob consulta")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+elif st.session_state.pagina == "Cadastro":
+    # PORTAL DE CADASTROS CLEAN (Apenas Ícones e Nomes)
+    st.markdown('<div class="translucent-balloon">', unsafe_allow_html=True)
+    st.subheader("📝 Portal de Cadastros")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSd7N_E2vP6P-fS9jR_Wk7K-G_X_v/viewform" class="btn-cadastro-clean"><div class="icon-large">👤</div>Aluno</a>', unsafe_allow_html=True)
+    with col2:
+        st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSdyHq5Wf1uCjL9fQG-Alp6N7qYqY/viewform" class="btn-cadastro-clean"><div class="icon-large">🏢</div>Academia</a>', unsafe_allow_html=True)
+    with col3:
+        st.markdown('<a href="https://docs.google.com/forms/d/1q4HQq9uY1ju2ZsgOcFb7BF0LtKstpe3fYwjur4WwMLY/viewform" class="btn-cadastro-clean"><div class="icon-large">🎾</div>Professor</a>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+elif st.session_state.pagina == "Dashboard":
+    # ACESSO AO DASHBOARD RESTAURADO
+    st.markdown('<div class="custom-card">', unsafe_allow_html=True)
+    st.subheader("📊 Dashboard Administrativo")
+    if not st.session_state.admin_autenticado:
+        senha = st.text_input("Senha", type="password")
+        if st.button("Acessar"):
+            if senha == "aranha2026":
+                st.session_state.admin_autenticado = True
+                st.rerun()
+            else: st.error("Acesso negado.")
+    else:
+        df_admin = conn.read(worksheet="Página1")
+        st.dataframe(df_admin, use_container_width=True)
+        if st.button("Logout"):
+            st.session_state.admin_autenticado = False
+            st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+
+elif st.session_state.pagina == "Contato":
+    st.markdown('<div class="translucent-balloon">', unsafe_allow_html=True)
+    st.subheader("📞 Canais de Atendimento")
+    st.write("📧 **E-mail:** aranha.corp@gmail.com")
+    st.write("📱 **WhatsApp:** (11) 97142-5028")
+    st.markdown('</div>', unsafe_allow_html=True)

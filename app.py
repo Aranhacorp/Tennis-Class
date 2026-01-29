@@ -30,18 +30,18 @@ st.markdown("""
     .custom-card { background-color: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 20px; color: #333; }
     .translucent-balloon { background-color: rgba(50, 50, 50, 0.85); padding: 25px; border-radius: 15px; color: white; backdrop-filter: blur(10px); margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
     
-    /* Portal de Cadastros Clean: Apenas ícones e nomes */
+    /* Portal de Cadastros Clean */
     .btn-cadastro-clean {
         display: flex; flex-direction: column; align-items: center; justify-content: center;
-        background-color: rgba(30, 100, 30, 0.9); /* Verde Tênis Escuro */
+        background-color: rgba(30, 100, 30, 0.9);
         color: white !important; text-decoration: none; font-weight: bold; text-align: center;
         transition: 0.3s; padding: 20px; border-radius: 15px; border: 2px solid #4CAF50;
         height: 180px; width: 100%;
     }
-    .btn-cadastro-clean:hover { transform: scale(1.05); background-color: #4CAF50 !important; color: white !important; }
+    .btn-cadastro-clean:hover { transform: scale(1.05); background-color: #4CAF50 !important; }
     .icon-large { font-size: 50px; margin-bottom: 10px; }
     
-    /* WhatsApp Flutuante Corrigido */
+    /* WhatsApp Flutuante */
     .whatsapp-float {
         position: fixed; width: 60px; height: 60px; bottom: 40px; right: 40px;
         background-color: #25d366; color: #FFF; border-radius: 50px; text-align: center;
@@ -50,7 +50,6 @@ st.markdown("""
     }
     
     .assinatura-footer { position: fixed; bottom: 20px; left: 20px; width: 150px; z-index: 1000; opacity: 0.8; }
-    .sidebar-detalhe { font-size: 12px; color: #ccc; margin-bottom: 10px; }
 </style>
 
 <a href="https://wa.me/5511971425028" class="whatsapp-float" target="_blank">
@@ -79,8 +78,7 @@ with st.sidebar:
         "ARENA BTG Morumbi": "Unidade Morumbi"
     }
     for nome, endereco in academias_info.items():
-        st.markdown(f"📍 **{nome}**")
-        st.markdown(f'<div class="sidebar-detalhe">{endereco}</div>', unsafe_allow_html=True)
+        st.markdown(f"📍 **{nome}**\n\n<div style='font-size: 12px; color: #ccc;'>{endereco}</div>", unsafe_allow_html=True)
 
 st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
 
@@ -113,18 +111,12 @@ if st.session_state.pagina == "Home":
                     st.session_state.pagamento_ativo = True
                     st.session_state.inicio_timer = time.time()
                     st.rerun()
-                else:
-                    st.warning("Preencha nome e e-mail.")
     else:
-        # CRONÔMETRO DE PAGAMENTO
+        # PAGAMENTO E CRONÔMETRO
         timer_placeholder = st.empty()
         st.subheader("💳 Pagamento via PIX")
-        c1, c2 = st.columns([1,2])
-        with c1:
-            st.image("https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=aranha.corp@gmail.com")
-        with c2:
-            st.info("Chave PIX: aranha.corp@gmail.com")
-            st.write("Após o pagamento, clique em confirmar abaixo.")
+        st.image("https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=aranha.corp@gmail.com")
+        st.info("Chave PIX: aranha.corp@gmail.com")
         
         if st.button("CONFIRMAR PAGAMENTO", type="primary"):
             try:
@@ -136,12 +128,65 @@ if st.session_state.pagina == "Home":
                 st.session_state.pagamento_ativo = False
                 time.sleep(2)
                 st.rerun()
-            except Exception as e: 
-                st.error(f"Erro ao registrar: {e}")
+            except Exception as e: st.error(f"Erro: {e}")
 
         while st.session_state.pagamento_ativo:
             restante = 300 - (time.time() - st.session_state.inicio_timer)
             if restante <= 0:
                 st.session_state.pagamento_ativo = False
                 st.rerun()
-            m, s = divmod(int(restante), 6
+            m, s = divmod(int(restante), 60)
+            timer_placeholder.error(f"⏱️ Tempo restante para o PIX: {m:02d}:{s:02d}")
+            time.sleep(1)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+elif st.session_state.pagina == "Preços":
+    # TABELA DE PREÇOS RESTAURADA
+    st.markdown('<div class="translucent-balloon">', unsafe_allow_html=True)
+    st.markdown("### 🎾 Tabela de Preços")
+    st.markdown("---")
+    st.write("• **Individual:** R$ 250/h")
+    st.write("• **Grupo/Kids:** R$ 200/h")
+    st.write("• **Treinamento competitivo:** R$ 1.400 / mês (8 horas de treino)")
+    st.write("• **Eventos:** Sob consulta")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+elif st.session_state.pagina == "Cadastro":
+    # PORTAL DE CADASTROS
+    st.markdown('<div class="translucent-balloon">', unsafe_allow_html=True)
+    st.subheader("📝 Portal de Cadastros")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSd7N_E2vP6P-fS9jR_Wk7K-G_X_v/viewform" class="btn-cadastro-clean" target="_blank"><div class="icon-large">👤</div>Aluno</a>', unsafe_allow_html=True)
+    with col2:
+        st.markdown('<a href="https://docs.google.com/forms/d/e/1FAIpQLSdyHq5Wf1uCjL9fQG-Alp6N7qYqY/viewform" class="btn-cadastro-clean" target="_blank"><div class="icon-large">🏢</div>Academia</a>', unsafe_allow_html=True)
+    with col3:
+        st.markdown('<a href="https://docs.google.com/forms/d/1q4HQq9uY1ju2ZsgOcFb7BF0LtKstpe3fYwjur4WwMLY/viewform" class="btn-cadastro-clean" target="_blank"><div class="icon-large">🎾</div>Professor</a>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+elif st.session_state.pagina == "Dashboard":
+    # ADMINISTRAÇÃO
+    st.markdown('<div class="custom-card">', unsafe_allow_html=True)
+    st.subheader("📊 Administração")
+    if not st.session_state.admin_autenticado:
+        senha = st.text_input("Chave de Acesso", type="password")
+        if st.button("Acessar"):
+            if senha == "aranha2026":
+                st.session_state.admin_autenticado = True
+                st.rerun()
+            else: st.error("Acesso Negado")
+    else:
+        dados = conn.read(worksheet="Página1")
+        st.dataframe(dados, use_container_width=True)
+        if st.button("Logout"):
+            st.session_state.admin_autenticado = False
+            st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+
+elif st.session_state.pagina == "Contato":
+    # CONTATO
+    st.markdown('<div class="translucent-balloon">', unsafe_allow_html=True)
+    st.subheader("📞 Canais de Atendimento")
+    st.write("📧 **E-mail:** aranha.corp@gmail.com")
+    st.write("📱 **WhatsApp:** (11) 97142-5028")
+    st.markdown('</div>', unsafe_allow_html=True)

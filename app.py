@@ -3,62 +3,175 @@ from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 import time
 
+# ------------------------------------------------------
 # 1. CONFIGURAÇÃO DA PÁGINA
-st.set_page_config(page_title="TENNIS CLASS", layout="wide", page_icon="🎾")
+# ------------------------------------------------------
+st.set_page_config(
+    page_title="TENNIS CLASS",
+    layout="wide",
+    page_icon="🎾"
+)
 
+# ------------------------------------------------------
 # 2. CONEXÃO COM BANCO DE DADOS
+# ------------------------------------------------------
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# 3. ESTADOS DA SESSÃO
-if 'pagina' not in st.session_state: st.session_state.pagina = "Home"
-if 'pagamento_ativo' not in st.session_state: st.session_state.pagamento_ativo = False
-if 'reserva_temp' not in st.session_state: st.session_state.reserva_temp = {}
-if 'inicio_timer' not in st.session_state: st.session_state.inicio_timer = None
-if 'admin_autenticado' not in st.session_state: st.session_state.admin_autenticado = False
+# ------------------------------------------------------
+# 3. GERENCIAMENTO DE ESTADO (SESSION STATE)
+# ------------------------------------------------------
+if 'pagina' not in st.session_state:
+    st.session_state.pagina = "Home"
+if 'pagamento_ativo' not in st.session_state:
+    st.session_state.pagamento_ativo = False
+if 'reserva_temp' not in st.session_state:
+    st.session_state.reserva_temp = {}
+if 'inicio_timer' not in st.session_state:
+    st.session_state.inicio_timer = None
+if 'admin_autenticado' not in st.session_state:
+    st.session_state.admin_autenticado = False
 
-# 4. CSS GLOBAL E ESTILOS
+# ------------------------------------------------------
+# 4. CSS GLOBAL E ESTILIZAÇÃO VISUAL
+# ------------------------------------------------------
 st.markdown("""
 <style>
+    /* Fundo da Aplicação */
     .stApp {
         background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
                     url("https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/Fundo%20APP%20ver2.png");
-        background-size: cover; background-position: center; background-attachment: fixed;
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
     }
-    .header-title { color: white; font-size: 50px; font-weight: bold; text-align: center; margin-bottom: 20px; text-shadow: 2px 2px 4px black; }
-    .custom-card { background-color: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 20px; color: #333; position: relative; }
-    .translucent-balloon { background-color: rgba(50, 50, 50, 0.85); padding: 25px; border-radius: 15px; color: white; backdrop-filter: blur(10px); margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
-    .clean-link { text-align: center; text-decoration: none !important; color: white !important; transition: 0.3s; display: block; padding: 20px; }
-    .clean-link:hover { transform: translateY(-8px); color: #4CAF50 !important; }
-    .icon-text { font-size: 80px; margin-bottom: 10px; }
-    .label-text { font-size: 20px; font-weight: bold; letter-spacing: 2px; }
-    .whatsapp-float { position: fixed; width: 60px; height: 60px; bottom: 40px; right: 40px; background-color: #25d366; color: #FFF; border-radius: 50px; text-align: center; font-size: 35px; box-shadow: 2px 2px 3px #999; z-index: 9999; display: flex; align-items: center; justify-content: center; text-decoration: none; }
-    .regulamento-icon { display: block; text-align: center; margin-top: 20px; text-decoration: none; color: #555; font-size: 14px; transition: 0.3s; }
-    .regulamento-icon span { font-size: 24px; display: block; }
-    .regulamento-icon:hover { color: #4CAF50; transform: scale(1.05); }
-    .assinatura-footer { position: fixed; bottom: 15px; left: 20px; width: 130px; z-index: 9999; opacity: 0.8; }
-    .sidebar-detalhe { font-size: 11px; color: #ccc; margin-bottom: 10px; line-height: 1.2; }
+    
+    /* Títulos e Textos */
+    .header-title {
+        color: white;
+        font-size: 50px;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 20px;
+        text-shadow: 2px 2px 4px black;
+    }
+    
+    /* Cartões e Balões */
+    .custom-card {
+        background-color: rgba(255, 255, 255, 0.95);
+        padding: 30px;
+        border-radius: 20px;
+        color: #333;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .translucent-balloon {
+        background-color: rgba(50, 50, 50, 0.85);
+        padding: 25px;
+        border-radius: 15px;
+        color: white;
+        backdrop-filter: blur(10px);
+        margin-bottom: 20px;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    /* Botões de Cadastro (Ícones Grandes) */
+    .clean-link {
+        text-align: center;
+        text-decoration: none !important;
+        color: white !important;
+        transition: 0.3s;
+        display: block;
+        padding: 20px;
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 10px;
+    }
+    .clean-link:hover {
+        transform: translateY(-5px);
+        background-color: rgba(255,255,255,0.1);
+        border-color: #4CAF50;
+    }
+    .icon-text { font-size: 60px; margin-bottom: 10px; }
+    .label-text { font-size: 18px; font-weight: bold; letter-spacing: 1px; }
+
+    /* Botão Flutuante do WhatsApp */
+    .whatsapp-float {
+        position: fixed;
+        width: 60px;
+        height: 60px;
+        bottom: 40px;
+        right: 40px;
+        background-color: #25d366;
+        color: #FFF;
+        border-radius: 50px;
+        text-align: center;
+        font-size: 35px;
+        box-shadow: 2px 2px 3px #999;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+    }
+    
+    /* Rodapé e Regulamento */
+    .regulamento-icon {
+        display: block;
+        text-align: center;
+        margin-top: 20px;
+        text-decoration: none;
+        color: #555;
+        font-size: 14px;
+        font-weight: bold;
+        transition: 0.3s;
+        padding: 10px;
+        border-radius: 5px;
+    }
+    .regulamento-icon:hover {
+        background-color: #f0f0f0;
+        color: #4CAF50;
+    }
+    .assinatura-footer {
+        position: fixed;
+        bottom: 15px;
+        left: 20px;
+        width: 130px;
+        z-index: 9999;
+        opacity: 0.8;
+    }
+    .sidebar-detalhe {
+        font-size: 12px;
+        color: #ddd;
+        margin-bottom: 15px;
+        line-height: 1.4;
+    }
 </style>
-<a href="https://wa.me/5511971425028" class="whatsapp-float" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" width="35"></a>
+
+<a href="https://wa.me/5511971425028" class="whatsapp-float" target="_blank">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" width="35">
+</a>
 <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/By%20Andre%20Aranha.png" class="assinatura-footer">
 """, unsafe_allow_html=True)
 
+# ------------------------------------------------------
 # 5. MENU LATERAL
+# ------------------------------------------------------
 with st.sidebar:
     st.markdown("<h2 style='color: white; text-align: center;'>🎾 MENU</h2>", unsafe_allow_html=True)
-    for item in ["Home", "Preços", "Cadastro", "Dashboard", "Contato"]:
-        if st.button(item, key=f"nav_{item}", use_container_width=True):
-            st.session_state.pagina = item
-            st.session_state.pagamento_ativo = False
-            st.rerun()
-    st.markdown("---")
-    st.markdown("### 🏢 ACADEMIAS RECOMENDADAS")
-    academias = {
-        "PLAY TENNIS Ibirapuera": "R. Estado de Israel, 860 - SP\n📞 (11) 97752-0488",
-        "TOP One Tennis": "Av. Indianópolis, 647 - SP\n📞 (11) 93236-3828",
-        "MELL Tennis": "Rua Oscar Gomes Cardim, 535 - SP\n📞 (11) 97142-5028",
-        "ARENA BTG Morumbi": "Av. Maj. Sylvio de Magalhães Padilha, 16741\n📞 (11) 98854-3860"
-    }
-    for nome, info in academias.items():
-        st.markdown(f"📍 **{nome}**\n<div class='sidebar-detalhe'>{info}</div>", unsafe_allow_html=True)
+    
+    # Navegação com botões
+    if st.button("Home", use_container_width=True):
+        st.session_state.pagina = "Home"
+        st.session_state.pagamento_ativo = False
+        st.rerun()
+        
+    if st.button("Preços", use_container_width=True):
+        st.session_state.pagina = "Preços"
+        st.session_state.pagamento_ativo = False
+        st.rerun()
 
-st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
+    if st.button("Cadastro", use_container_width=True):
+        st.session_state.pagina = "Cadastro"
+        st.session_state.pagamento_ativo = False
+        st.rerun()
+
+    if st.button("Dashboard", use_container_width=True):
+        st

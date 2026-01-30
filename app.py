@@ -6,8 +6,7 @@ import time
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="TENNIS CLASS", layout="wide", page_icon="🎾")
 
-# 2. CONEXÃO COM BANCO DE DADOS (TennisClass_DB)
-# O link da planilha deve estar configurado no seu arquivo .streamlit/secrets.toml
+# 2. CONEXÃO COM BANCO DE DADOS
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 # 3. ESTADOS DA SESSÃO
@@ -17,7 +16,7 @@ if 'reserva_temp' not in st.session_state: st.session_state.reserva_temp = {}
 if 'inicio_timer' not in st.session_state: st.session_state.inicio_timer = None
 if 'admin_autenticado' not in st.session_state: st.session_state.admin_autenticado = False
 
-# 4. CSS GLOBAL
+# 4. CSS GLOBAL (Corrigido para evitar erros de aspas triplas)
 st.markdown("""
 <style>
     .stApp {
@@ -37,29 +36,4 @@ st.markdown("""
 <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/By%20Andre%20Aranha.png" class="assinatura-footer">
 """, unsafe_allow_html=True)
 
-# 5. MENU LATERAL
-with st.sidebar:
-    st.markdown("<h2 style='color: white; text-align: center;'>🎾 MENU</h2>", unsafe_allow_html=True)
-    for item in ["Home", "Preços", "Cadastro", "Dashboard", "Contato"]:
-        if st.button(item, key=f"nav_{item}", use_container_width=True):
-            st.session_state.pagina = item
-            st.session_state.pagamento_ativo = False
-            st.rerun()
-
-st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
-
-# 6. LÓGICA DE PÁGINAS
-if st.session_state.pagina == "Home":
-    st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-    if not st.session_state.pagamento_ativo:
-        with st.form("reserva_form"):
-            st.subheader("📅 Agendar Aula")
-            aluno = st.text_input("Nome do Aluno")
-            email = st.text_input("E-mail")
-            servico = st.selectbox("Serviço", ["Aula particular R$ 250/hora", "Aula em grupo R$ 200/hora", "Aula Kids R$ 200/hora", "Personal trainer R$ 250/hora"])
-            unidade = st.selectbox("Unidade", ["PLAY TENNIS Ibirapuera", "TOP One Tennis", "MELL Tennis", "ARENA BTG Morumbi"])
-            c1, c2 = st.columns(2)
-            with c1: dt = st.date_input("Data", format="DD/MM/YYYY")
-            with c2: hr = st.selectbox("Horário", [f"{h:02d}:00" for h in range(7, 23)])
-            
-            if st.form_submit_button("AVANÇAR PARA
+# 5

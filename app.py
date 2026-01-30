@@ -6,7 +6,8 @@ import time
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="TENNIS CLASS", layout="wide", page_icon="🎾")
 
-# 2. CONEXÃO COM BANCO DE DADOS
+# 2. CONEXÃO COM BANCO DE DADOS (TennisClass_DB)
+# O link da planilha deve estar configurado no seu arquivo .streamlit/secrets.toml
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 # 3. ESTADOS DA SESSÃO
@@ -16,7 +17,7 @@ if 'reserva_temp' not in st.session_state: st.session_state.reserva_temp = {}
 if 'inicio_timer' not in st.session_state: st.session_state.inicio_timer = None
 if 'admin_autenticado' not in st.session_state: st.session_state.admin_autenticado = False
 
-# 4. CSS GLOBAL (Corrigido para evitar SyntaxError)
+# 4. CSS GLOBAL
 st.markdown("""
 <style>
     .stApp {
@@ -55,41 +56,10 @@ if st.session_state.pagina == "Home":
             st.subheader("📅 Agendar Aula")
             aluno = st.text_input("Nome do Aluno")
             email = st.text_input("E-mail")
-            servicos = ["Aula particular R$ 250/hora", "Aula em grupo R$ 200/hora", "Aula Kids R$ 200/hora", "Personal trainer R$ 250/hora"]
-            servico = st.selectbox("Serviço", servicos)
+            servico = st.selectbox("Serviço", ["Aula particular R$ 250/hora", "Aula em grupo R$ 200/hora", "Aula Kids R$ 200/hora", "Personal trainer R$ 250/hora"])
             unidade = st.selectbox("Unidade", ["PLAY TENNIS Ibirapuera", "TOP One Tennis", "MELL Tennis", "ARENA BTG Morumbi"])
             c1, c2 = st.columns(2)
             with c1: dt = st.date_input("Data", format="DD/MM/YYYY")
             with c2: hr = st.selectbox("Horário", [f"{h:02d}:00" for h in range(7, 23)])
-            if st.form_submit_button("AVANÇAR PARA PAGAMENTO", use_container_width=True):
-                if aluno and email:
-                    st.session_state.reserva_temp = {"Data": dt.strftime("%d/%m/%Y"), "Horário": hr, "Aluno": aluno, "Serviço": servico, "Unidade": unidade, "E-mail": email, "Status": "Pendente"}
-                    st.session_state.pagamento_ativo = True
-                    st.session_state.inicio_timer = time.time()
-                    st.rerun()
-    else:
-        st.subheader("💳 Pagamento via PIX")
-        st.image("https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=aranha.corp@gmail.com")
-        st.code("aranha.corp@gmail.com", language="text")
-        if st.button("CONFIRMAR PAGAMENTO", type="primary"):
-            df = conn.read(worksheet="Página1")
-            df_novo = pd.concat([df, pd.DataFrame([st.session_state.reserva_temp])], ignore_index=True)
-            conn.update(worksheet="Página1", data=df_novo)
-            st.success("✅ Agendamento Registrado!")
-            st.session_state.pagamento_ativo = False
-            time.sleep(2); st.rerun()
-
-    st.markdown("""
-    <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-    <a href="https://docs.google.com/document/d/1LW9CNdmgYxwnpXlDYRrE8rKsLdajbPi3fniwXVsBqco/edit?usp=sharing" target="_blank" class="regulamento-icon">
-        <span>📄</span> Ler Regulamento de Uso
-    </a>
-    """, unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-elif st.session_state.pagina == "Contato":
-    st.markdown('<div class="translucent-balloon">', unsafe_allow_html=True)
-    st.subheader("📞 Canais de Atendimento")
-    st.write("📧 aranha.corp@gmail.com")
-    st.write("📱 (11) 97142-5028")
-    st.markdown('</div>', unsafe_allow_html=True)
+            
+            if st.form_submit_button("AVANÇAR PARA

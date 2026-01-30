@@ -25,13 +25,15 @@ st.markdown("""
         background-size: cover; background-position: center; background-attachment: fixed;
     }
     .header-title { color: white; font-size: 50px; font-weight: bold; text-align: center; margin-bottom: 20px; text-shadow: 2px 2px 4px black; }
-    .custom-card { background-color: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 20px; color: #333; }
+    .custom-card { background-color: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 20px; color: #333; position: relative; }
     .translucent-balloon { background-color: rgba(50, 50, 50, 0.85); padding: 25px; border-radius: 15px; color: white; backdrop-filter: blur(10px); margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
     .clean-link { text-align: center; text-decoration: none !important; color: white !important; transition: 0.3s; display: block; padding: 20px; }
     .clean-link:hover { transform: translateY(-8px); color: #4CAF50 !important; }
     .icon-text { font-size: 80px; margin-bottom: 10px; }
     .label-text { font-size: 20px; font-weight: bold; letter-spacing: 2px; }
     .whatsapp-float { position: fixed; width: 60px; height: 60px; bottom: 40px; right: 40px; background-color: #25d366; color: #FFF; border-radius: 50px; text-align: center; font-size: 35px; box-shadow: 2px 2px 3px #999; z-index: 9999; display: flex; align-items: center; justify-content: center; text-decoration: none; }
+    .regulamento-float { position: absolute; bottom: 20px; right: 20px; text-decoration: none; color: #666; font-size: 30px; transition: 0.3s; }
+    .regulamento-float:hover { color: #4CAF50; transform: scale(1.1); }
     .assinatura-footer { position: fixed; bottom: 15px; left: 20px; width: 130px; z-index: 9999; opacity: 0.8; }
     .sidebar-detalhe { font-size: 11px; color: #ccc; margin-bottom: 10px; line-height: 1.2; }
 </style>
@@ -39,7 +41,7 @@ st.markdown("""
 <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/By%20Andre%20Aranha.png" class="assinatura-footer">
 """, unsafe_allow_html=True)
 
-# 5. MENU LATERAL E ACADEMIAS (Ícone atualizado para bola única 🎾)
+# 5. MENU LATERAL E ACADEMIAS (Ícone de bola única 🎾)
 with st.sidebar:
     st.markdown("<h2 style='color: white; text-align: center;'>🎾 MENU</h2>", unsafe_allow_html=True)
     for item in ["Home", "Preços", "Cadastro", "Dashboard", "Contato"]:
@@ -97,6 +99,9 @@ if st.session_state.pagina == "Home":
         m, s = divmod(int(restante), 60)
         timer_box.warning(f"⏱️ Expira em: {m:02d}:{s:02d}")
         time.sleep(1); st.rerun()
+    
+    # Ícone do Regulamento no final do card
+    st.markdown("""<a href="https://docs.google.com/document/d/1LW9CNdmgYxwnpXlDYRrE8rKsLdajbPi3fniwXVsBqco/edit?usp=sharing" class="regulamento-float" target="_blank" title="Ver Regulamento">📄</a>""", unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 elif st.session_state.pagina == "Preços":
@@ -135,5 +140,4 @@ elif st.session_state.pagina == "Contato":
     st.markdown('<div class="translucent-balloon">', unsafe_allow_html=True)
     st.subheader("📞 Canais de Atendimento")
     st.write("📧 aranha.corp@gmail.com")
-    st.write("📱 (11) 97142-5028")
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.write("📱 (11) 9714

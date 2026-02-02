@@ -45,7 +45,7 @@ ACADEMIAS = {
         "telefone": "(11) 97142-5028"
     },
     "ARENA BTG Morumbi": {
-        "endereco": "Av. Maj. Sylvino de Magalhães Padilha, 16741",
+        "endereco": "Av. Maj. Sylvio de Magalhães Padilha, 16741",
         "telefone": "(11) 98854-3860"
     }
 }
@@ -631,23 +631,24 @@ if st.session_state.pagina == "Home":
                 
                 # Mostrar mensagem de sucesso
                 if email_enviado:
-                    st.markdown(f"""
+                    st.markdown("""
                     <div class="email-status email-success">
                         <h3>✅ Reserva confirmada!</h3>
-                        <p>E-mail de confirmação enviado para <strong>{email_destinatario}</strong></p>
+                        <p>E-mail de confirmação enviado para <strong>{}</strong></p>
                         <p>Verifique sua caixa de entrada e spam.</p>
                     </div>
-                    """, unsafe_allow_html=True)
+                    """.format(email_destinatario), unsafe_allow_html=True)
                 else:
-                    st.markdown(f"""
+                    st.markdown("""
                     <div class="email-status email-warning">
                         <h3>✅ Reserva confirmada no sistema!</h3>
                         <p><strong>Atenção:</strong> Não foi possível enviar o e-mail de confirmação.</p>
                         <p>Por favor, anote os detalhes da sua reserva:</p>
-                        <p><strong>ID:</strong> {st.session_state.reserva_temp.get("ID", "N/A")}</p>
+                        <p><strong>ID:</strong> {}</p>
                         <p>Entre em contato pelo WhatsApp se precisar de assistência.</p>
                     </div>
-                    """, unsafe_allow_html=True)
+                    """.format(st.session_state.reserva_temp.get("ID", "N/A")), 
+                    unsafe_allow_html=True)
                 
                 # Limpa estado e aguarda para redirecionar
                 st.session_state.pagamento_ativo = False
@@ -829,7 +830,7 @@ elif st.session_state.pagina == "Dashboard":
         except Exception as e:
             st.error(f"❌ Erro ao carregar dashboard: {str(e)}")
 
-# PÁGINA: CONTATO - CORRIGIDA
+# PÁGINA: CONTATO
 elif st.session_state.pagina == "Contato":
     st.markdown(card_com_estilo(""), unsafe_allow_html=True)
     
@@ -853,5 +854,4 @@ elif st.session_state.pagina == "Contato":
         st.markdown("### 📱 WhatsApp")
         st.markdown("""
         <div style='padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px;'>
-            <h4 style='margin:0;'>(11) 97142-5028</h4>
-            <p style='
+            <h4 style='margin:0;'>(11) 97142-5028</

@@ -829,7 +829,7 @@ elif st.session_state.pagina == "Dashboard":
         except Exception as e:
             st.error(f"❌ Erro ao carregar dashboard: {str(e)}")
 
-# PÁGINA: CONTATO - CORRIGIDA
+# PÁGINA: CONTATO - CORRIGIDA COMPLETAMENTE
 elif st.session_state.pagina == "Contato":
     st.markdown(card_com_estilo(""), unsafe_allow_html=True)
     
@@ -853,4 +853,5 @@ elif st.session_state.pagina == "Contato":
         st.markdown("### 📱 WhatsApp")
         st.markdown("""
         <div style='padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px;'>
-            <h4 style='margin:0;'>(11) 
+            <h4 style='margin:0;'>(11) 97142-5028</h4>
+            <p style

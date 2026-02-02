@@ -5,7 +5,7 @@ import time
 import re
 import uuid
 from datetime import datetime
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 # ============================================
 # 1. CONFIGURAÇÃO E CONSTANTES
@@ -15,17 +15,17 @@ st.set_page_config(
     page_title="TENNIS CLASS",
     layout="wide",
     page_icon="🎾",
-    initial_sidebar_state="collapsed"  # Sidebar inicia recolhida
+    initial_sidebar_state="expanded"
 )
 
 # Constantes organizadas
 SERVICOS = {
-    "particular": {"nome": "Aula particular", "preco": 250, "icone": "🎾"},
-    "grupo": {"nome": "Aula em grupo", "preco": 200, "icone": "🎾"},
-    "kids": {"nome": "Aula Kids", "preco": 200, "icone": "🎾"},
-    "personal": {"nome": "Personal trainer", "preco": 250, "icone": "🎾"},
-    "competitivo": {"nome": "Treinamento competitivo", "preco": 1400, "icone": "🎾"},
-    "eventos": {"nome": "Eventos", "preco": 0, "icone": "🎾"}
+    "particular": {"nome": "Aula particular", "preco": 250},
+    "grupo": {"nome": "Aula em grupo", "preco": 200},
+    "kids": {"nome": "Aula Kids", "preco": 200},
+    "personal": {"nome": "Personal trainer", "preco": 250},
+    "competitivo": {"nome": "Treinamento competitivo", "preco": 1400},
+    "eventos": {"nome": "Eventos", "preco": 0}
 }
 
 ACADEMIAS = {
@@ -45,13 +45,6 @@ ACADEMIAS = {
         "endereco": "Av. Maj. Sylvio de Magalhães Padilha, 16741",
         "telefone": "(11) 98854-3860"
     }
-}
-
-# LINKS CORRIGIDOS DOS FORMULÁRIOS
-FORM_LINKS = {
-    "aluno": "https://docs.google.com/forms/d/e/1FAIpQLSdehkMHlLyCNd1owC-dSNO_-ROXq07w41jgymyKyFugvUZ0fA/viewform",
-    "academia": "https://docs.google.com/forms/d/e/1FAIpQLScaC-XBLuzTPN78inOQPcXd6r0BzaessEke1MzOfGzOIlZpwQ/viewform",
-    "professor": "https://docs.google.com/forms/d/1q4HQq9uY1ju2ZsgOcFb7BF0LtKstpe3fYwjur4WwMLY/viewform"
 }
 
 TEMPO_PAGAMENTO = 300  # 5 minutos em segundos
@@ -139,9 +132,6 @@ if 'admin_autenticado' not in st.session_state:
 if 'erros_form' not in st.session_state:
     st.session_state.erros_form = {}
 
-if 'sidebar_colapsed' not in st.session_state:
-    st.session_state.sidebar_colapsed = True
-
 # ============================================
 # 4. CSS GLOBAL E COMPONENTES FIXOS
 # ============================================
@@ -185,26 +175,20 @@ st.markdown("""
         color: white !important; 
         transition: 0.3s; 
         display: block; 
-        padding: 15px; 
-        border-radius: 10px;
-        background-color: rgba(0, 0, 0, 0.3);
-        margin: 8px 0;
+        padding: 20px; 
     }
     .clean-link:hover { 
-        transform: translateY(-5px); 
+        transform: translateY(-8px); 
         color: #4CAF50 !important; 
-        background-color: rgba(0, 0, 0, 0.5);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     }
-    /* ÍCONES MENORES PARA CADASTROS */
-    .icon-text-small { 
-        font-size: 50px !important;  /* REDUZIDO DE 80px PARA 50px */
-        margin-bottom: 8px; 
+    .icon-text { 
+        font-size: 80px; 
+        margin-bottom: 10px; 
     }
     .label-text { 
-        font-size: 18px; 
+        font-size: 20px; 
         font-weight: bold; 
-        letter-spacing: 1px; 
+        letter-spacing: 2px; 
     }
     .whatsapp-float { 
         position: fixed; 
@@ -281,64 +265,7 @@ st.markdown("""
         border-radius: 10px;
         background-color: rgba(255, 136, 0, 0.1);
     }
-    .form-title {
-        text-align: center;
-        color: #333;
-        margin-bottom: 30px;
-        font-size: 28px;
-    }
-    /* BOLA DE TÊNIS AMARELA FOSFORESCENTE */
-    .tennis-ball {
-        color: #FFFF00 !important;
-        text-shadow: 0 0 10px #FF0, 0 0 20px #FF0, 0 0 30px #FF0 !important;
-        filter: drop-shadow(0 0 5px rgba(255, 255, 0, 0.7));
-        font-size: 1.2em;
-        animation: glow 2s ease-in-out infinite alternate;
-    }
-    @keyframes glow {
-        from {
-            text-shadow: 0 0 10px #FF0, 0 0 20px #FF0, 0 0 30px #FF0;
-        }
-        to {
-            text-shadow: 0 0 15px #FF0, 0 0 25px #FF0, 0 0 35px #FF0;
-        }
-    }
-    /* ESTILO PARA OS BOTÕES DO MENU */
-    .stButton > button {
-        width: 100%;
-        margin: 5px 0;
-        transition: all 0.3s ease;
-    }
-    .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    }
-    /* BOTÃO MENU FIXO NO TOPO */
-    .menu-toggle {
-        position: fixed;
-        top: 15px;
-        left: 15px;
-        z-index: 10000;
-        background: rgba(0,0,0,0.7);
-        border-radius: 50%;
-        width: 50px;
-        height: 50px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 24px;
-        cursor: pointer;
-        border: 2px solid #FFFF00;
-    }
-    .menu-toggle:hover {
-        background: rgba(0,0,0,0.9);
-        transform: scale(1.1);
-    }
 </style>
-
-<!-- BOTÃO PARA ABRIR/FECHAR MENU -->
-<div class="menu-toggle" onclick="toggleSidebar()">☰</div>
 
 <a href="https://wa.me/5511971425028" class="whatsapp-float" target="_blank" 
    aria-label="Contato via WhatsApp">
@@ -349,64 +276,39 @@ st.markdown("""
 <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/By%20Andre%20Aranha.png" 
      class="assinatura-footer" 
      alt="Assinatura André Aranha">
-
-<script>
-function toggleSidebar() {
-    const sidebar = document.querySelector('[data-testid="stSidebar"]');
-    if (sidebar) {
-        const isVisible = sidebar.style.transform === 'translateX(0px)';
-        sidebar.style.transform = isVisible ? 'translateX(-100%)' : 'translateX(0px)';
-    }
-}
-</script>
 """, unsafe_allow_html=True)
 
 # ============================================
-# 5. MENU LATERAL COM FUNCIONALIDADE DE RECOLHER
+# 5. MENU LATERAL
 # ============================================
 
-def navegar_para(pagina: str):
-    """Função para navegação que recolhe a sidebar após clique"""
-    st.session_state.pagina = pagina
-    st.session_state.pagamento_ativo = False
-    # Fecha a sidebar após clique
-    st.session_state.sidebar_colapsed = True
-    st.rerun()
-
-# Sidebar configurada para ser recolhível
 with st.sidebar:
-    # ÍCONE ATUALIZADO: Bola de tênis amarela fosforescente 🎾
-    st.markdown("<h2 style='color: #FFFF00; text-align: center; text-shadow: 0 0 10px #FF0;'>🎾 MENU</h2>", 
+    st.markdown("<h2 style='color: white; text-align: center;'>🎾 MENU</h2>", 
                 unsafe_allow_html=True)
     
-    # Adiciona classe tennis-ball aos itens do menu
     for item in ["Home", "Preços", "Cadastro", "Dashboard", "Contato"]:
-        # Ícone de bola de tênis amarela antes de cada item
-        icone = "<span class='tennis-ball'>🎾</span>"
-        if st.button(f"{icone} {item}", key=f"nav_{item}", use_container_width=True):
-            navegar_para(item)
+        if st.button(item, key=f"nav_{item}", use_container_width=True):
+            st.session_state.pagina = item
+            st.session_state.pagamento_ativo = False
+            st.rerun()
     
     st.markdown("---")
-    # ÍCONE ATUALIZADO: Bola de tênis amarela fosforescente 🎾
-    st.markdown("<h3 style='color: #FFFF00; text-shadow: 0 0 5px #FF0;'>🎾 ACADEMIAS RECOMENDADAS</h3>", 
-                unsafe_allow_html=True)
+    st.markdown("### 🏢 ACADEMIAS RECOMENDADAS")
     
     for nome, info in ACADEMIAS.items():
         st.markdown(
-            f"<span class='tennis-ball'>📍</span> **{nome}**\n"
+            f"📍 **{nome}**\n"
             f"<div class='sidebar-detalhe'>"
             f"{info['endereco']}<br>📞 {info['telefone']}"
             f"</div>", 
             unsafe_allow_html=True
         )
 
+st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
+
 # ============================================
 # 6. LÓGICA DE PÁGINAS
 # ============================================
-
-# Título principal com bola de tênis amarela
-st.markdown('<div class="header-title"><span class="tennis-ball">🎾</span> TENNIS CLASS</div>', 
-            unsafe_allow_html=True)
 
 # PÁGINA: HOME
 if st.session_state.pagina == "Home":
@@ -414,27 +316,24 @@ if st.session_state.pagina == "Home":
     
     if not st.session_state.pagamento_ativo:
         with st.form("reserva_form", clear_on_submit=True):
-            st.markdown('<h3 class="form-title"><span class="tennis-ball">🎾</span> Agendar Aula</h3>', 
-                       unsafe_allow_html=True)
+            st.subheader("📅 Agendar Aula")
             
             # Campos do formulário com validação
             aluno = st.text_input(
                 "Nome do Aluno *",
                 help="Digite seu nome completo (mínimo 3 caracteres)",
-                label_visibility="visible",
-                placeholder="Ex: João Silva"
+                label_visibility="visible"
             )
             
             email = st.text_input(
                 "E-mail *",
                 help="Digite um e-mail válido para confirmação",
-                label_visibility="visible",
-                placeholder="Ex: joao.silva@email.com"
+                label_visibility="visible"
             )
             
             # Lista de serviços formatada
             servicos_lista = [
-                f"{SERVICOS[key]['icone']} {SERVICOS[key]['nome']} R$ {SERVICOS[key]['preco']}"
+                f"{SERVICOS[key]['nome']} R$ {SERVICOS[key]['preco']}"
                 f"{'/hora' if key != 'competitivo' else '/mês'}"
                 for key in SERVICOS.keys()
             ]
@@ -450,9 +349,8 @@ if st.session_state.pagina == "Home":
             
             # Botão de submissão
             submit = st.form_submit_button(
-                "🎾 AVANÇAR PARA PAGAMENTO", 
-                use_container_width=True,
-                type="primary"
+                "AVANÇAR PARA PAGAMENTO", 
+                use_container_width=True
             )
             
             if submit:
@@ -517,7 +415,7 @@ if st.session_state.pagina == "Home":
                 st.rerun()
         
         # Botão de confirmação
-        if st.button("🎾 CONFIRMAR PAGAMENTO", type="primary", use_container_width=True):
+        if st.button("CONFIRMAR PAGAMENTO", type="primary", use_container_width=True):
             if salvar_reserva(st.session_state.reserva_temp):
                 st.balloons()
                 st.markdown(
@@ -549,142 +447,89 @@ if st.session_state.pagina == "Home":
 elif st.session_state.pagina == "Preços":
     st.markdown(card_com_estilo(""), unsafe_allow_html=True)
     
-    # ÍCONE ATUALIZADO: Bola de tênis amarela fosforescente 🎾
-    st.markdown('<h3 class="form-title"><span class="tennis-ball">🎾</span> Tabela de Preços</h3>', 
-               unsafe_allow_html=True)
+    st.markdown("### 🎾 Tabela de Preços")
     st.markdown("---")
     
     for key, info in SERVICOS.items():
         if key == "eventos":
-            st.markdown(f"<span class='tennis-ball'>🎾</span> **{info['nome']}:** Valor a combinar")
+            st.markdown(f"* **{info['nome']}:** Valor a combinar")
         else:
             unidade = "/hora" if key != "competitivo" else "/mês"
-            st.markdown(f"<span class='tennis-ball'>🎾</span> **{info['nome']}:** R$ {info['preco']} {unidade}")
-    
-    st.markdown("---")
-    st.info("<span class='tennis-ball'>💡</span> *Valores sujeitos a alteração. Consulte condições especiais para pacotes.*", 
-            unsafe_allow_html=True)
+            st.markdown(f"* **{info['nome']}:** R$ {info['preco']} {unidade}")
 
 # PÁGINA: CADASTRO
 elif st.session_state.pagina == "Cadastro":
     st.markdown(card_com_estilo(""), unsafe_allow_html=True)
     
-    st.markdown('<h3 class="form-title"><span class="tennis-ball">🎾</span> Portal de Cadastros</h3>', 
+    st.markdown("<h2 style='text-align: center;'>📝 Portal de Cadastros</h2><br>", 
                 unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div style='text-align: center; margin-bottom: 30px; color: #666;'>
-        Clique em uma das opções abaixo para preencher o formulário correspondente
-    </div>
-    """, unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.markdown(f"""
-        <a href="{FORM_LINKS['aluno']}" 
+        st.markdown("""
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLSd7N_E2vP6P-fS9jR_Wk7K-G_X_v/viewform" 
            class="clean-link" 
            target="_blank"
-           aria-label="Cadastro de Aluno"
-           onclick="trackFormClick('aluno')">
-            <!-- ÍCONE REDUZIDO: de 80px para 50px -->
-            <div class="icon-text-small">👤</div>
+           aria-label="Cadastro de Aluno">
+            <div class="icon-text">👤</div>
             <div class="label-text">ALUNO</div>
-            <div style="font-size: 14px; margin-top: 10px; opacity: 0.8;">
-                Formulário para novos alunos
-            </div>
         </a>
         """, unsafe_allow_html=True)
     
     with col2:
-        st.markdown(f"""
-        <a href="{FORM_LINKS['academia']}" 
+        st.markdown("""
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLSdyHq5Wf1uCjL9fQG-Alp6N7qYqY/viewform" 
            class="clean-link" 
            target="_blank"
-           aria-label="Cadastro de Academia"
-           onclick="trackFormClick('academia')">
-            <!-- ÍCONE REDUZIDO: de 80px para 50px -->
-            <div class="icon-text-small">🏢</div>
+           aria-label="Cadastro de Academia">
+            <div class="icon-text">🏢</div>
             <div class="label-text">ACADEMIA</div>
-            <div style="font-size: 14px; margin-top: 10px; opacity: 0.8;">
-                Para academias parceiras
-            </div>
         </a>
         """, unsafe_allow_html=True)
     
     with col3:
-        st.markdown(f"""
-        <a href="{FORM_LINKS['professor']}" 
+        st.markdown("""
+        <a href="https://docs.google.com/forms/d/1q4HQq9uY1ju2ZsgOcFb7BF0LtKstpe3fYwjur4WwMLY/viewform" 
            class="clean-link" 
            target="_blank"
-           aria-label="Cadastro de Professor"
-           onclick="trackFormClick('professor')">
-            <!-- ÍCONE REDUZIDO: de 80px para 50px -->
-            <div class="icon-text-small">🎾</div>
+           aria-label="Cadastro de Professor">
+            <div class="icon-text">🎾</div>
             <div class="label-text">PROFESSOR</div>
-            <div style="font-size: 14px; margin-top: 10px; opacity: 0.8;">
-                Para professores parceiros
-            </div>
         </a>
         """, unsafe_allow_html=True)
-    
-    # JavaScript para tracking
-    st.markdown("""
-    <script>
-    function trackFormClick(tipo) {
-        console.log(`Formulário ${tipo} clicado`);
-        // Fecha sidebar após clique
-        const sidebar = document.querySelector('[data-testid="stSidebar"]');
-        if (sidebar) {
-            sidebar.style.transform = 'translateX(-100%)';
-        }
-    }
-    </script>
-    """, unsafe_allow_html=True)
 
 # PÁGINA: DASHBOARD
 elif st.session_state.pagina == "Dashboard":
     st.markdown(card_com_estilo(""), unsafe_allow_html=True)
     
     if not st.session_state.admin_autenticado:
-        st.markdown('<h3 class="form-title"><span class="tennis-ball">🎾</span> Acesso Administrativo</h3>', 
-                   unsafe_allow_html=True)
+        st.subheader("🔐 Acesso Administrativo")
         
-        # Usa secrets do Streamlit
-        try:
-            senha_correta = st.secrets.get("ADMIN_PASSWORD", "aranha2026")
-        except:
-            senha_correta = "aranha2026"
+        # Usa secrets do Streamlit (configurar no .streamlit/secrets.toml)
+        senha_correta = st.secrets.get("ADMIN_PASSWORD", "aranha2026")
         
         senha = st.text_input(
             "Digite a senha de administrador:", 
             type="password",
             label_visibility="visible",
-            help="Senha para acesso ao dashboard",
-            placeholder="Digite a senha..."
+            help="Senha para acesso ao dashboard"
         )
         
-        col1, col2 = st.columns([1, 3])
-        with col1:
-            if st.button("🔓 Acessar", use_container_width=True):
-                if senha == senha_correta:
-                    st.session_state.admin_autenticado = True
-                    st.success("✅ Acesso concedido!")
-                    time.sleep(1)
-                    st.rerun()
-                else:
-                    st.error("❌ Senha incorreta!")
-        with col2:
-            if st.button("🔙 Voltar para Home", use_container_width=True):
-                st.session_state.pagina = "Home"
+        if st.button("Acessar", use_container_width=True):
+            if senha == senha_correta:
+                st.session_state.admin_autenticado = True
+                st.success("✅ Acesso concedido!")
+                time.sleep(1)
                 st.rerun()
+            else:
+                st.error("❌ Senha incorreta!")
     
     else:
-        st.markdown('<h3 class="form-title"><span class="tennis-ball">🎾</span> Dashboard - Reservas</h3>', 
-                   unsafe_allow_html=True)
+        st.subheader("📊 Dashboard - Reservas")
         
         # Botão de logout
-        if st.button("🚪 Logout", use_container_width=False, type="secondary"):
+        if st.button("🚪 Logout", use_container_width=False):
             st.session_state.admin_autenticado = False
             st.rerun()
         
@@ -709,11 +554,9 @@ elif st.session_state.pagina == "Dashboard":
                 with col1:
                     st.metric("Total Reservas", total)
                 with col2:
-                    st.metric("Pendentes", pendentes, 
-                             delta=f"{pendentes/total*100:.1f}%" if total > 0 else "0%")
+                    st.metric("Pendentes", pendentes)
                 with col3:
-                    st.metric("Confirmados", confirmados,
-                             delta=f"{confirmados/total*100:.1f}%" if total > 0 else "0%")
+                    st.metric("Confirmados", confirmados)
                 
                 st.markdown("---")
                 
@@ -736,8 +579,7 @@ elif st.session_state.pagina == "Dashboard":
                 with col1:
                     if st.button("🔄 Atualizar Dados", use_container_width=True):
                         st.cache_data.clear()
-                        st.success("✅ Dados atualizados!")
-                        time.sleep(1)
+                        st.success("Dados atualizados!")
                         st.rerun()
                 
                 with col2:
@@ -745,7 +587,7 @@ elif st.session_state.pagina == "Dashboard":
                     st.download_button(
                         label="📥 Exportar CSV",
                         data=csv,
-                        file_name=f"reservas_tennis_class_{datetime.now().strftime('%Y%m%d')}.csv",
+                        file_name="reservas_tennis_class.csv",
                         mime="text/csv",
                         use_container_width=True
                     )
@@ -759,8 +601,7 @@ elif st.session_state.pagina == "Dashboard":
 elif st.session_state.pagina == "Contato":
     st.markdown(card_com_estilo(""), unsafe_allow_html=True)
     
-    st.markdown('<h3 class="form-title"><span class="tennis-ball">🎾</span> Canais de Atendimento</h3>', 
-               unsafe_allow_html=True)
+    st.subheader("📞 Canais de Atendimento")
     st.markdown("---")
     
     col1, col2 = st.columns(2)
@@ -768,9 +609,9 @@ elif st.session_state.pagina == "Contato":
     with col1:
         st.markdown("### 📧 E-mail")
         st.markdown("""
-        <div style='padding: 20px; background: rgba(255,255,255,0.1); border-radius: 10px;'>
-            <h4 style='margin:0; color: #4CAF50;'>aranha.corp@gmail.com</h4>
-            <p style='margin:10px 0 0 0; color: #ccc;'>
+        <div style='padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px;'>
+            <h4 style='margin:0;'>aranha.corp@gmail.com</h4>
+            <p style='margin:5px 0 0 0; color: #ccc;'>
             Respondemos em até 24h
             </p>
         </div>
@@ -779,9 +620,9 @@ elif st.session_state.pagina == "Contato":
     with col2:
         st.markdown("### 📱 WhatsApp")
         st.markdown("""
-        <div style='padding: 20px; background: rgba(255,255,255,0.1); border-radius: 10px;'>
-            <h4 style='margin:0; color: #4CAF50;'>(11) 97142-5028</h4>
-            <p style='margin:10px 0 0 0; color: #ccc;'>
+        <div style='padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px;'>
+            <h4 style='margin:0;'>(11) 97142-5028</h4>
+            <p style='margin:5px 0 0 0; color: #ccc;'>
             Segunda a Sábado, 8h às 20h
             </p>
         </div>
@@ -789,16 +630,13 @@ elif st.session_state.pagina == "Contato":
     
     st.markdown("---")
     
-    # Mapa de localização
-    st.markdown("### 📍 Atendimento Presencial")
+    # Mapa de localização (opcional)
+    st.markdown("### 📍 Localização Principal")
     st.markdown("""
-    <div style='padding: 20px; background: rgba(255,255,255,0.1); border-radius: 10px;'>
-        <p style='margin:0;'><span class='tennis-ball'>🎾</span> <strong>Atendemos em todas as academias parceiras</strong></p>
-        <p style='margin:10px 0 0 0; color: #ccc;'>
-        Consulte a lista completa no menu lateral
-        </p>
-        <p style='margin:10px 0 0 0; color: #4CAF50;'>
-        ⭐ Agende sua aula experimental gratuita!
+    <div style='padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px;'>
+        <p style='margin:0;'>📍 São Paulo - SP</p>
+        <p style='margin:5px 0 0 0; color: #ccc;'>
+        Atendemos em todas as academias parceiras listadas no menu lateral
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -810,16 +648,18 @@ elif st.session_state.pagina == "Contato":
 st.markdown("""
 <div style='text-align: center; margin-top: 40px; color: rgba(255,255,255,0.6); font-size: 12px;'>
     <hr style='border-color: rgba(255,255,255,0.2);'>
-    <p><span class='tennis-ball'>🎾</span> TENNIS CLASS © 2024 - Todos os direitos reservados</p>
+    <p>TENNIS CLASS © 2024 - Todos os direitos reservados</p>
     <p>Desenvolvido com ❤️ por André Aranha</p>
-    <p style='font-size: 10px; margin-top: 5px;'>
-        <a href="https://tennis-class.streamlit.app" 
-           style='color: rgba(255,255,255,0.6); text-decoration: none;'>
-           tennis-class.streamlit.app
-        </a>
-    </p>
 </div>
 """, unsafe_allow_html=True)
 
 # ============================================
-#
+# 8. ARQUIVO DE CONFIGURAÇÃO (secrets.toml)
+# ============================================
+
+st.sidebar.markdown("---")
+st.sidebar.markdown("""
+<div style='font-size: 10px; color: #888; text-align: center;'>
+    Versão 2.0.0 | Segurança Otimizada
+</div>
+""", unsafe_allow_html=True)

@@ -823,4 +823,9 @@ st.markdown("""
     <p>Desenvolvido com ❤️ por André Aranha</p>
     <p style='font-size: 10px; margin-top: 5px;'>
         <a href="https://tennis-class.streamlit.app" 
-           style='color: rgba(255,255,255,0.6); text-decoration
+           style='color: rgba(255,255,255,0.6); text-decoration: none;'>
+           tennis-class.streamlit.app
+        </a>
+    </p>
+</div>
+""", unsafe_allow_html

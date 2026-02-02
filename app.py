@@ -15,17 +15,17 @@ st.set_page_config(
     page_title="TENNIS CLASS",
     layout="wide",
     page_icon="🎾",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"  # Sidebar inicia recolhida
 )
 
 # Constantes organizadas
 SERVICOS = {
-    "particular": {"nome": "Aula particular", "preco": 250},
-    "grupo": {"nome": "Aula em grupo", "preco": 200},
-    "kids": {"nome": "Aula Kids", "preco": 200},
-    "personal": {"nome": "Personal trainer", "preco": 250},
-    "competitivo": {"nome": "Treinamento competitivo", "preco": 1400},
-    "eventos": {"nome": "Eventos", "preco": 0}
+    "particular": {"nome": "Aula particular", "preco": 250, "icone": "🎾"},
+    "grupo": {"nome": "Aula em grupo", "preco": 200, "icone": "🎾"},
+    "kids": {"nome": "Aula Kids", "preco": 200, "icone": "🎾"},
+    "personal": {"nome": "Personal trainer", "preco": 250, "icone": "🎾"},
+    "competitivo": {"nome": "Treinamento competitivo", "preco": 1400, "icone": "🎾"},
+    "eventos": {"nome": "Eventos", "preco": 0, "icone": "🎾"}
 }
 
 ACADEMIAS = {
@@ -139,6 +139,9 @@ if 'admin_autenticado' not in st.session_state:
 if 'erros_form' not in st.session_state:
     st.session_state.erros_form = {}
 
+if 'sidebar_colapsed' not in st.session_state:
+    st.session_state.sidebar_colapsed = True
+
 # ============================================
 # 4. CSS GLOBAL E COMPONENTES FIXOS
 # ============================================
@@ -182,10 +185,10 @@ st.markdown("""
         color: white !important; 
         transition: 0.3s; 
         display: block; 
-        padding: 20px; 
+        padding: 15px; 
         border-radius: 10px;
         background-color: rgba(0, 0, 0, 0.3);
-        margin: 10px 0;
+        margin: 8px 0;
     }
     .clean-link:hover { 
         transform: translateY(-5px); 
@@ -193,14 +196,15 @@ st.markdown("""
         background-color: rgba(0, 0, 0, 0.5);
         box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     }
-    .icon-text { 
-        font-size: 80px; 
-        margin-bottom: 10px; 
+    /* ÍCONES MENORES PARA CADASTROS */
+    .icon-text-small { 
+        font-size: 50px !important;  /* REDUZIDO DE 80px PARA 50px */
+        margin-bottom: 8px; 
     }
     .label-text { 
-        font-size: 20px; 
+        font-size: 18px; 
         font-weight: bold; 
-        letter-spacing: 2px; 
+        letter-spacing: 1px; 
     }
     .whatsapp-float { 
         position: fixed; 
@@ -283,7 +287,58 @@ st.markdown("""
         margin-bottom: 30px;
         font-size: 28px;
     }
+    /* BOLA DE TÊNIS AMARELA FOSFORESCENTE */
+    .tennis-ball {
+        color: #FFFF00 !important;
+        text-shadow: 0 0 10px #FF0, 0 0 20px #FF0, 0 0 30px #FF0 !important;
+        filter: drop-shadow(0 0 5px rgba(255, 255, 0, 0.7));
+        font-size: 1.2em;
+        animation: glow 2s ease-in-out infinite alternate;
+    }
+    @keyframes glow {
+        from {
+            text-shadow: 0 0 10px #FF0, 0 0 20px #FF0, 0 0 30px #FF0;
+        }
+        to {
+            text-shadow: 0 0 15px #FF0, 0 0 25px #FF0, 0 0 35px #FF0;
+        }
+    }
+    /* ESTILO PARA OS BOTÕES DO MENU */
+    .stButton > button {
+        width: 100%;
+        margin: 5px 0;
+        transition: all 0.3s ease;
+    }
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    /* BOTÃO MENU FIXO NO TOPO */
+    .menu-toggle {
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        z-index: 10000;
+        background: rgba(0,0,0,0.7);
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+        border: 2px solid #FFFF00;
+    }
+    .menu-toggle:hover {
+        background: rgba(0,0,0,0.9);
+        transform: scale(1.1);
+    }
 </style>
+
+<!-- BOTÃO PARA ABRIR/FECHAR MENU -->
+<div class="menu-toggle" onclick="toggleSidebar()">☰</div>
 
 <a href="https://wa.me/5511971425028" class="whatsapp-float" target="_blank" 
    aria-label="Contato via WhatsApp">
@@ -294,39 +349,64 @@ st.markdown("""
 <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/By%20Andre%20Aranha.png" 
      class="assinatura-footer" 
      alt="Assinatura André Aranha">
+
+<script>
+function toggleSidebar() {
+    const sidebar = document.querySelector('[data-testid="stSidebar"]');
+    if (sidebar) {
+        const isVisible = sidebar.style.transform === 'translateX(0px)';
+        sidebar.style.transform = isVisible ? 'translateX(-100%)' : 'translateX(0px)';
+    }
+}
+</script>
 """, unsafe_allow_html=True)
 
 # ============================================
-# 5. MENU LATERAL
+# 5. MENU LATERAL COM FUNCIONALIDADE DE RECOLHER
 # ============================================
 
+def navegar_para(pagina: str):
+    """Função para navegação que recolhe a sidebar após clique"""
+    st.session_state.pagina = pagina
+    st.session_state.pagamento_ativo = False
+    # Fecha a sidebar após clique
+    st.session_state.sidebar_colapsed = True
+    st.rerun()
+
+# Sidebar configurada para ser recolhível
 with st.sidebar:
-    st.markdown("<h2 style='color: white; text-align: center;'>🎾 MENU</h2>", 
+    # ÍCONE ATUALIZADO: Bola de tênis amarela fosforescente 🎾
+    st.markdown("<h2 style='color: #FFFF00; text-align: center; text-shadow: 0 0 10px #FF0;'>🎾 MENU</h2>", 
                 unsafe_allow_html=True)
     
+    # Adiciona classe tennis-ball aos itens do menu
     for item in ["Home", "Preços", "Cadastro", "Dashboard", "Contato"]:
-        if st.button(item, key=f"nav_{item}", use_container_width=True):
-            st.session_state.pagina = item
-            st.session_state.pagamento_ativo = False
-            st.rerun()
+        # Ícone de bola de tênis amarela antes de cada item
+        icone = "<span class='tennis-ball'>🎾</span>"
+        if st.button(f"{icone} {item}", key=f"nav_{item}", use_container_width=True):
+            navegar_para(item)
     
     st.markdown("---")
-    st.markdown("### 🏢 ACADEMIAS RECOMENDADAS")
+    # ÍCONE ATUALIZADO: Bola de tênis amarela fosforescente 🎾
+    st.markdown("<h3 style='color: #FFFF00; text-shadow: 0 0 5px #FF0;'>🎾 ACADEMIAS RECOMENDADAS</h3>", 
+                unsafe_allow_html=True)
     
     for nome, info in ACADEMIAS.items():
         st.markdown(
-            f"📍 **{nome}**\n"
+            f"<span class='tennis-ball'>📍</span> **{nome}**\n"
             f"<div class='sidebar-detalhe'>"
             f"{info['endereco']}<br>📞 {info['telefone']}"
             f"</div>", 
             unsafe_allow_html=True
         )
 
-st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
-
 # ============================================
 # 6. LÓGICA DE PÁGINAS
 # ============================================
+
+# Título principal com bola de tênis amarela
+st.markdown('<div class="header-title"><span class="tennis-ball">🎾</span> TENNIS CLASS</div>', 
+            unsafe_allow_html=True)
 
 # PÁGINA: HOME
 if st.session_state.pagina == "Home":
@@ -334,7 +414,8 @@ if st.session_state.pagina == "Home":
     
     if not st.session_state.pagamento_ativo:
         with st.form("reserva_form", clear_on_submit=True):
-            st.markdown('<h3 class="form-title">📅 Agendar Aula</h3>', unsafe_allow_html=True)
+            st.markdown('<h3 class="form-title"><span class="tennis-ball">🎾</span> Agendar Aula</h3>', 
+                       unsafe_allow_html=True)
             
             # Campos do formulário com validação
             aluno = st.text_input(
@@ -353,7 +434,7 @@ if st.session_state.pagina == "Home":
             
             # Lista de serviços formatada
             servicos_lista = [
-                f"{SERVICOS[key]['nome']} R$ {SERVICOS[key]['preco']}"
+                f"{SERVICOS[key]['icone']} {SERVICOS[key]['nome']} R$ {SERVICOS[key]['preco']}"
                 f"{'/hora' if key != 'competitivo' else '/mês'}"
                 for key in SERVICOS.keys()
             ]
@@ -369,7 +450,7 @@ if st.session_state.pagina == "Home":
             
             # Botão de submissão
             submit = st.form_submit_button(
-                "AVANÇAR PARA PAGAMENTO", 
+                "🎾 AVANÇAR PARA PAGAMENTO", 
                 use_container_width=True,
                 type="primary"
             )
@@ -436,7 +517,7 @@ if st.session_state.pagina == "Home":
                 st.rerun()
         
         # Botão de confirmação
-        if st.button("CONFIRMAR PAGAMENTO", type="primary", use_container_width=True):
+        if st.button("🎾 CONFIRMAR PAGAMENTO", type="primary", use_container_width=True):
             if salvar_reserva(st.session_state.reserva_temp):
                 st.balloons()
                 st.markdown(
@@ -468,24 +549,27 @@ if st.session_state.pagina == "Home":
 elif st.session_state.pagina == "Preços":
     st.markdown(card_com_estilo(""), unsafe_allow_html=True)
     
-    st.markdown('<h3 class="form-title">🎾 Tabela de Preços</h3>', unsafe_allow_html=True)
+    # ÍCONE ATUALIZADO: Bola de tênis amarela fosforescente 🎾
+    st.markdown('<h3 class="form-title"><span class="tennis-ball">🎾</span> Tabela de Preços</h3>', 
+               unsafe_allow_html=True)
     st.markdown("---")
     
     for key, info in SERVICOS.items():
         if key == "eventos":
-            st.markdown(f"* **{info['nome']}:** Valor a combinar")
+            st.markdown(f"<span class='tennis-ball'>🎾</span> **{info['nome']}:** Valor a combinar")
         else:
             unidade = "/hora" if key != "competitivo" else "/mês"
-            st.markdown(f"* **{info['nome']}:** R$ {info['preco']} {unidade}")
+            st.markdown(f"<span class='tennis-ball'>🎾</span> **{info['nome']}:** R$ {info['preco']} {unidade}")
     
     st.markdown("---")
-    st.info("💡 *Valores sujeitos a alteração. Consulte condições especiais para pacotes.*")
+    st.info("<span class='tennis-ball'>💡</span> *Valores sujeitos a alteração. Consulte condições especiais para pacotes.*", 
+            unsafe_allow_html=True)
 
 # PÁGINA: CADASTRO
 elif st.session_state.pagina == "Cadastro":
     st.markdown(card_com_estilo(""), unsafe_allow_html=True)
     
-    st.markdown('<h3 class="form-title">📝 Portal de Cadastros</h3>', 
+    st.markdown('<h3 class="form-title"><span class="tennis-ball">🎾</span> Portal de Cadastros</h3>', 
                 unsafe_allow_html=True)
     
     st.markdown("""
@@ -503,7 +587,8 @@ elif st.session_state.pagina == "Cadastro":
            target="_blank"
            aria-label="Cadastro de Aluno"
            onclick="trackFormClick('aluno')">
-            <div class="icon-text">👤</div>
+            <!-- ÍCONE REDUZIDO: de 80px para 50px -->
+            <div class="icon-text-small">👤</div>
             <div class="label-text">ALUNO</div>
             <div style="font-size: 14px; margin-top: 10px; opacity: 0.8;">
                 Formulário para novos alunos
@@ -518,7 +603,8 @@ elif st.session_state.pagina == "Cadastro":
            target="_blank"
            aria-label="Cadastro de Academia"
            onclick="trackFormClick('academia')">
-            <div class="icon-text">🏢</div>
+            <!-- ÍCONE REDUZIDO: de 80px para 50px -->
+            <div class="icon-text-small">🏢</div>
             <div class="label-text">ACADEMIA</div>
             <div style="font-size: 14px; margin-top: 10px; opacity: 0.8;">
                 Para academias parceiras
@@ -533,7 +619,8 @@ elif st.session_state.pagina == "Cadastro":
            target="_blank"
            aria-label="Cadastro de Professor"
            onclick="trackFormClick('professor')">
-            <div class="icon-text">🎾</div>
+            <!-- ÍCONE REDUZIDO: de 80px para 50px -->
+            <div class="icon-text-small">🎾</div>
             <div class="label-text">PROFESSOR</div>
             <div style="font-size: 14px; margin-top: 10px; opacity: 0.8;">
                 Para professores parceiros
@@ -541,12 +628,16 @@ elif st.session_state.pagina == "Cadastro":
         </a>
         """, unsafe_allow_html=True)
     
-    # JavaScript para tracking (opcional)
+    # JavaScript para tracking
     st.markdown("""
     <script>
     function trackFormClick(tipo) {
         console.log(`Formulário ${tipo} clicado`);
-        // Aqui você pode adicionar Google Analytics ou outro tracking
+        // Fecha sidebar após clique
+        const sidebar = document.querySelector('[data-testid="stSidebar"]');
+        if (sidebar) {
+            sidebar.style.transform = 'translateX(-100%)';
+        }
     }
     </script>
     """, unsafe_allow_html=True)
@@ -556,7 +647,7 @@ elif st.session_state.pagina == "Dashboard":
     st.markdown(card_com_estilo(""), unsafe_allow_html=True)
     
     if not st.session_state.admin_autenticado:
-        st.markdown('<h3 class="form-title">🔐 Acesso Administrativo</h3>', 
+        st.markdown('<h3 class="form-title"><span class="tennis-ball">🎾</span> Acesso Administrativo</h3>', 
                    unsafe_allow_html=True)
         
         # Usa secrets do Streamlit
@@ -589,7 +680,7 @@ elif st.session_state.pagina == "Dashboard":
                 st.rerun()
     
     else:
-        st.markdown('<h3 class="form-title">📊 Dashboard - Reservas</h3>', 
+        st.markdown('<h3 class="form-title"><span class="tennis-ball">🎾</span> Dashboard - Reservas</h3>', 
                    unsafe_allow_html=True)
         
         # Botão de logout
@@ -668,7 +759,7 @@ elif st.session_state.pagina == "Dashboard":
 elif st.session_state.pagina == "Contato":
     st.markdown(card_com_estilo(""), unsafe_allow_html=True)
     
-    st.markdown('<h3 class="form-title">📞 Canais de Atendimento</h3>', 
+    st.markdown('<h3 class="form-title"><span class="tennis-ball">🎾</span> Canais de Atendimento</h3>', 
                unsafe_allow_html=True)
     st.markdown("---")
     
@@ -702,7 +793,7 @@ elif st.session_state.pagina == "Contato":
     st.markdown("### 📍 Atendimento Presencial")
     st.markdown("""
     <div style='padding: 20px; background: rgba(255,255,255,0.1); border-radius: 10px;'>
-        <p style='margin:0;'>🎾 <strong>Atendemos em todas as academias parceiras</strong></p>
+        <p style='margin:0;'><span class='tennis-ball'>🎾</span> <strong>Atendemos em todas as academias parceiras</strong></p>
         <p style='margin:10px 0 0 0; color: #ccc;'>
         Consulte a lista completa no menu lateral
         </p>
@@ -719,7 +810,7 @@ elif st.session_state.pagina == "Contato":
 st.markdown("""
 <div style='text-align: center; margin-top: 40px; color: rgba(255,255,255,0.6); font-size: 12px;'>
     <hr style='border-color: rgba(255,255,255,0.2);'>
-    <p>TENNIS CLASS © 2024 - Todos os direitos reservados</p>
+    <p><span class='tennis-ball'>🎾</span> TENNIS CLASS © 2024 - Todos os direitos reservados</p>
     <p>Desenvolvido com ❤️ por André Aranha</p>
     <p style='font-size: 10px; margin-top: 5px;'>
         <a href="https://tennis-class.streamlit.app" 
@@ -731,16 +822,4 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ============================================
-# 8. SIDEBAR FOOTER
-# ============================================
-
-st.sidebar.markdown("---")
-st.sidebar.markdown("""
-<div style='font-size: 10px; color: #888; text-align: center; padding: 10px;'>
-    <div style='margin-bottom: 5px;'>🎾 Tennis Class v2.1</div>
-    <div style='color: #4CAF50;'>Links dos forms corrigidos ✓</div>
-    <div style='font-size: 9px; margin-top: 5px;'>
-        Atualizado: """ + datetime.now().strftime("%d/%m/%Y") + """
-    </div>
-</div>
-""", unsafe_allow_html=True)
+#

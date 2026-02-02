@@ -854,4 +854,5 @@ elif st.session_state.pagina == "Contato":
         st.markdown("""
         <div style='padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px;'>
             <h4 style='margin:0;'>(11) 97142-5028</h4>
-            <p style='margin:5px 0 0 0;
+            <p style='margin:5px 0 0 0; color: #ccc;'>
+            Seg

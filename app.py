@@ -201,7 +201,7 @@ st.markdown("""
         box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     }
     .icon-text { 
-        font-size: 50px;  /* REDUZIDO PARA 50px */
+        font-size: 50px;
         margin-bottom: 10px; 
     }
     .label-text { 
@@ -330,7 +330,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ============================================
-# 5. MENU LATERAL COM NOMES ATUALIZADOS
+# 5. MENU LATERAL - VERSÃO LIMPA E SIMPLES
 # ============================================
 
 with st.sidebar:
@@ -338,7 +338,7 @@ with st.sidebar:
     st.markdown("<h2 style='color: #FFFF00; text-align: center; text-shadow: 0 0 10px #FF0;'>🎾 MENU</h2>", 
                 unsafe_allow_html=True)
     
-    # NOMES DO MENU ATUALIZADOS (mantendo os mesmos nomes solicitados)
+    # MENU LIMPO E SIMPLES - APENAS OS 5 ITENS SOLICITADOS
     menu_items = ["Home", "Preços", "Cadastro", "Dashboard", "Contato"]
     
     for item in menu_items:
@@ -548,8 +548,7 @@ elif st.session_state.pagina == "Cadastro":
         <a href="{FORM_LINKS['aluno']}" 
            class="clean-link" 
            target="_blank"
-           aria-label="Cadastro de Aluno de Tênis"
-           onclick="return confirm('Você será redirecionado para o formulário de cadastro de aluno. Deseja continuar?')">
+           aria-label="Cadastro de Aluno de Tênis">
             <div class="icon-text">👤</div>
             <div class="label-text">ALUNO</div>
             <div class="link-description">
@@ -563,8 +562,7 @@ elif st.session_state.pagina == "Cadastro":
         <a href="{FORM_LINKS['academia']}" 
            class="clean-link" 
            target="_blank"
-           aria-label="Cadastro de Academia de Tênis"
-           onclick="return confirm('Você será redirecionado para o formulário de cadastro de academia. Deseja continuar?')">
+           aria-label="Cadastro de Academia de Tênis">
             <div class="icon-text">🏢</div>
             <div class="label-text">ACADEMIA</div>
             <div class="link-description">
@@ -578,8 +576,7 @@ elif st.session_state.pagina == "Cadastro":
         <a href="{FORM_LINKS['professor']}" 
            class="clean-link" 
            target="_blank"
-           aria-label="Cadastro de Professor de Tênis"
-           onclick="return confirm('Você será redirecionado para o formulário de cadastro de professor. Deseja continuar?')">
+           aria-label="Cadastro de Professor de Tênis">
             <div class="icon-text">🎾</div>
             <div class="label-text">PROFESSOR</div>
             <div class="link-description">
@@ -755,7 +752,7 @@ st.markdown("""
 <div style='text-align: center; margin-top: 40px; color: rgba(255,255,255,0.6); font-size: 12px;'>
     <hr style='border-color: rgba(255,255,255,0.2);'>
     <p><span class="tennis-ball-yellow">🎾</span> TENNIS CLASS © 2024 - Todos os direitos reservados</p>
-    <p>Desenvolvido com ❤️ por André Aranha</p>
+    <p>Desenvolvido por André Aranha</p>
     <p style='font-size: 10px; margin-top: 5px;'>
         <a href="https://tennis-class.streamlit.app" 
            style='color: rgba(255,255,255,0.6); text-decoration: none;'>
@@ -772,8 +769,8 @@ st.markdown("""
 st.sidebar.markdown("---")
 st.sidebar.markdown(f"""
 <div style='font-size: 10px; color: #888; text-align: center; padding: 10px;'>
-    <div style='margin-bottom: 5px;'><span class='tennis-ball-yellow'>🎾</span> Tennis Class v5.0</div>
-    <div style='color: #4CAF50;'>Menu atualizado ✓</div>
+    <div style='margin-bottom: 5px;'><span class='tennis-ball-yellow'>🎾</span> Tennis Class v5.1</div>
+    <div style='color: #4CAF50;'>Menu limpo e simples ✓</div>
     <div style='color: #4CAF50;'>Links testados ✓</div>
     <div style='color: #4CAF50;'>Design otimizado ✓</div>
     <div style='font-size: 9px; margin-top: 5px;'>

@@ -330,7 +330,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ============================================
-# 5. MENU LATERAL
+# 5. MENU LATERAL COM NOMES ATUALIZADOS
 # ============================================
 
 with st.sidebar:
@@ -338,7 +338,10 @@ with st.sidebar:
     st.markdown("<h2 style='color: #FFFF00; text-align: center; text-shadow: 0 0 10px #FF0;'>🎾 MENU</h2>", 
                 unsafe_allow_html=True)
     
-    for item in ["Home", "Preços", "Cadastro", "Dashboard", "Contato"]:
+    # NOMES DO MENU ATUALIZADOS (mantendo os mesmos nomes solicitados)
+    menu_items = ["Home", "Preços", "Cadastro", "Dashboard", "Contato"]
+    
+    for item in menu_items:
         # Ícone de bola de tênis amarela antes de cada item
         icone = "<span class='tennis-ball-yellow'>🎾</span>"
         if st.button(f"{icone} {item}", key=f"nav_{item}", use_container_width=True):
@@ -769,9 +772,9 @@ st.markdown("""
 st.sidebar.markdown("---")
 st.sidebar.markdown(f"""
 <div style='font-size: 10px; color: #888; text-align: center; padding: 10px;'>
-    <div style='margin-bottom: 5px;'>🎾 Tennis Class v4.1</div>
-    <div style='color: #4CAF50;'>Links corrigidos ✓</div>
-    <div style='color: #4CAF50;'>Formulários testados ✓</div>
+    <div style='margin-bottom: 5px;'><span class='tennis-ball-yellow'>🎾</span> Tennis Class v5.0</div>
+    <div style='color: #4CAF50;'>Menu atualizado ✓</div>
+    <div style='color: #4CAF50;'>Links testados ✓</div>
     <div style='color: #4CAF50;'>Design otimizado ✓</div>
     <div style='font-size: 9px; margin-top: 5px;'>
         Atualizado: {datetime.now().strftime("%d/%m/%Y")}

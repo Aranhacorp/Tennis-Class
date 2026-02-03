@@ -580,7 +580,7 @@ def log_reserva(reserva: Dict[str, Any], success: bool, user_ip: str = "N/A") ->
         logger.error(f"FALHA NA RESERVA - Dados: {reserva}, IP: {user_ip}")
 
 # ============================================
-# 7. CSS GLOBAL AVANÇADO
+# 7. CSS GLOBAL AVANÇADO (CORRIGIDO)
 # ============================================
 
 st.markdown("""
@@ -897,4 +897,5 @@ st.markdown("""
     /* Loading spinner */
     .loading-spinner {
         display: inline-block;
-        width: 40px
+        width: 40px;
+        height

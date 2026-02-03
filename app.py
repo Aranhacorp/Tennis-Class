@@ -580,9 +580,10 @@ def log_reserva(reserva: Dict[str, Any], success: bool, user_ip: str = "N/A") ->
         logger.error(f"FALHA NA RESERVA - Dados: {reserva}, IP: {user_ip}")
 
 # ============================================
-# 7. CSS GLOBAL AVANÇADO (CORRIGIDO)
+# 7. CSS GLOBAL (DIVIDIDO EM PARTES)
 # ============================================
 
+# Parte 1 do CSS - Estrutura principal
 st.markdown("""
 <style>
     /* Fundo e container principal */
@@ -645,7 +646,12 @@ st.markdown("""
         height: 4px;
         background: linear-gradient(90deg, #FFD700, #FFA500);
     }
-    
+</style>
+""", unsafe_allow_html=True)
+
+# Parte 2 do CSS - Cards e animações
+st.markdown("""
+<style>
     .tennis-card {
         background: rgba(255, 255, 255, 0.98);
         border-radius: 15px;
@@ -678,7 +684,12 @@ st.markdown("""
         0%, 100% { transform: translateY(0); }
         50% { transform: translateY(-8px); }
     }
-    
+</style>
+""", unsafe_allow_html=True)
+
+# Parte 3 do CSS - Links e botões
+st.markdown("""
+<style>
     /* Links e botões */
     .clean-link { 
         text-align: center; 
@@ -751,7 +762,12 @@ st.markdown("""
         box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4) !important;
         background: linear-gradient(135deg, #FFA500, #FFD700) !important;
     }
-    
+</style>
+""", unsafe_allow_html=True)
+
+# Parte 4 do CSS - Elementos flutuantes
+st.markdown("""
+<style>
     /* WhatsApp flutuante */
     .whatsapp-float { 
         position: fixed; 
@@ -811,7 +827,12 @@ st.markdown("""
         padding-left: 10px;
         border-left: 2px solid #FFD700;
     }
-    
+</style>
+""", unsafe_allow_html=True)
+
+# Parte 5 do CSS - Mensagens e feedback
+st.markdown("""
+<style>
     /* Mensagens */
     .error-message {
         color: #f44336;
@@ -855,7 +876,12 @@ st.markdown("""
         from { opacity: 0; transform: translateY(-10px); }
         to { opacity: 1; transform: translateY(0); }
     }
-    
+</style>
+""", unsafe_allow_html=True)
+
+# Parte 6 do CSS - Timer e animações especiais
+st.markdown("""
+<style>
     /* Timer */
     .timer-warning {
         color: #FF9800;
@@ -880,22 +906,3 @@ st.markdown("""
     .tennis-ball-yellow {
         color: #FFD700 !important;
         text-shadow: 0 0 15px rgba(255, 215, 0, 0.8), 0 0 25px rgba(255, 215, 0, 0.5) !important;
-        filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.7));
-        animation: glow 1.5s ease-in-out infinite alternate;
-        display: inline-block;
-    }
-    
-    @keyframes glow {
-        from {
-            text-shadow: 0 0 10px #FFD700, 0 0 20px #FFD700;
-        }
-        to {
-            text-shadow: 0 0 20px #FFD700, 0 0 30px #FFD700, 0 0 40px #FFD700;
-        }
-    }
-    
-    /* Loading spinner */
-    .loading-spinner {
-        display: inline-block;
-        width: 40px;
-        height

@@ -1,6 +1,6 @@
 # ============================================
 # TENNIS CLASS MANAGEMENT SYSTEM
-# Versão 2.0 - Otimizado para Streamlit Cloud
+# Versão 2.0 - Corrigido e Otimizado
 # ============================================
 
 import streamlit as st
@@ -43,43 +43,55 @@ try:
 except:
     SENHA_ADMIN = "tennispro2024"
 
-# Serviços disponíveis
+# Serviços disponíveis - ESTRUTURA CORRIGIDA
 SERVICOS = {
-    "particular": {
+    "AULA PARTICULAR": {
         "nome": "Aula particular", 
         "preco": 250, 
         "icone": "🎾",
-        "descricao": "Aula individual com foco total no aluno"
+        "descricao": "Aula individual com foco total no aluno",
+        "categoria": "Aulas",
+        "unidade": "/hora"
     },
-    "grupo": {
+    "AULA EM GRUPO": {
         "nome": "Aula em grupo", 
         "preco": 200, 
         "icone": "👥",
-        "descricao": "Aula em grupo de até 4 pessoas"
+        "descricao": "Aula em grupo de até 4 pessoas",
+        "categoria": "Aulas",
+        "unidade": "/hora"
     },
-    "kids": {
+    "AULA KIDS": {
         "nome": "Aula Kids", 
         "preco": 200, 
         "icone": "👶",
-        "descricao": "Aula especializada para crianças"
+        "descricao": "Aula especializada para crianças",
+        "categoria": "Aulas",
+        "unidade": "/hora"
     },
-    "personal": {
+    "PERSONAL TRAINER": {
         "nome": "Personal trainer", 
         "preco": 250, 
         "icone": "💪",
-        "descricao": "Treinamento personalizado"
+        "descricao": "Treinamento personalizado",
+        "categoria": "Treinamento",
+        "unidade": "/hora"
     },
-    "competitivo": {
+    "COMPETITIVO": {
         "nome": "Treinamento competitivo", 
         "preco": 1400, 
         "icone": "🏆",
-        "descricao": "Pacote mensal para competidores"
+        "descricao": "Pacote mensal para competidores",
+        "categoria": "Treinamento",
+        "unidade": "/mês"
     },
-    "eventos": {
+    "EVENTOS": {
         "nome": "Eventos", 
         "preco": 0, 
         "icone": "🎉",
-        "descricao": "Organização de eventos especiais"
+        "descricao": "Organização de eventos especiais",
+        "categoria": "Especial",
+        "unidade": "a combinar"
     }
 }
 
@@ -114,7 +126,7 @@ FORM_LINKS = {
 TEMPO_PAGAMENTO = 300  # 5 minutos em segundos
 
 # ============================================
-# 3. FUNÇÕES AUXILIARES (SEM DEPENDÊNCIAS EXTERNAS)
+# 3. FUNÇÕES AUXILIARES
 # ============================================
 
 def validar_email(email: str) -> bool:
@@ -125,9 +137,7 @@ def validar_email(email: str) -> bool:
 def validar_nome(nome: str) -> bool:
     """Valida nome (mínimo 3 caracteres)."""
     nome_limpo = nome.strip()
-    if len(nome_limpo) < 3:
-        return False
-    return True
+    return len(nome_limpo) >= 3
 
 def validar_telefone(telefone: str) -> bool:
     """Valida formato de telefone brasileiro."""
@@ -137,28 +147,6 @@ def validar_telefone(telefone: str) -> bool:
 def formatar_moeda(valor: float) -> str:
     """Formata valor em moeda brasileira."""
     return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-
-def validar_data(data_str: str) -> Tuple[bool, str]:
-    """Valida data no formato DD/MM/YYYY."""
-    try:
-        data_obj = datetime.strptime(data_str, '%d/%m/%Y').date()
-        if data_obj < date.today():
-            return False, "Data não pode ser no passado"
-        return True, "Data válida"
-    except ValueError:
-        return False, "Data inválida. Use formato DD/MM/YYYY"
-
-def validar_horario(horario: str) -> Tuple[bool, str]:
-    """Valida horário no formato HH:00."""
-    try:
-        hora = int(horario.split(':')[0])
-        if hora < 7 or hora > 22:
-            return False, "Horário deve ser entre 07:00 e 22:00"
-        if horario not in [f"{h:02d}:00" for h in range(7, 23)]:
-            return False, "Horário deve ser em ponto (ex: 08:00)"
-        return True, "Horário válido"
-    except:
-        return False, "Horário inválido. Use formato HH:00"
 
 @st.cache_data(ttl=300)
 def carregar_dados() -> pd.DataFrame:
@@ -236,11 +224,12 @@ if 'erros_form' not in st.session_state:
     st.session_state.erros_form = {}
 
 # ============================================
-# 5. CSS SIMPLIFICADO (EVITANDO ERROS DE SINTAXE)
+# 5. CSS ATUALIZADO (COM BALÕES CINZA TRANSPARENTES)
 # ============================================
 
 st.markdown("""
 <style>
+    /* Fundo principal */
     .stApp {
         background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
                     url("https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/Fundo%20APP%20ver2.png");
@@ -248,6 +237,8 @@ st.markdown("""
         background-position: center;
         min-height: 100vh;
     }
+    
+    /* Títulos */
     .header-title { 
         color: white; 
         font-size: 50px; 
@@ -256,6 +247,8 @@ st.markdown("""
         margin-bottom: 20px; 
         text-shadow: 2px 2px 4px black; 
     }
+    
+    /* Cards principais */
     .custom-card { 
         background-color: rgba(255, 255, 255, 0.95); 
         padding: 30px; 
@@ -265,6 +258,40 @@ st.markdown("""
         max-width: 1000px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     }
+    
+    /* Balões de contato - CINZA COM TRANSPARÊNCIA */
+    .contact-bubble {
+        background-color: rgba(100, 100, 100, 0.15) !important;
+        padding: 25px;
+        border-radius: 15px;
+        margin: 15px 0;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+    }
+    
+    .contact-bubble:hover {
+        background-color: rgba(100, 100, 100, 0.25) !important;
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    
+    .contact-bubble h3 {
+        color: #FFD700;
+        margin-top: 0;
+    }
+    
+    .contact-bubble p {
+        color: #f0f0f0;
+        margin-bottom: 5px;
+    }
+    
+    .contact-bubble strong {
+        color: white;
+        font-size: 18px;
+    }
+    
+    /* Links */
     .clean-link { 
         text-align: center; 
         text-decoration: none !important; 
@@ -282,6 +309,7 @@ st.markdown("""
         align-items: center;
         border: 1px solid rgba(255,255,255,0.1);
     }
+    
     .clean-link:hover { 
         transform: translateY(-5px); 
         color: #FFD700 !important; 
@@ -289,16 +317,20 @@ st.markdown("""
         box-shadow: 0 8px 20px rgba(0,0,0,0.3);
         border-color: #FFD700;
     }
+    
     .icon-text { 
         font-size: 50px;
         margin-bottom: 10px; 
     }
+    
     .label-text { 
         font-size: 18px; 
         font-weight: bold; 
         letter-spacing: 1px; 
         margin-bottom: 8px;
     }
+    
+    /* WhatsApp flutuante */
     .whatsapp-float { 
         position: fixed; 
         width: 60px; 
@@ -318,9 +350,12 @@ st.markdown("""
         text-decoration: none; 
         transition: all 0.3s ease;
     }
+    
     .whatsapp-float:hover {
         transform: scale(1.1);
     }
+    
+    /* Assinatura */
     .assinatura-footer { 
         position: fixed; 
         bottom: 15px; 
@@ -329,12 +364,16 @@ st.markdown("""
         z-index: 9999; 
         opacity: 0.8;
     }
+    
+    /* Sidebar */
     .sidebar-detalhe { 
         font-size: 11px; 
         color: #ccc; 
         margin-bottom: 10px; 
         line-height: 1.2; 
     }
+    
+    /* Mensagens de erro/sucesso */
     .error-message {
         color: #ff4444;
         font-size: 14px;
@@ -344,6 +383,7 @@ st.markdown("""
         background-color: rgba(255, 68, 68, 0.1);
         border-left: 4px solid #ff4444;
     }
+    
     .success-message {
         color: #00C851;
         font-size: 14px;
@@ -353,6 +393,8 @@ st.markdown("""
         background-color: rgba(0, 200, 81, 0.1);
         border-left: 4px solid #00C851;
     }
+    
+    /* Timer */
     .timer-warning {
         color: #ff8800;
         font-weight: bold;
@@ -363,20 +405,53 @@ st.markdown("""
         border-radius: 10px;
         background-color: rgba(255, 136, 0, 0.1);
     }
+    
+    /* Bola de tênis amarela */
     .tennis-ball-yellow {
         color: #FFD700 !important;
         text-shadow: 0 0 10px rgba(255, 215, 0, 0.7);
     }
+    
+    /* Botões */
     .stButton > button {
         transition: all 0.3s ease !important;
     }
+    
     .stButton > button:hover {
         transform: translateY(-2px) !important;
         box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
     }
+    
+    /* Tabela de preços */
+    .price-card {
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 10px;
+        padding: 15px;
+        margin: 10px 0;
+        border-left: 4px solid #FFD700;
+    }
+    
+    .price-title {
+        color: #333;
+        font-weight: bold;
+        font-size: 18px;
+        margin-bottom: 5px;
+    }
+    
+    .price-value {
+        color: #4CAF50;
+        font-weight: bold;
+        font-size: 20px;
+    }
+    
+    .price-description {
+        color: #666;
+        font-size: 14px;
+        margin-top: 5px;
+    }
 </style>
 
-<!-- Botão WhatsApp -->
+<!-- Botão WhatsApp Flutuante -->
 <a href="https://wa.me/5511971425028" class="whatsapp-float" target="_blank">
     <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" 
          width="35" alt="WhatsApp">
@@ -441,21 +516,18 @@ if st.session_state.pagina == "Home":
             with col1:
                 aluno = st.text_input(
                     "Nome do Aluno *",
-                    placeholder="Ex: João Silva",
-                    help="Digite seu nome completo"
+                    placeholder="Ex: João Silva"
                 )
             with col2:
                 email = st.text_input(
                     "E-mail *",
-                    placeholder="Ex: joao.silva@email.com",
-                    help="Digite um e-mail válido"
+                    placeholder="Ex: joao.silva@email.com"
                 )
             
-            # Lista de serviços
+            # Lista de serviços formatada corretamente
             servicos_lista = [
-                f"{SERVICOS[key]['icone']} {SERVICOS[key]['nome']} - R$ {SERVICOS[key]['preco']}"
-                f"{'/hora' if key != 'competitivo' else '/mês'}"
-                for key in SERVICOS.keys()
+                f"{info['icone']} {info['nome']} - R$ {info['preco']} {info['unidade']}"
+                for key, info in SERVICOS.items()
             ]
             
             col3, col4 = st.columns(2)
@@ -489,7 +561,6 @@ if st.session_state.pagina == "Home":
             if submit:
                 st.session_state.erros_form = {}
                 
-                # Validação
                 if not validar_nome(aluno):
                     st.session_state.erros_form['aluno'] = "Nome deve ter pelo menos 3 caracteres."
                 
@@ -556,7 +627,6 @@ if st.session_state.pagina == "Home":
             else:
                 st.session_state.pagamento_ativo = False
                 st.error("⏰ Tempo esgotado! Por favor, inicie uma nova reserva.")
-                time.sleep(2)
                 st.rerun()
         
         # Botão de confirmação
@@ -586,16 +656,18 @@ if st.session_state.pagina == "Home":
     # Regulamento
     st.markdown("""
     <hr style="margin: 30px 0;">
-    <a href="https://docs.google.com/document/d/1LW9CNdmgYxwnpXlDYrE8rKsLdajbPi3fniwXVsBqco/edit" 
-       target="_blank" 
-       style="display: block; text-align: center; text-decoration: none; color: #555; padding: 10px;">
-        📄 Ler Regulamento de Uso
-    </a>
+    <div style="text-align: center;">
+        <a href="https://docs.google.com/document/d/1LW9CNdmgYxwnpXlDYrE8rKsLdajbPi3fniwXVsBqco/edit" 
+           target="_blank" 
+           style="text-decoration: none; color: #555; padding: 10px; display: inline-block;">
+            📄 Ler Regulamento de Uso
+        </a>
+    </div>
     """, unsafe_allow_html=True)
     
     st.markdown('</div>', unsafe_allow_html=True)
 
-# PÁGINA: PREÇOS
+# PÁGINA: PREÇOS - CORRIGIDA
 elif st.session_state.pagina == "Preços":
     st.markdown('<div class="custom-card">', unsafe_allow_html=True)
     
@@ -604,7 +676,7 @@ elif st.session_state.pagina == "Preços":
     
     st.markdown("---")
     
-    # Agrupar por categoria
+    # Agrupar serviços por categoria
     categorias = {}
     for key, info in SERVICOS.items():
         categoria = info.get('categoria', 'Outros')
@@ -612,26 +684,31 @@ elif st.session_state.pagina == "Preços":
             categorias[categoria] = []
         categorias[categoria].append((key, info))
     
+    # Exibir por categoria
     for categoria, servicos in categorias.items():
         st.markdown(f"### {categoria}")
+        
         for key, info in servicos:
-            if key == "eventos":
-                st.markdown(f"<div style='margin: 10px 0; padding-left: 20px;'>"
-                          f"<span style='color: #FFD700;'>🎉</span> "
-                          f"<strong>{info['nome']}:</strong> "
-                          f"<em>Valor a combinar</em><br>"
-                          f"<small style='color: #666;'>{info['descricao']}</small>"
-                          f"</div>")
+            if key == "EVENTOS":
+                st.markdown(f"""
+                <div class="price-card">
+                    <div class="price-title">{info['icone']} {info['nome']}</div>
+                    <div class="price-value">Valor a combinar</div>
+                    <div class="price-description">{info['descricao']}</div>
+                </div>
+                """, unsafe_allow_html=True)
             else:
-                unidade = "/hora" if key != "competitivo" else "/mês"
-                st.markdown(f"<div style='margin: 10px 0; padding-left: 20px;'>"
-                          f"<span style='color: #FFD700;'>{info['icone']}</span> "
-                          f"<strong>{info['nome']}:</strong> "
-                          f"R$ {info['preco']} {unidade}<br>"
-                          f"<small style='color: #666;'>{info['descricao']}</small>"
-                          f"</div>")
-        st.markdown("---")
+                st.markdown(f"""
+                <div class="price-card">
+                    <div class="price-title">{info['icone']} {info['nome']}</div>
+                    <div class="price-value">R$ {info['preco']} {info['unidade']}</div>
+                    <div class="price-description">{info['descricao']}</div>
+                </div>
+                """, unsafe_allow_html=True)
+        
+        st.markdown("<br>", unsafe_allow_html=True)
     
+    st.markdown("---")
     st.info("💡 *Valores sujeitos a alteração. Consulte condições especiais para pacotes.*")
     
     st.markdown('</div>', unsafe_allow_html=True)
@@ -692,6 +769,61 @@ elif st.session_state.pagina == "Cadastro":
     
     st.markdown('</div>', unsafe_allow_html=True)
 
+# PÁGINA: CONTATO - COM BALÕES CINZA TRANSPARENTES
+elif st.session_state.pagina == "Contato":
+    st.markdown('<div class="custom-card">', unsafe_allow_html=True)
+    
+    st.markdown('<h3 style="text-align: center; color: #333;">🎾 Canais de Atendimento</h3>', 
+               unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # BALÃO DE E-MAIL - CINZA TRANSPARENTE
+        st.markdown("""
+        <div class="contact-bubble">
+            <h3>📧 E-mail</h3>
+            <p><strong>aranha.corp@gmail.com</strong></p>
+            <p>Respondemos em até 24 horas úteis</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        # BALÃO DE WHATSAPP - CINZA TRANSPARENTE
+        st.markdown("""
+        <div class="contact-bubble">
+            <h3>📱 WhatsApp</h3>
+            <p><strong>(11) 97142-5028</strong></p>
+            <p>Atendimento direto</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    # Formulário de contato
+    st.markdown("### ✉️ Envie uma mensagem")
+    
+    with st.form("contato_form"):
+        nome_contato = st.text_input("Seu nome *")
+        email_contato = st.text_input("Seu e-mail *")
+        mensagem = st.text_area("Mensagem *", height=150)
+        
+        enviar = st.form_submit_button("📤 Enviar Mensagem", type="primary")
+        
+        if enviar:
+            if nome_contato and email_contato and mensagem:
+                if validar_email(email_contato):
+                    st.success("✅ Mensagem enviada! Entraremos em contato em breve.")
+                    # Aqui você poderia adicionar lógica para enviar o e-mail
+                else:
+                    st.error("❌ E-mail inválido. Digite um e-mail válido.")
+            else:
+                st.warning("⚠️ Preencha todos os campos obrigatórios (*).")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
 # PÁGINA: DASHBOARD
 elif st.session_state.pagina == "Dashboard":
     st.markdown('<div class="custom-card">', unsafe_allow_html=True)
@@ -740,8 +872,8 @@ elif st.session_state.pagina == "Dashboard":
             if not df.empty:
                 # Métricas
                 total = len(df)
-                pendentes = len(df[df['Status'] == 'Pendente'])
-                confirmados = len(df[df['Status'] == 'Confirmado'])
+                pendentes = len(df[df['Status'] == 'Pendente']) if 'Status' in df.columns else 0
+                confirmados = len(df[df['Status'] == 'Confirmado']) if 'Status' in df.columns else 0
                 
                 col1, col2, col3 = st.columns(3)
                 with col1:
@@ -755,7 +887,7 @@ elif st.session_state.pagina == "Dashboard":
                 
                 # Tabela
                 st.dataframe(
-                    df.sort_values('Data', ascending=False),
+                    df.sort_values('Data', ascending=False) if 'Data' in df.columns else df,
                     use_container_width=True,
                     hide_index=True,
                     column_config={
@@ -794,64 +926,6 @@ elif st.session_state.pagina == "Dashboard":
                 
         except Exception as e:
             st.error(f"❌ Erro ao carregar dashboard: {str(e)}")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# PÁGINA: CONTATO
-elif st.session_state.pagina == "Contato":
-    st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-    
-    st.markdown('<h3 style="text-align: center; color: #333;">🎾 Canais de Atendimento</h3>', 
-               unsafe_allow_html=True)
-    
-    st.markdown("---")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("### 📧 E-mail")
-        st.markdown("""
-        <div style='padding: 20px; background: #f5f5f5; border-radius: 10px;'>
-            <p style="font-size: 18px; margin: 0 0 10px 0;">
-                <strong>aranha.corp@gmail.com</strong>
-            </p>
-            <p style="font-size: 14px; color: #666; margin: 0;">
-                Respondemos em até 24 horas úteis
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown("### 📱 WhatsApp")
-        st.markdown("""
-        <div style='padding: 20px; background: #f5f5f5; border-radius: 10px;'>
-            <p style="font-size: 18px; margin: 0 0 10px 0;">
-                <strong>(11) 97142-5028</strong>
-            </p>
-            <p style="font-size: 14px; color: #666; margin: 0;">
-                Atendimento direto
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    st.markdown("---")
-    
-    # Formulário de contato
-    st.markdown("### ✉️ Envie uma mensagem")
-    
-    with st.form("contato_form"):
-        nome_contato = st.text_input("Seu nome")
-        email_contato = st.text_input("Seu e-mail")
-        mensagem = st.text_area("Mensagem", height=150)
-        
-        if st.form_submit_button("📤 Enviar Mensagem", type="primary"):
-            if nome_contato and email_contato and mensagem:
-                if validar_email(email_contato):
-                    st.success("✅ Mensagem enviada! Entraremos em contato em breve.")
-                else:
-                    st.error("❌ E-mail inválido.")
-            else:
-                st.warning("⚠️ Preencha todos os campos obrigatórios.")
     
     st.markdown('</div>', unsafe_allow_html=True)
 

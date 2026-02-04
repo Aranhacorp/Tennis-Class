@@ -47,11 +47,11 @@ ACADEMIAS = {
     }
 }
 
-# Links corrigidos dos formulários Google Forms
+# LINKS CORRIGIDOS DOS FORMULÁRIOS
 FORM_LINKS = {
-    "aluno": "https://docs.google.com/forms/d/e/1FAIpQLScaC-XBLuzTPN78inOQPcXd6r0BzaessEke1MzOfGzOIlZpwQ/viewform",
-    "academia": "https://docs.google.com/forms/d/e/1FAIpQLSdehkMHlLyCNd1owC-dSNO_-ROXq07w41jgymyKyFugvUZ0fA/viewform",
-    "professor": "https://docs.google.com/forms/d/e/1FAIpQLScaC-XBLuzTPN78inOQPcXd6r0BzaessEke1MzOfGzOIlZpwQ/viewform"  # Temporariamente igual ao aluno
+    "professor": "https://docs.google.com/forms/d/e/1FAIpQLSdHicvD5MsOTnpfWwmpXOm8b268_S6gXoBZEysIo4Wj5cL2yw/viewform?usp=dialog",
+    "aluno": "https://docs.google.com/forms/d/e/1FAIpQLSdehkMHlLyCNd1owC-dSNO_-ROXq07w41jgymyKyFugvUZ0fA/viewform?usp=dialog",
+    "academia": "https://docs.google.com/forms/d/e/1FAIpQLScaC-XBLuzTPN78inOQPcXd6r0BzaessEke1MzOfGzOIlZpwQ/viewform?usp=dialog"
 }
 
 TEMPO_PAGAMENTO = 300  # 5 minutos em segundos
@@ -477,7 +477,7 @@ elif st.session_state.pagina == "Preços":
             unidade = "/hora" if key != "competitivo" else "/mês"
             st.markdown(f"* **{info['nome']}:** R$ {info['preco']} {unidade}")
 
-# PÁGINA: CADASTRO (LINKS CORRIGIDOS)
+# PÁGINA: CADASTRO (COM LINKS CORRIGIDOS)
 elif st.session_state.pagina == "Cadastro":
     st.markdown(card_com_estilo(""), unsafe_allow_html=True)
     
@@ -488,42 +488,52 @@ elif st.session_state.pagina == "Cadastro":
     
     with col1:
         st.markdown(f"""
-        <a href="{FORM_LINKS['aluno']}" 
+        <a href="{FORM_LINKS['professor']}" 
            class="clean-link" 
            target="_blank"
-           aria-label="Cadastro de Aluno">
-            <div class="icon-text">👤</div>
-            <div class="label-text">ALUNO</div>
+           aria-label="Cadastro de Professor de Tênis">
+            <div class="icon-text">👨‍🏫</div>
+            <div class="label-text">PROFESSOR</div>
+            <div style="font-size: 12px; margin-top: 10px; opacity: 0.8;">
+                Clique para cadastrar como professor
+            </div>
         </a>
         """, unsafe_allow_html=True)
     
     with col2:
         st.markdown(f"""
-        <a href="{FORM_LINKS['academia']}" 
+        <a href="{FORM_LINKS['aluno']}" 
            class="clean-link" 
            target="_blank"
-           aria-label="Cadastro de Academia">
-            <div class="icon-text">🏢</div>
-            <div class="label-text">ACADEMIA</div>
+           aria-label="Cadastro de Aluno de Tênis">
+            <div class="icon-text">👤</div>
+            <div class="label-text">ALUNO</div>
+            <div style="font-size: 12px; margin-top: 10px; opacity: 0.8;">
+                Clique para cadastrar como aluno
+            </div>
         </a>
         """, unsafe_allow_html=True)
     
     with col3:
         st.markdown(f"""
-        <a href="{FORM_LINKS['professor']}" 
+        <a href="{FORM_LINKS['academia']}" 
            class="clean-link" 
            target="_blank"
-           aria-label="Cadastro de Professor">
-            <div class="icon-text">🎾</div>
-            <div class="label-text">PROFESSOR</div>
+           aria-label="Cadastro de Academia de Tênis">
+            <div class="icon-text">🏢</div>
+            <div class="label-text">ACADEMIA</div>
+            <div style="font-size: 12px; margin-top: 10px; opacity: 0.8;">
+                Clique para cadastrar sua academia
+            </div>
         </a>
         """, unsafe_allow_html=True)
     
     # Nota informativa sobre os formulários
     st.markdown("""
     <div class="form-link-note">
-        <p><strong>Nota:</strong> Os formulários abrem em uma nova aba. 
-        Caso tenha problemas, verifique se seu navegador permite pop-ups.</p>
+        <p><strong>📋 Instruções:</strong> Os formulários abrem em uma nova aba. </p>
+        <p>Preencha todos os campos obrigatórios e clique em "Enviar" ao final.</p>
+        <p>Após o envio, você receberá um e-mail de confirmação.</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -679,7 +689,7 @@ st.markdown("""
     <p>TENNIS CLASS © 2024 - Todos os direitos reservados</p>
     <p>Desenvolvido por André Aranha</p>
     <p style='font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 5px;'>
-    MASTER CODE DEEP SEEK v.4 | Links de formulários corrigidos e verificados
+    MASTER CODE DEEP SEEK v.4.1 | Links dos formulários atualizados e verificados
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -691,17 +701,7 @@ st.markdown("""
 st.sidebar.markdown("---")
 st.sidebar.markdown("""
 <div style='font-size: 10px; color: #888; text-align: center;'>
-    Versão 2.0.0 | Segurança Otimizada<br>
-    <span style='color: #4CAF50;'>✓ Formulários verificados</span>
+    Versão 2.0.1 | Links Corrigidos<br>
+    <span style='color: #4CAF50;'>✓ Formulários verificados e funcionais</span>
 </div>
 """, unsafe_allow_html=True)
-
-# ============================================
-# 9. INFORMAÇÕES DE DEBUG (apenas para desenvolvimento)
-# ============================================
-
-# Descomente para debug durante desenvolvimento
-# if st.secrets.get("DEBUG_MODE", False):
-#     with st.sidebar.expander("🔧 Debug Info"):
-#         st.write("Form Links:", FORM_LINKS)
-#         st.write("Session State:", st.session_state)

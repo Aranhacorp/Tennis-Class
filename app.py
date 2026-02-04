@@ -3,248 +3,270 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tennis Academy</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-        }
-
-        body {
-            background-color: #f5f5f5;
-            padding: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        /* Estilo do menu */
-        nav {
-            background-color: #2c3e50;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 30px;
-        }
-
-        nav ul {
-            list-style: none;
-            display: flex;
-            justify-content: space-around;
-            flex-wrap: wrap;
-        }
-
-        nav a {
-            color: white;
-            text-decoration: none;
-            font-weight: bold;
-            padding: 8px 15px;
-            border-radius: 4px;
-            transition: background-color 0.3s;
-        }
-
-        nav a:hover {
-            background-color: #34495e;
-        }
-
-        /* Layout principal */
-        .container {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 30px;
-        }
-
-        /* Seção de aulas */
-        .aulas-section {
-            margin-bottom: 30px;
-        }
-
-        .aulas-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-        }
-
-        .aula-item {
-            background-color: white;
-            border-radius: 10px;
-            padding: 25px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: transform 0.3s;
-        }
-
-        .aula-item:hover {
-            transform: translateY(-5px);
-        }
-
-        .aula-titulo {
-            color: #2c3e50;
-            margin-bottom: 15px;
-            font-size: 1.5em;
-        }
-
-        /* Balões de preço com cinza transparente */
-        .preco-balao {
-            display: inline-block;
-            background-color: rgba(128, 128, 128, 0.2); /* Cinza com 20% de opacidade */
-            padding: 10px 20px;
-            border-radius: 25px;
-            font-size: 1.3em;
-            font-weight: bold;
-            color: #2c3e50;
-            margin: 15px 0;
-            border: 2px solid rgba(128, 128, 128, 0.3);
-            backdrop-filter: blur(5px);
-        }
-
-        .aula-descricao {
-            color: #666;
-            line-height: 1.6;
-            margin-top: 10px;
-        }
-
-        /* Seção academias */
-        .academias-section {
-            margin-top: 30px;
-        }
-
-        .academias-container {
-            display: grid;
-            gap: 20px;
-        }
-
-        .academia-item {
-            background-color: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .academia-nome {
-            color: #2c3e50;
-            margin-bottom: 10px;
-            font-size: 1.2em;
-        }
-
-        .academia-endereco, .academia-telefone {
-            color: #666;
-            margin: 5px 0;
-        }
-
-        /* Seção treinamento */
-        .treinamento-section {
-            background-color: white;
-            border-radius: 10px;
-            padding: 25px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            margin-top: 30px;
-            grid-column: 1 / -1;
-        }
-
-        .treinamento-titulo {
-            color: #2c3e50;
-            margin-bottom: 15px;
-            font-size: 1.5em;
-        }
-
-        /* Responsividade */
-        @media (max-width: 768px) {
-            .container {
-                grid-template-columns: 1fr;
-            }
-            
-            nav ul {
-                flex-direction: column;
-                align-items: center;
-                gap: 10px;
-            }
-        }
-    </style>
+    <title>Tennis Academy - Aulas de Tênis Profissionais</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 </head>
 <body>
-    <!-- Menu de navegação -->
-    <nav>
-        <ul>
-            <li><a href="#home">Home</a></li>
-            <li><a href="#precos">Preços</a></li>
-            <li><a href="#cadastro">Cadastro</a></li>
-            <li><a href="#dashboard">Dashboard</a></li>
-            <li><a href="#contato">Contato</a></li>
-        </ul>
+    <!-- Menu de Navegação -->
+    <nav class="navbar">
+        <div class="container nav-container">
+            <a href="/" class="logo">
+                <i class="fas fa-tennis-ball logo-icon"></i>
+                Tennis Academy
+            </a>
+            
+            <ul class="nav-links">
+                <li><a href="/" class="{{ 'active' if request.path == '/' else '' }}">
+                    <i class="fas fa-home"></i> Home
+                </a></li>
+                <li><a href="/precos" class="{{ 'active' if request.path == '/precos' else '' }}">
+                    <i class="fas fa-tag"></i> Preços
+                </a></li>
+                <li><a href="/cadastro" class="{{ 'active' if request.path == '/cadastro' else '' }}">
+                    <i class="fas fa-user-plus"></i> Cadastro
+                </a></li>
+                <li><a href="/dashboard" class="{{ 'active' if request.path == '/dashboard' else '' }}">
+                    <i class="fas fa-chart-line"></i> Dashboard
+                </a></li>
+                <li><a href="/contato" class="{{ 'active' if request.path == '/contato' else '' }}">
+                    <i class="fas fa-envelope"></i> Contato
+                </a></li>
+            </ul>
+        </div>
     </nav>
 
-    <div class="container">
-        <!-- Seção de Aulas -->
-        <div class="aulas-section">
-            <h2 style="color: #2c3e50; margin-bottom: 20px; font-size: 2em;">Aulas</h2>
-            
-            <div class="aulas-container">
-                <div class="aula-item">
-                    <h3 class="aula-titulo">Aula particular</h3>
-                    <div class="preco-balao">R$ 250 /hora</div>
-                    <p class="aula-descricao">Aula individual com foco total no aluno. Perfeita para quem quer evoluir rapidamente com atenção personalizada.</p>
-                </div>
+    <!-- Conteúdo Principal -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Seção de Aulas -->
+            <section class="aulas-section">
+                <h2 class="section-title">
+                    <i class="fas fa-graduation-cap"></i> Nossas Aulas
+                </h2>
                 
-                <div class="aula-item">
-                    <h3 class="aula-titulo">Aula em grupo</h3>
-                    <div class="preco-balao">R$ 200 /hora</div>
-                    <p class="aula-descricao">Aula em grupo de até 4 pessoas. Ideal para amigos ou familiares que querem aprender juntos de forma divertida.</p>
+                <div class="aulas-grid">
+                    <!-- Aula Particular -->
+                    <div class="aula-card">
+                        <h3 class="aula-title">
+                            <i class="fas fa-user"></i> Aula Particular
+                        </h3>
+                        <div class="price-badge">R$ 250 / hora</div>
+                        <p class="aula-description">
+                            Aula individual com foco total no aluno. Perfeita para quem quer evoluir rapidamente 
+                            com atenção personalizada do professor. Inclui análise de vídeo e plano de desenvolvimento individual.
+                        </p>
+                        <ul class="aula-benefits" style="margin-top: 1rem; padding-left: 1.2rem; color: #555;">
+                            <li>Professor dedicado exclusivamente a você</li>
+                            <li>Plano de treino personalizado</li>
+                            <li>Horários flexíveis</li>
+                            <li>Feedback detalhado a cada aula</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Aula em Grupo -->
+                    <div class="aula-card">
+                        <h3 class="aula-title">
+                            <i class="fas fa-users"></i> Aula em Grupo
+                        </h3>
+                        <div class="price-badge">R$ 200 / hora</div>
+                        <p class="aula-description">
+                            Aula em grupo de até 4 pessoas. Ideal para amigos ou familiares que querem aprender 
+                            juntos de forma divertida e econômica. Promove interação e competição saudável.
+                        </p>
+                        <ul class="aula-benefits" style="margin-top: 1rem; padding-left: 1.2rem; color: #555;">
+                            <li>Economia de até 20% por pessoa</li>
+                            <li>Ambiente descontraído e social</li>
+                            <li>Jogos e exercícios em equipe</li>
+                            <li>Perfeito para todos os níveis</li>
+                        </ul>
+                    </div>
                 </div>
+            </section>
+            
+            <!-- Seção de Academias -->
+            <section class="academias-section">
+                <h2 class="section-title">
+                    <i class="fas fa-map-marker-alt"></i> Nossas Academias
+                </h2>
+                
+                <div class="academias-list">
+                    <!-- PLAY TENNIS Ibirapuera -->
+                    <div class="academia-item">
+                        <h3 class="academia-name">
+                            <i class="fas fa-tennis-ball academia-icon"></i> PLAY TENNIS Ibirapuera
+                        </h3>
+                        <p class="academia-address">
+                            <i class="fas fa-map-pin"></i> R. Estado de Israel, 860 - Vila Clementino, São Paulo - SP
+                        </p>
+                        <p class="academia-phone">
+                            <i class="fas fa-phone"></i> (11) 97752-0488
+                        </p>
+                        <p class="academia-hours" style="color: #777; margin-top: 0.5rem;">
+                            <i class="fas fa-clock"></i> Segunda a Sábado: 6h às 22h | Domingo: 8h às 18h
+                        </p>
+                    </div>
+                    
+                    <!-- TOP One Tennis -->
+                    <div class="academia-item">
+                        <h3 class="academia-name">
+                            <i class="fas fa-tennis-ball academia-icon"></i> TOP One Tennis
+                        </h3>
+                        <p class="academia-address">
+                            <i class="fas fa-map-pin"></i> Av. Indianópolis, 647 - Indianópolis, São Paulo - SP
+                        </p>
+                        <p class="academia-phone">
+                            <i class="fas fa-phone"></i> (11) 93236-3828
+                        </p>
+                        <p class="academia-hours" style="color: #777; margin-top: 0.5rem;">
+                            <i class="fas fa-clock"></i> Segunda a Sexta: 7h às 23h | Sábado: 8h às 20h
+                        </p>
+                    </div>
+                    
+                    <!-- MELL Tennis -->
+                    <div class="academia-item">
+                        <h3 class="academia-name">
+                            <i class="fas fa-tennis-ball academia-icon"></i> MELL Tennis
+                        </h3>
+                        <p class="academia-address">
+                            <i class="fas fa-map-pin"></i> Em breve - Nova unidade
+                        </p>
+                        <p class="academia-phone">
+                            <i class="fas fa-phone"></i> Informações em breve
+                        </p>
+                        <p class="academia-hours" style="color: #777; margin-top: 0.5rem;">
+                            <i class="fas fa-clock"></i> Horários a definir
+                        </p>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Seção Treinamento -->
+            <section class="treinamento-section">
+                <h2 class="section-title">
+                    <i class="fas fa-dumbbell"></i> Nosso Método de Treinamento
+                </h2>
+                
+                <div class="treinamento-content">
+                    <p>
+                        Nossos treinamentos são desenvolvidos por profissionais certificados e adaptados para 
+                        todas as idades e níveis, desde iniciantes até jogadores avançados.
+                    </p>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+                        <div class="treinamento-item" style="background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.05);">
+                            <h4 style="color: #2c3e50; margin-bottom: 0.5rem;">
+                                <i class="fas fa-cogs" style="color: #3498db;"></i> Técnica
+                            </h4>
+                            <p style="color: #666; font-size: 0.95rem;">
+                                Fundamentos sólidos, golpes precisos e movimentos eficientes
+                            </p>
+                        </div>
+                        
+                        <div class="treinamento-item" style="background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.05);">
+                            <h4 style="color: #2c3e50; margin-bottom: 0.5rem;">
+                                <i class="fas fa-chess" style="color: #3498db;"></i> Tática
+                            </h4>
+                            <p style="color: #666; font-size: 0.95rem;">
+                                Estratégias de jogo, posicionamento e leitura do adversário
+                            </p>
+                        </div>
+                        
+                        <div class="treinamento-item" style="background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.05);">
+                            <h4 style="color: #2c3e50; margin-bottom: 0.5rem;">
+                                <i class="fas fa-running" style="color: #3498db;"></i> Condicionamento
+                            </h4>
+                            <p style="color: #666; font-size: 0.95rem;">
+                                Preparo físico específico para tênis, agilidade e resistência
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-content">
+            <div class="footer-section">
+                <h3>Tennis Academy</h3>
+                <p>Excelência no ensino de tênis desde 2010. Formamos campeões dentro e fora das quadras.</p>
+            </div>
+            
+            <div class="footer-section">
+                <h3>Links Rápidos</h3>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/precos">Preços</a></li>
+                    <li><a href="/cadastro">Cadastro</a></li>
+                    <li><a href="/contato">Contato</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-section">
+                <h3>Contato</h3>
+                <p><i class="fas fa-phone"></i> (11) 98765-4321</p>
+                <p><i class="fas fa-envelope"></i> contato@tennisacademy.com</p>
+                <p><i class="fas fa-map-marker-alt"></i> São Paulo - SP</p>
             </div>
         </div>
-
-        <!-- Seção de Academias -->
-        <div class="academias-section">
-            <h2 style="color: #2c3e50; margin-bottom: 20px; font-size: 2em;">Academias</h2>
-            
-            <div class="academias-container">
-                <div class="academia-item">
-                    <h3 class="academia-nome">PLAY TENNIS Ibirapuera</h3>
-                    <p class="academia-endereco">R. Estado de Israel, 860 - SP</p>
-                    <p class="academia-telefone">(11) 97752-0488</p>
-                </div>
-                
-                <div class="academia-item">
-                    <h3 class="academia-nome">TOP One Tennis</h3>
-                    <p class="academia-endereco">Av. Indianópolis, 647 - SP</p>
-                    <p class="academia-telefone">(11) 93236-3828</p>
-                </div>
-                
-                <div class="academia-item">
-                    <h3 class="academia-nome">MELL Tennis</h3>
-                    <p class="academia-endereco">Endereço e telefone em breve</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Seção Treinamento -->
-        <div class="treinamento-section">
-            <h2 class="treinamento-titulo">Treinamento</h2>
-            <p style="color: #666; line-height: 1.6;">Nossos treinamentos são desenvolvidos por profissionais certificados e adaptados para todas as idades e níveis, desde iniciantes até jogadores avançados. Oferecemos programas personalizados que incluem técnica, tática, condicionamento físico e preparação mental.</p>
-        </div>
-    </div>
-
-    <script>
-        // Adiciona interatividade aos itens
-        document.querySelectorAll('.aula-item, .academia-item').forEach(item => {
-            item.addEventListener('click', function() {
-                this.style.transform = 'scale(1.02)';
-                setTimeout(() => {
-                    this.style.transform = '';
-                }, 200);
-            });
-        });
         
-        // Adiciona efeito de hover nos balões de preço
-        document.querySelectorAll('.preco-balao').forEach(balao => {
-            balao.addEventListener('mouseenter', function() {
-                this.style.backgroundColor = 'rgba(128, 128, 128, 0.3)';
-                this.style.transform = 'scale(1.05)';
+        <div class="copyright">
+            <p>&copy; 2024 Tennis Academy. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+    
+    <!-- Scripts -->
+    <script>
+        // Script para destacar a seção ativa no menu
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('.nav-links a');
+            
+            navLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
             });
             
-            balao.addEventListener('mouseleave', function() {
-                this.style.backgroundColor = 'rgba(128, 128, 128, 0.2)';
-                this.style.transform = 'scale(1)';
+            // Efeito nos balões de preço
+            const priceBadges = document.querySelectorAll('.price-badge');
+            priceBadges.forEach(badge => {
+                badge.addEventListener('mouseenter', function() {
+                    this.style.transform = 'scale(1.1)';
+                    this.style.backgroundColor = 'rgba(128, 128, 128, 0.3)';
+                });
+                
+                badge.addEventListener('mouseleave', function() {
+                    this.style.transform = 'scale(1)';
+                    this.style.backgroundColor = 'rgba(128, 128, 128, 0.15)';
+                });
+            });
+            
+            // Animações de entrada
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+            
+            const observer = new IntersectionObserver(function(entries) {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, observerOptions);
+            
+            // Observar elementos para animação
+            document.querySelectorAll('.aula-card, .academias-list, .treinamento-section').forEach(el => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(20px)';
+                el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                observer.observe(el);
             });
         });
     </script>

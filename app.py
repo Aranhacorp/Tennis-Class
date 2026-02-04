@@ -4,8 +4,12 @@ import pandas as pd
 import time
 import re
 import uuid
+import smtplib
 from datetime import datetime
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from typing import Dict, Any, Optional
+import ssl
 
 # ============================================
 # 1. CONFIGURAÇÃO E CONSTANTES
@@ -47,11 +51,11 @@ ACADEMIAS = {
     }
 }
 
-# LINKS CORRIGIDOS DOS FORMULÁRIOS
+# Links corrigidos dos formulários Google Forms
 FORM_LINKS = {
-    "professor": "https://docs.google.com/forms/d/e/1FAIpQLSdHicvD5MsOTnpfWwmpXOm8b268_S6gXoBZEysIo4Wj5cL2yw/viewform?usp=dialog",
-    "aluno": "https://docs.google.com/forms/d/e/1FAIpQLSdehkMHlLyCNd1owC-dSNO_-ROXq07w41jgymyKyFugvUZ0fA/viewform?usp=dialog",
-    "academia": "https://docs.google.com/forms/d/e/1FAIpQLScaC-XBLuzTPN78inOQPcXd6r0BzaessEke1MzOfGzOIlZpwQ/viewform?usp=dialog"
+    "aluno": "https://docs.google.com/forms/d/e/1FAIpQLScaC-XBLuzTPN78inOQPcXd6r0BzaessEke1MzOfGzOIlZpwQ/viewform",
+    "academia": "https://docs.google.com/forms/d/e/1FAIpQLSdehkMHlLyCNd1owC-dSNO_-ROXq07w41jgymyKyFugvUZ0fA/viewform",
+    "professor": "https://docs.google.com/forms/d/e/1FAIpQLScaC-XBLuzTPN78inOQPcXd6r0BzaessEke1MzOfGzOIlZpwQ/viewform"  # Temporariamente igual ao aluno
 }
 
 TEMPO_PAGAMENTO = 300  # 5 minutos em segundos
@@ -70,14 +74,206 @@ def carregar_dados() -> pd.DataFrame:
         st.error(f"❌ Erro ao carregar dados: {str(e)}")
         return pd.DataFrame()
 
-def salvar_reserva(reserva: Dict[str, Any]) -> bool:
-    """Salva uma reserva no Google Sheets com tratamento de erros."""
+def enviar_email_confirmacao(aluno: str, email: str, reserva_info: Dict[str, Any], reserva_id: str) -> bool:
+    """Envia e-mail de confirmação de reserva para o aluno."""
+    try:
+        # Configurações do servidor SMTP (Gmail)
+        smtp_server = "smtp.gmail.com"
+        smtp_port = 587
+        
+        # Usar credenciais do Streamlit secrets
+        email_remetente = st.secrets.get("EMAIL_USER", "aranha.corp@gmail.com")
+        email_senha = st.secrets.get("EMAIL_PASSWORD", "")
+        
+        if not email_senha:
+            st.warning("⚠️ Senha do e-mail não configurada. Configure EMAIL_PASSWORD no secrets.")
+            return False
+        
+        # Criar mensagem
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = f"🎾 Tennis Class - Confirmação de Reserva #{reserva_id}"
+        msg['From'] = email_remetente
+        msg['To'] = email
+        
+        # Corpo do e-mail em HTML
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                }}
+                .container {{
+                    max-width: 600px;
+                    margin: 0 auto;
+                    padding: 20px;
+                    border: 1px solid #ddd;
+                    border-radius: 10px;
+                }}
+                .header {{
+                    background: linear-gradient(135deg, #2c3e50 0%, #4a6491 100%);
+                    color: white;
+                    padding: 20px;
+                    text-align: center;
+                    border-radius: 10px 10px 0 0;
+                }}
+                .content {{
+                    padding: 30px;
+                    background-color: #f8f9fa;
+                }}
+                .resumo {{
+                    background-color: white;
+                    padding: 20px;
+                    border-radius: 8px;
+                    margin: 20px 0;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }}
+                .info-item {{
+                    margin-bottom: 10px;
+                    padding-bottom: 10px;
+                    border-bottom: 1px solid #eee;
+                }}
+                .info-label {{
+                    font-weight: bold;
+                    color: #2c3e50;
+                }}
+                .info-value {{
+                    color: #555;
+                }}
+                .footer {{
+                    text-align: center;
+                    padding: 20px;
+                    color: #666;
+                    font-size: 12px;
+                    border-top: 1px solid #ddd;
+                }}
+                .whatsapp-btn {{
+                    display: inline-block;
+                    background-color: #25D366;
+                    color: white;
+                    padding: 10px 20px;
+                    text-decoration: none;
+                    border-radius: 5px;
+                    margin-top: 20px;
+                }}
+                .id-box {{
+                    background-color: #f0f0f0;
+                    padding: 10px;
+                    border-radius: 5px;
+                    font-family: monospace;
+                    font-weight: bold;
+                    text-align: center;
+                    margin: 10px 0;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>🎾 TENNIS CLASS</h1>
+                    <p>Confirmação de Reserva</p>
+                </div>
+                
+                <div class="content">
+                    <h2>Olá, {aluno}!</h2>
+                    <p>Sua reserva foi confirmada com sucesso. Abaixo estão os detalhes:</p>
+                    
+                    <div class="resumo">
+                        <h3>📋 Resumo da Reserva</h3>
+                        <div class="info-item">
+                            <span class="info-label">ID da Reserva:</span><br>
+                            <div class="id-box">{reserva_id}</div>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Aluno:</span>
+                            <div class="info-value">{aluno}</div>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Serviço:</span>
+                            <div class="info-value">{reserva_info.get('Serviço', '')}</div>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Unidade:</span>
+                            <div class="info-value">{reserva_info.get('Unidade', '')}</div>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Data:</span>
+                            <div class="info-value">{reserva_info.get('Data', '')}</div>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Horário:</span>
+                            <div class="info-value">{reserva_info.get('Horário', '')}</div>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Status:</span>
+                            <div class="info-value" style="color: #28a745; font-weight: bold;">Confirmado ✅</div>
+                        </div>
+                    </div>
+                    
+                    <h3>📍 Informações da Academia</h3>
+                    <div class="info-item">
+                        <span class="info-label">Endereço:</span>
+                        <div class="info-value">{ACADEMIAS.get(reserva_info.get('Unidade', ''), {}).get('endereco', '')}</div>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Telefone:</span>
+                        <div class="info-value">{ACADEMIAS.get(reserva_info.get('Unidade', ''), {}).get('telefone', '')}</div>
+                    </div>
+                    
+                    <h3>📋 Instruções Importantes</h3>
+                    <ul>
+                        <li>Chegue 15 minutos antes do horário marcado</li>
+                        <li>Use roupas apropriadas para prática de tênis</li>
+                        <li>Traga sua raquete (ou alugue na academia)</li>
+                        <li>Em caso de cancelamento, avise com 24h de antecedência</li>
+                    </ul>
+                    
+                    <div style="text-align: center; margin-top: 30px;">
+                        <a href="https://wa.me/5511971425028" class="whatsapp-btn" target="_blank">
+                            📱 Falar no WhatsApp
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="footer">
+                    <p>TENNIS CLASS © {datetime.now().year}</p>
+                    <p>Este é um e-mail automático, por favor não responda.</p>
+                    <p>Em caso de dúvidas: aranha.corp@gmail.com | (11) 97142-5028</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Anexar parte HTML
+        msg.attach(MIMEText(html, 'html'))
+        
+        # Enviar e-mail
+        context = ssl.create_default_context()
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls(context=context)
+            server.login(email_remetente, email_senha)
+            server.send_message(msg)
+        
+        return True
+        
+    except Exception as e:
+        st.error(f"❌ Erro ao enviar e-mail: {str(e)}")
+        return False
+
+def salvar_reserva(reserva: Dict[str, Any]) -> tuple[bool, str]:
+    """Salva uma reserva no Google Sheets e envia e-mail de confirmação."""
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
         df = carregar_dados()
         
         # Adiciona ID único e timestamp
-        reserva["ID"] = str(uuid.uuid4())[:8]
+        reserva_id = str(uuid.uuid4())[:8]
+        reserva["ID"] = reserva_id
         reserva["Timestamp"] = datetime.now().isoformat()
         reserva["Status"] = "Pendente"
         
@@ -87,10 +283,19 @@ def salvar_reserva(reserva: Dict[str, Any]) -> bool:
         # Limpa cache para próxima leitura
         st.cache_data.clear()
         
-        return True
+        # Envia e-mail de confirmação
+        email_enviado = enviar_email_confirmacao(
+            aluno=reserva["Aluno"],
+            email=reserva["E-mail"],
+            reserva_info=reserva,
+            reserva_id=reserva_id
+        )
+        
+        return True, reserva_id
+        
     except Exception as e:
         st.error(f"❌ Erro ao salvar reserva: {str(e)}")
-        return False
+        return False, ""
 
 def validar_email(email: str) -> bool:
     """Valida formato de e-mail."""
@@ -138,6 +343,9 @@ if 'admin_autenticado' not in st.session_state:
 
 if 'erros_form' not in st.session_state:
     st.session_state.erros_form = {}
+
+if 'reserva_id_gerada' not in st.session_state:
+    st.session_state.reserva_id_gerada = None
 
 # ============================================
 # 4. CSS GLOBAL E COMPONENTES FIXOS
@@ -283,6 +491,30 @@ st.markdown("""
     .form-link-note p {
         margin: 0;
     }
+    .reserva-id-box {
+        background-color: #f8f9fa;
+        border: 2px solid #28a745;
+        border-radius: 10px;
+        padding: 15px;
+        margin: 15px 0;
+        text-align: center;
+        font-family: monospace;
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #28a745;
+    }
+    .email-confirmation {
+        background-color: #e8f5e9;
+        border: 2px solid #4CAF50;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        text-align: center;
+    }
+    .email-confirmation h3 {
+        color: #2e7d32;
+        margin-top: 0;
+    }
 </style>
 
 <!-- Botão flutuante do WhatsApp -->
@@ -414,6 +646,15 @@ if st.session_state.pagina == "Home":
         # Chave PIX
         st.code("aranha.corp@gmail.com", language="text")
         
+        # Informações da reserva
+        st.markdown("### 📋 Resumo da Reserva")
+        st.info(f"""
+        **Aluno:** {st.session_state.reserva_temp.get('Aluno', '')}  
+        **Serviço:** {st.session_state.reserva_temp.get('Serviço', '')}  
+        **Unidade:** {st.session_state.reserva_temp.get('Unidade', '')}  
+        **Data:** {st.session_state.reserva_temp.get('Data', '')} às {st.session_state.reserva_temp.get('Horário', '')}
+        """)
+        
         # Timer otimizado
         timer_box = st.empty()
         
@@ -436,20 +677,42 @@ if st.session_state.pagina == "Home":
         
         # Botão de confirmação
         if st.button("CONFIRMAR PAGAMENTO", type="primary", use_container_width=True):
-            if salvar_reserva(st.session_state.reserva_temp):
-                st.balloons()
-                st.markdown(
-                    '<div class="success-message">'
-                    '✅ Reserva confirmada! Você receberá um e-mail de confirmação.'
-                    '</div>',
-                    unsafe_allow_html=True
-                )
+            with st.spinner("Processando reserva e enviando confirmação..."):
+                sucesso, reserva_id = salvar_reserva(st.session_state.reserva_temp)
                 
-                # Limpa estado e aguarda para redirecionar
-                st.session_state.pagamento_ativo = False
-                st.session_state.reserva_temp = {}
-                time.sleep(3)
-                st.rerun()
+                if sucesso:
+                    st.session_state.reserva_id_gerada = reserva_id
+                    st.session_state.pagamento_ativo = False
+                    st.session_state.reserva_temp = {}
+                    
+                    # Mostra confirmação com ID
+                    st.balloons()
+                    
+                    # Container de confirmação
+                    st.markdown("""
+                    <div class="email-confirmation">
+                        <h3>✅ Reserva Confirmada!</h3>
+                        <p>Um e-mail de confirmação foi enviado para:</p>
+                        <p><strong>{email}</strong></p>
+                        <div class="reserva-id-box">
+                            ID da Reserva: {reserva_id}
+                        </div>
+                        <p>Guarde este ID para futuras consultas.</p>
+                        <p><em>Verifique sua caixa de entrada e spam.</em></p>
+                    </div>
+                    """.format(
+                        email=st.session_state.reserva_temp.get('E-mail', ''),
+                        reserva_id=reserva_id
+                    ), unsafe_allow_html=True)
+                    
+                    # Botão para nova reserva
+                    if st.button("📅 Fazer Nova Reserva", use_container_width=True):
+                        st.session_state.pagamento_ativo = False
+                        st.session_state.reserva_temp = {}
+                        st.rerun()
+                    
+                    time.sleep(5)
+                    st.rerun()
     
     # Ícone do regulamento
     st.markdown("""
@@ -477,7 +740,7 @@ elif st.session_state.pagina == "Preços":
             unidade = "/hora" if key != "competitivo" else "/mês"
             st.markdown(f"* **{info['nome']}:** R$ {info['preco']} {unidade}")
 
-# PÁGINA: CADASTRO (COM LINKS CORRIGIDOS)
+# PÁGINA: CADASTRO (LINKS CORRIGIDOS)
 elif st.session_state.pagina == "Cadastro":
     st.markdown(card_com_estilo(""), unsafe_allow_html=True)
     
@@ -488,52 +751,42 @@ elif st.session_state.pagina == "Cadastro":
     
     with col1:
         st.markdown(f"""
-        <a href="{FORM_LINKS['professor']}" 
+        <a href="{FORM_LINKS['aluno']}" 
            class="clean-link" 
            target="_blank"
-           aria-label="Cadastro de Professor de Tênis">
-            <div class="icon-text">👨‍🏫</div>
-            <div class="label-text">PROFESSOR</div>
-            <div style="font-size: 12px; margin-top: 10px; opacity: 0.8;">
-                Clique para cadastrar como professor
-            </div>
+           aria-label="Cadastro de Aluno">
+            <div class="icon-text">👤</div>
+            <div class="label-text">ALUNO</div>
         </a>
         """, unsafe_allow_html=True)
     
     with col2:
         st.markdown(f"""
-        <a href="{FORM_LINKS['aluno']}" 
+        <a href="{FORM_LINKS['academia']}" 
            class="clean-link" 
            target="_blank"
-           aria-label="Cadastro de Aluno de Tênis">
-            <div class="icon-text">👤</div>
-            <div class="label-text">ALUNO</div>
-            <div style="font-size: 12px; margin-top: 10px; opacity: 0.8;">
-                Clique para cadastrar como aluno
-            </div>
+           aria-label="Cadastro de Academia">
+            <div class="icon-text">🏢</div>
+            <div class="label-text">ACADEMIA</div>
         </a>
         """, unsafe_allow_html=True)
     
     with col3:
         st.markdown(f"""
-        <a href="{FORM_LINKS['academia']}" 
+        <a href="{FORM_LINKS['professor']}" 
            class="clean-link" 
            target="_blank"
-           aria-label="Cadastro de Academia de Tênis">
-            <div class="icon-text">🏢</div>
-            <div class="label-text">ACADEMIA</div>
-            <div style="font-size: 12px; margin-top: 10px; opacity: 0.8;">
-                Clique para cadastrar sua academia
-            </div>
+           aria-label="Cadastro de Professor">
+            <div class="icon-text">🎾</div>
+            <div class="label-text">PROFESSOR</div>
         </a>
         """, unsafe_allow_html=True)
     
     # Nota informativa sobre os formulários
     st.markdown("""
     <div class="form-link-note">
-        <p><strong>📋 Instruções:</strong> Os formulários abrem em uma nova aba. </p>
-        <p>Preencha todos os campos obrigatórios e clique em "Enviar" ao final.</p>
-        <p>Após o envio, você receberá um e-mail de confirmação.</p>
+        <p><strong>Nota:</strong> Os formulários abrem em uma nova aba. 
+        Caso tenha problemas, verifique se seu navegador permite pop-ups.</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -629,6 +882,31 @@ elif st.session_state.pagina == "Dashboard":
                         mime="text/csv",
                         use_container_width=True
                     )
+                    
+                # Funcionalidade extra: reenviar e-mail
+                st.markdown("### 📧 Reenviar E-mail de Confirmação")
+                col_id, col_btn = st.columns([3, 1])
+                with col_id:
+                    reserva_id = st.text_input("ID da Reserva para reenviar e-mail:")
+                with col_btn:
+                    if st.button("↻ Reenviar", use_container_width=True):
+                        if reserva_id and not df.empty:
+                            reserva = df[df['ID'] == reserva_id]
+                            if not reserva.empty:
+                                reserva_info = reserva.iloc[0].to_dict()
+                                if enviar_email_confirmacao(
+                                    aluno=reserva_info.get('Aluno', ''),
+                                    email=reserva_info.get('E-mail', ''),
+                                    reserva_info=reserva_info,
+                                    reserva_id=reserva_id
+                                ):
+                                    st.success(f"✅ E-mail reenviado para {reserva_info.get('E-mail', '')}")
+                                else:
+                                    st.error("❌ Erro ao reenviar e-mail")
+                            else:
+                                st.error("❌ Reserva não encontrada")
+                        else:
+                            st.warning("⚠️ Digite um ID válido")
             else:
                 st.info("📭 Nenhuma reserva encontrada.")
                 
@@ -689,7 +967,7 @@ st.markdown("""
     <p>TENNIS CLASS © 2024 - Todos os direitos reservados</p>
     <p>Desenvolvido por André Aranha</p>
     <p style='font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 5px;'>
-    MASTER CODE DEEP SEEK v.4.1 | Links dos formulários atualizados e verificados
+    MASTER CODE DEEP SEEK v.5 | Sistema de e-mail de confirmação ativado
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -701,7 +979,33 @@ st.markdown("""
 st.sidebar.markdown("---")
 st.sidebar.markdown("""
 <div style='font-size: 10px; color: #888; text-align: center;'>
-    Versão 2.0.1 | Links Corrigidos<br>
-    <span style='color: #4CAF50;'>✓ Formulários verificados e funcionais</span>
+    Versão 2.1.0 | Sistema de E-mail<br>
+    <span style='color: #4CAF50;'>✓ Confirmação automática ativa</span>
 </div>
 """, unsafe_allow_html=True)
+
+# ============================================
+# 9. INSTRUÇÕES DE CONFIGURAÇÃO
+# ============================================
+
+st.sidebar.markdown("---")
+with st.sidebar.expander("⚙️ Configurar E-mail"):
+    st.markdown("""
+    ### Para configurar o envio de e-mails:
+    
+    1. Crie um arquivo `.streamlit/secrets.toml`
+    2. Adicione as credenciais:
+    
+    ```toml
+    [email]
+    EMAIL_USER = "seu_email@gmail.com"
+    EMAIL_PASSWORD = "sua_senha_de_app"
+    ```
+    
+    3. Para Gmail, gere uma "senha de app":
+       - Acesse: Google Account → Segurança
+       - Ative "Verificação em duas etapas"
+       - Gere uma "Senha de app" para e-mail
+    
+    4. Use essa senha no campo `EMAIL_PASSWORD`
+    """)

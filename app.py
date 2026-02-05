@@ -75,30 +75,57 @@ def carregar_dados() -> pd.DataFrame:
         st.error(f"❌ Erro ao carregar dados: {str(e)}")
         return pd.DataFrame()
 
+def obter_credenciais_email():
+    """Obtém credenciais de e-mail com fallback hierárquico."""
+    # 1. Tentar secrets do Streamlit primeiro
+    try:
+        secrets = st.secrets
+        email_user = secrets.get("EMAIL_USER", "aranha.corp@gmail.com")
+        email_password = secrets.get("EMAIL_PASSWORD", "")
+        
+        if email_password:
+            return email_user, email_password
+    except Exception:
+        pass
+    
+    # 2. Tentar variáveis de ambiente
+    email_password_env = os.environ.get("EMAIL_PASSWORD", "")
+    if email_password_env:
+        return "aranha.corp@gmail.com", email_password_env
+    
+    # 3. Retornar None se não encontrar
+    return "aranha.corp@gmail.com", ""
+
 def enviar_email_confirmacao(aluno: str, email: str, reserva_info: Dict[str, Any], reserva_id: str) -> bool:
     """Envia e-mail de confirmação de reserva para o aluno."""
     try:
+        # Obter credenciais
+        email_remetente, email_senha = obter_credenciais_email()
+        
+        if not email_senha:
+            st.error("❌ Senha do e-mail não configurada. Configure EMAIL_PASSWORD nos secrets do Streamlit.")
+            st.info("📝 Instruções de configuração:")
+            st.markdown("""
+            1. Crie um arquivo `.streamlit/secrets.toml` no diretório do projeto
+            2. Adicione as seguintes linhas:
+            ```toml
+            EMAIL_USER = "aranha.corp@gmail.com"
+            EMAIL_PASSWORD = "sua_senha_de_app_gerada"
+            ```
+            3. Para Gmail, gere uma "senha de app" em: Google Account → Segurança → Senhas de app
+            """)
+            return False
+        
         # Configurações do servidor SMTP (Gmail)
         smtp_server = "smtp.gmail.com"
         smtp_port = 587
         
-        # Usar credenciais do Streamlit secrets
-        email_remetente = st.secrets.get("EMAIL_USER", "aranha.corp@gmail.com")
-        email_senha = st.secrets.get("EMAIL_PASSWORD", "")
-        
-        # Fallback para variáveis de ambiente
-        if not email_senha:
-            email_senha = os.environ.get("EMAIL_PASSWORD", "")
-        
-        if not email_senha:
-            st.warning("⚠️ Senha do e-mail não configurada. Configure EMAIL_PASSWORD no secrets.")
-            return False
-        
         # Criar mensagem
         msg = MIMEMultipart('alternative')
         msg['Subject'] = f"🎾 Tennis Class - Confirmação de Reserva #{reserva_id}"
-        msg['From'] = email_remetente
+        msg['From'] = f"Tennis Class <{email_remetente}>"
         msg['To'] = email
+        msg['Reply-To'] = "aranha.corp@gmail.com"
         
         # Extrair dados da reserva
         servico = reserva_info.get('Serviço', '')
@@ -111,31 +138,33 @@ def enviar_email_confirmacao(aluno: str, email: str, reserva_info: Dict[str, Any
         endereco_academia = info_academia.get('endereco', '')
         telefone_academia = info_academia.get('telefone', '')
         
-        # Corpo do e-mail em HTML
+        # Corpo do e-mail em HTML (versão corrigida)
         html = f"""
         <!DOCTYPE html>
-        <html>
+        <html lang="pt-BR">
         <head>
             <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Confirmação de Reserva - TENNIS CLASS</title>
             <style>
                 body {{
-                    font-family: Arial, sans-serif;
+                    font-family: 'Arial', sans-serif;
                     line-height: 1.6;
-                    color: #333;
+                    color: #333333;
                     margin: 0;
-                    padding: 20px;
+                    padding: 0;
                     background-color: #f4f4f4;
                 }}
                 .container {{
                     max-width: 600px;
                     margin: 0 auto;
-                    background: white;
+                    background: #ffffff;
                     border-radius: 10px;
                     overflow: hidden;
                     box-shadow: 0 0 20px rgba(0,0,0,0.1);
                 }}
                 .header {{
-                    background: linear-gradient(135deg, #2c3e50 0%, #4a6491 100%);
+                    background: linear-gradient(135deg, #1a5f7a 0%, #2a8bb8 100%);
                     color: white;
                     padding: 30px;
                     text-align: center;
@@ -143,6 +172,7 @@ def enviar_email_confirmacao(aluno: str, email: str, reserva_info: Dict[str, Any
                 .header h1 {{
                     margin: 0;
                     font-size: 28px;
+                    font-weight: bold;
                 }}
                 .content {{
                     padding: 30px;
@@ -153,27 +183,34 @@ def enviar_email_confirmacao(aluno: str, email: str, reserva_info: Dict[str, Any
                     padding: 15px;
                     margin: 20px 0;
                     border-radius: 4px;
+                    font-family: 'Courier New', monospace;
+                    font-size: 16px;
+                    font-weight: bold;
                 }}
                 .info-box {{
                     background: #f8f9fa;
                     border-radius: 8px;
                     padding: 20px;
                     margin: 20px 0;
+                    border: 1px solid #eaeaea;
                 }}
                 .info-item {{
                     margin-bottom: 10px;
                     padding-bottom: 10px;
-                    border-bottom: 1px solid #eee;
+                    border-bottom: 1px solid #eeeeee;
+                    display: flex;
                 }}
                 .info-label {{
                     font-weight: bold;
                     color: #2c3e50;
-                    display: inline-block;
-                    width: 120px;
+                    min-width: 120px;
+                }}
+                .info-value {{
+                    color: #34495e;
                 }}
                 .status {{
                     display: inline-block;
-                    background: #28a745;
+                    background: #27ae60;
                     color: white;
                     padding: 5px 15px;
                     border-radius: 20px;
@@ -187,6 +224,13 @@ def enviar_email_confirmacao(aluno: str, email: str, reserva_info: Dict[str, Any
                     margin: 20px 0;
                     border-radius: 4px;
                 }}
+                .instructions ul {{
+                    margin: 10px 0;
+                    padding-left: 20px;
+                }}
+                .instructions li {{
+                    margin-bottom: 8px;
+                }}
                 .whatsapp-btn {{
                     display: inline-block;
                     background: #25D366;
@@ -196,6 +240,10 @@ def enviar_email_confirmacao(aluno: str, email: str, reserva_info: Dict[str, Any
                     border-radius: 5px;
                     margin-top: 15px;
                     font-weight: bold;
+                    font-size: 16px;
+                }}
+                .whatsapp-btn:hover {{
+                    background: #128C7E;
                 }}
                 .footer {{
                     background: #2c3e50;
@@ -204,6 +252,10 @@ def enviar_email_confirmacao(aluno: str, email: str, reserva_info: Dict[str, Any
                     text-align: center;
                     font-size: 12px;
                 }}
+                .footer a {{
+                    color: #3498db;
+                    text-decoration: none;
+                }}
                 @media (max-width: 600px) {{
                     .container {{
                         width: 100%;
@@ -211,6 +263,13 @@ def enviar_email_confirmacao(aluno: str, email: str, reserva_info: Dict[str, Any
                     }}
                     .content {{
                         padding: 15px;
+                    }}
+                    .info-item {{
+                        flex-direction: column;
+                    }}
+                    .info-label {{
+                        min-width: 100%;
+                        margin-bottom: 5px;
                     }}
                 }}
             </style>
@@ -223,7 +282,7 @@ def enviar_email_confirmacao(aluno: str, email: str, reserva_info: Dict[str, Any
                 </div>
                 
                 <div class="content">
-                    <h2>Olá, {aluno}!</h2>
+                    <h2 style="color: #2c3e50; margin-top: 0;">Olá, {aluno}!</h2>
                     <p>Sua reserva foi confirmada com sucesso. Abaixo estão os detalhes:</p>
                     
                     <div class="reserva-id">
@@ -231,87 +290,165 @@ def enviar_email_confirmacao(aluno: str, email: str, reserva_info: Dict[str, Any
                     </div>
                     
                     <div class="info-box">
-                        <h3>📋 Detalhes da Reserva</h3>
+                        <h3 style="color: #2c3e50; margin-top: 0;">📋 Detalhes da Reserva</h3>
                         <div class="info-item">
-                            <span class="info-label">Aluno:</span> {aluno}
+                            <div class="info-label">Aluno:</div>
+                            <div class="info-value">{aluno}</div>
                         </div>
                         <div class="info-item">
-                            <span class="info-label">Serviço:</span> {servico}
+                            <div class="info-label">Serviço:</div>
+                            <div class="info-value">{servico}</div>
                         </div>
                         <div class="info-item">
-                            <span class="info-label">Data:</span> {data}
+                            <div class="info-label">Data:</div>
+                            <div class="info-value">{data}</div>
                         </div>
                         <div class="info-item">
-                            <span class="info-label">Horário:</span> {horario}
+                            <div class="info-label">Horário:</div>
+                            <div class="info-value">{horario}</div>
                         </div>
                         <div class="info-item">
-                            <span class="info-label">Unidade:</span> {unidade}
+                            <div class="info-label">Unidade:</div>
+                            <div class="info-value">{unidade}</div>
                         </div>
                         <div class="info-item">
-                            <span class="info-label">Status:</span> 
-                            <span class="status">CONFIRMADO</span>
+                            <div class="info-label">Status:</div>
+                            <div class="info-value">
+                                <span class="status">CONFIRMADO</span>
+                            </div>
                         </div>
                     </div>
                     
                     <div class="info-box">
-                        <h3>📍 Informações da Academia</h3>
+                        <h3 style="color: #2c3e50; margin-top: 0;">📍 Informações da Academia</h3>
                         <div class="info-item">
-                            <span class="info-label">Endereço:</span> {endereco_academia}
+                            <div class="info-label">Endereço:</div>
+                            <div class="info-value">{endereco_academia}</div>
                         </div>
                         <div class="info-item">
-                            <span class="info-label">Telefone:</span> {telefone_academia}
+                            <div class="info-label">Telefone:</div>
+                            <div class="info-value">{telefone_academia}</div>
                         </div>
                     </div>
                     
                     <div class="instructions">
-                        <h3>📝 Instruções Importantes</h3>
+                        <h3 style="color: #2c3e50; margin-top: 0;">📝 Instruções Importantes</h3>
                         <ul>
-                            <li>Chegue 15 minutos antes do horário marcado</li>
-                            <li>Use roupas esportivas apropriadas</li>
-                            <li>Traga sua raquete ou alugue na recepção</li>
-                            <li>Em caso de cancelamento, avise com 24h de antecedência</li>
-                            <li>Apresente o ID da reserva na chegada</li>
+                            <li>Chegue <strong>15 minutos antes</strong> do horário marcado</li>
+                            <li>Use roupas esportivas apropriadas para prática de tênis</li>
+                            <li>Traga sua raquete ou alugue na recepção (R$ 20,00)</li>
+                            <li>Em caso de cancelamento, avise com <strong>24h de antecedência</strong></li>
+                            <li>Apresente o <strong>ID da reserva</strong> na chegada</li>
+                            <li>Traga uma garrafa de água ou compre na academia</li>
                         </ul>
                     </div>
                     
                     <div style="text-align: center; margin-top: 30px;">
-                        <a href="https://wa.me/5511971425028" class="whatsapp-btn" target="_blank">
+                        <a href="https://wa.me/5511971425028?text=Olá!%20Tenho%20uma%20reserva%20com%20ID%20{reserva_id}" 
+                           class="whatsapp-btn" 
+                           target="_blank">
                             📱 Falar no WhatsApp
                         </a>
                     </div>
+                    
+                    <p style="margin-top: 30px; color: #7f8c8d; font-size: 14px;">
+                        <strong>Observação:</strong> Em caso de dúvidas, entre em contato através do WhatsApp acima 
+                        ou responda este e-mail.
+                    </p>
                 </div>
                 
                 <div class="footer">
-                    <p>TENNIS CLASS © {datetime.now().year}</p>
-                    <p>Este é um e-mail automático, por favor não responda.</p>
-                    <p>Em caso de dúvidas: aranha.corp@gmail.com | (11) 97142-5028</p>
+                    <p><strong>TENNIS CLASS</strong> © {datetime.now().year}</p>
+                    <p>Este é um e-mail automático, por favor não responda diretamente.</p>
+                    <p>
+                        <strong>Contato:</strong> 
+                        <a href="mailto:aranha.corp@gmail.com">aranha.corp@gmail.com</a> | 
+                        (11) 97142-5028
+                    </p>
+                    <p style="font-size: 10px; opacity: 0.8; margin-top: 10px;">
+                        Para sua segurança, nunca compartilhe suas credenciais de acesso.
+                    </p>
                 </div>
             </div>
         </body>
         </html>
         """
         
-        # Anexar parte HTML
+        # Versão alternativa em texto puro para clientes de e-mail que não suportam HTML
+        texto = f"""
+        TENNIS CLASS - Confirmação de Reserva #{reserva_id}
+        
+        Olá, {aluno}!
+        
+        Sua reserva foi confirmada com sucesso. Abaixo estão os detalhes:
+        
+        ID da Reserva: {reserva_id}
+        
+        DETALHES DA RESERVA:
+        - Aluno: {aluno}
+        - Serviço: {servico}
+        - Data: {data}
+        - Horário: {horario}
+        - Unidade: {unidade}
+        - Status: CONFIRMADO
+        
+        INFORMAÇÕES DA ACADEMIA:
+        - Endereço: {endereco_academia}
+        - Telefone: {telefone_academia}
+        
+        INSTRUÇÕES IMPORTANTES:
+        1. Chegue 15 minutos antes do horário marcado
+        2. Use roupas esportivas apropriadas
+        3. Traga sua raquete ou alugue na recepção
+        4. Em caso de cancelamento, avise com 24h de antecedência
+        5. Apresente o ID da reserva na chegada
+        
+        Contato WhatsApp: (11) 97142-5028
+        
+        TENNIS CLASS © {datetime.now().year}
+        Este é um e-mail automático, por favor não responda diretamente.
+        """
+        
+        # Anexar partes HTML e texto
+        msg.attach(MIMEText(texto, 'plain'))
         msg.attach(MIMEText(html, 'html'))
         
-        # Enviar e-mail com tratamento de erro mais detalhado
+        # Enviar e-mail com tratamento de erro detalhado
         try:
+            # Criar contexto SSL seguro
             context = ssl.create_default_context()
-            with smtplib.SMTP(smtp_server, smtp_port) as server:
-                server.ehlo()
-                server.starttls(context=context)
-                server.ehlo()
-                server.login(email_remetente, email_senha)
-                server.send_message(msg)
             
-            st.success(f"✅ E-mail enviado para {email}")
+            # Conectar ao servidor SMTP
+            server = smtplib.SMTP(smtp_server, smtp_port)
+            server.ehlo()
+            server.starttls(context=context)
+            server.ehlo()
+            
+            # Fazer login
+            server.login(email_remetente, email_senha)
+            
+            # Enviar e-mail
+            server.send_message(msg)
+            
+            # Encerrar conexão
+            server.quit()
+            
+            st.success(f"✅ E-mail de confirmação enviado para {email}")
             return True
             
-        except smtplib.SMTPAuthenticationError:
-            st.error("❌ Erro de autenticação. Verifique o usuário e senha do e-mail.")
+        except smtplib.SMTPAuthenticationError as auth_err:
+            st.error("❌ Erro de autenticação SMTP. Verifique:")
+            st.error("1. Se o usuário e senha estão corretos")
+            st.error("2. Se a 'senha de app' foi gerada corretamente no Google")
+            st.error("3. Se a verificação em duas etapas está ativada")
             return False
-        except Exception as e:
-            st.error(f"❌ Erro ao enviar e-mail: {str(e)}")
+            
+        except smtplib.SMTPException as smtp_err:
+            st.error(f"❌ Erro SMTP: {str(smtp_err)}")
+            return False
+            
+        except Exception as conn_err:
+            st.error(f"❌ Erro de conexão: {str(conn_err)}")
             return False
         
     except Exception as e:
@@ -352,7 +489,8 @@ def validar_nome(nome: str) -> bool:
     nome_limpo = nome.strip()
     if len(nome_limpo) < 3:
         return False
-    return all(c.isalpha() or c.isspace() or c in "çãõâêîôûáéíóúàèìòùäëïöü" for c in nome_limpo)
+    # Permite letras, espaços e caracteres acentuados comuns em português
+    return bool(re.match(r'^[a-zA-ZÀ-ÿ\s]+$', nome_limpo))
 
 def mostrar_timer(tempo_total: int, inicio_time: float) -> tuple[bool, str]:
     """Calcula e formata o tempo restante."""
@@ -543,7 +681,7 @@ st.markdown("""
         padding: 15px;
         margin: 15px 0;
         text-align: center;
-        font-family: monospace;
+        font-family: 'Courier New', monospace;
         font-size: 1.2rem;
         font-weight: bold;
         color: #28a745;
@@ -559,6 +697,31 @@ st.markdown("""
     .email-confirmation h3 {
         color: #2e7d32;
         margin-top: 0;
+    }
+    .email-status {
+        padding: 10px;
+        border-radius: 5px;
+        margin: 10px 0;
+        text-align: center;
+        font-weight: bold;
+    }
+    .email-success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    .email-error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    .email-instructions {
+        background-color: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 15px 0;
     }
 </style>
 
@@ -600,6 +763,35 @@ with st.sidebar:
             f"</div>", 
             unsafe_allow_html=True
         )
+    
+    # Informações sobre configuração de e-mail
+    st.markdown("---")
+    with st.expander("⚙️ Configuração de E-mail"):
+        st.markdown("""
+        ### Para configurar o envio de e-mails:
+        
+        1. **Crie um arquivo `.streamlit/secrets.toml`**
+        
+        2. **Adicione as credenciais:**
+        
+        ```toml
+        EMAIL_USER = "aranha.corp@gmail.com"
+        EMAIL_PASSWORD = "sua_senha_de_app"
+        
+        ADMIN_PASSWORD = "aranha2026"
+        ```
+        
+        3. **Para Gmail, gere uma "senha de app":**
+           - Acesse: [Google Account → Segurança](https://myaccount.google.com/security)
+           - Ative "Verificação em duas etapas" (se não estiver ativa)
+           - Em "Senhas de app", gere uma senha para "E-mail"
+           - Use essa senha no campo `EMAIL_PASSWORD`
+        
+        4. **Teste o sistema:**
+           - Faça uma reserva de teste
+           - Verifique se o e-mail chega
+           - Verifique a pasta de spam se necessário
+        """)
 
 st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
 
@@ -619,13 +811,15 @@ if st.session_state.pagina == "Home":
             aluno = st.text_input(
                 "Nome do Aluno *",
                 help="Digite seu nome completo (mínimo 3 caracteres)",
-                label_visibility="visible"
+                label_visibility="visible",
+                placeholder="Ex: João Silva"
             )
             
             email = st.text_input(
                 "E-mail *",
                 help="Digite um e-mail válido para confirmação",
-                label_visibility="visible"
+                label_visibility="visible",
+                placeholder="exemplo@email.com"
             )
             
             # Lista de serviços formatada
@@ -640,7 +834,7 @@ if st.session_state.pagina == "Home":
             
             c1, c2 = st.columns(2)
             with c1:
-                dt = st.date_input("Data *", format="DD/MM/YYYY")
+                dt = st.date_input("Data *", format="DD/MM/YYYY", min_value=datetime.now().date())
             with c2:
                 hr = st.selectbox("Horário *", [f"{h:02d}:00" for h in range(7, 23)])
             
@@ -682,13 +876,16 @@ if st.session_state.pagina == "Home":
         st.subheader("💳 Pagamento via PIX")
         
         # QR Code
-        st.image(
-            "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=aranha.corp@gmail.com",
-            use_column_width=False,
-            width=250
-        )
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.image(
+                "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=aranha.corp@gmail.com",
+                use_column_width=False,
+                width=250
+            )
         
         # Chave PIX
+        st.markdown("### Chave PIX (Copie e Cole):")
         st.code("aranha.corp@gmail.com", language="text")
         
         # Informações da reserva
@@ -722,8 +919,8 @@ if st.session_state.pagina == "Home":
                 st.rerun()
         
         # Botão de confirmação
-        if st.button("CONFIRMAR PAGAMENTO", type="primary", use_container_width=True):
-            with st.spinner("Processando reserva..."):
+        if st.button("✅ CONFIRMAR PAGAMENTO", type="primary", use_container_width=True):
+            with st.spinner("Processando reserva e enviando confirmação..."):
                 # Salva reserva no Google Sheets
                 sucesso, reserva_id = salvar_reserva(st.session_state.reserva_temp)
                 
@@ -752,10 +949,26 @@ if st.session_state.pagina == "Home":
                             ID da Reserva: {reserva_id}
                         </div>
                         <p>Guarde este ID para futuras consultas.</p>
-                        <p><strong>Status do e-mail:</strong> {"✅ Enviado com sucesso" if email_enviado else "⚠️ Não foi possível enviar o e-mail"}</p>
-                        <p><em>Verifique sua caixa de entrada e spam.</em></p>
+                        <div class="{'email-success' if email_enviado else 'email-error'}">
+                            <strong>Status do e-mail:</strong> {"✅ Enviado com sucesso!" if email_enviado else "⚠️ O e-mail não pôde ser enviado"}
+                        </div>
+                        <p><em>{'Verifique sua caixa de entrada (e spam).' if email_enviado else 'Entre em contato conosco para confirmar sua reserva.'}</em></p>
                     </div>
                     """, unsafe_allow_html=True)
+                    
+                    # Instruções se o e-mail não foi enviado
+                    if not email_enviado:
+                        st.markdown("""
+                        <div class="email-instructions">
+                        <h4>📝 O que fazer se não recebeu o e-mail:</h4>
+                        <ol>
+                            <li>Verifique sua pasta de spam/lixo eletrônico</li>
+                            <li>Entre em contato pelo WhatsApp (11) 97142-5028 com seu ID de reserva</li>
+                            <li>Guarde o ID da reserva acima para referência</li>
+                            <li>Verifique se digitou o e-mail corretamente</li>
+                        </ol>
+                        </div>
+                        """, unsafe_allow_html=True)
                     
                     # Botão para nova reserva
                     if st.button("📅 Fazer Nova Reserva", use_container_width=True):
@@ -787,12 +1000,46 @@ elif st.session_state.pagina == "Preços":
     st.markdown("### 🎾 Tabela de Preços")
     st.markdown("---")
     
-    for key, info in SERVICOS.items():
-        if key == "eventos":
-            st.markdown(f"* **{info['nome']}:** Valor a combinar")
-        else:
-            unidade = "/hora" if key != "competitivo" else "/mês"
-            st.markdown(f"* **{info['nome']}:** R$ {info['preco']} {unidade}")
+    # Criar tabela de preços mais organizada
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        for key, info in SERVICOS.items():
+            if key in ["particular", "grupo", "kids"]:
+                unidade = "/hora"
+                st.markdown(f"""
+                <div style='background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin-bottom: 10px;'>
+                    <h4 style='margin: 0; color: white;'>{info['nome']}</h4>
+                    <p style='margin: 5px 0 0 0; color: #4CAF50; font-weight: bold;'>R$ {info['preco']} {unidade}</p>
+                </div>
+                """, unsafe_allow_html=True)
+    
+    with col2:
+        for key, info in SERVICOS.items():
+            if key in ["personal", "competitivo", "eventos"]:
+                if key == "competitivo":
+                    unidade = "/mês"
+                    st.markdown(f"""
+                    <div style='background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin-bottom: 10px;'>
+                        <h4 style='margin: 0; color: white;'>{info['nome']}</h4>
+                        <p style='margin: 5px 0 0 0; color: #4CAF50; font-weight: bold;'>R$ {info['preco']} {unidade}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                elif key == "eventos":
+                    st.markdown(f"""
+                    <div style='background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin-bottom: 10px;'>
+                        <h4 style='margin: 0; color: white;'>{info['nome']}</h4>
+                        <p style='margin: 5px 0 0 0; color: #FF9800; font-weight: bold;'>Valor a combinar</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    unidade = "/hora"
+                    st.markdown(f"""
+                    <div style='background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin-bottom: 10px;'>
+                        <h4 style='margin: 0; color: white;'>{info['nome']}</h4>
+                        <p style='margin: 5px 0 0 0; color: #4CAF50; font-weight: bold;'>R$ {info['preco']} {unidade}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
 
 # PÁGINA: CADASTRO (COM LINKS CORRIGIDOS)
 elif st.session_state.pagina == "Cadastro":
@@ -868,7 +1115,8 @@ elif st.session_state.pagina == "Dashboard":
             "Digite a senha de administrador:", 
             type="password",
             label_visibility="visible",
-            help="Senha para acesso ao dashboard"
+            help="Senha para acesso ao dashboard",
+            placeholder="Digite a senha..."
         )
         
         if st.button("Acessar", use_container_width=True):
@@ -884,9 +1132,11 @@ elif st.session_state.pagina == "Dashboard":
         st.subheader("📊 Dashboard - Reservas")
         
         # Botão de logout
-        if st.button("🚪 Logout", use_container_width=False):
-            st.session_state.admin_autenticado = False
-            st.rerun()
+        col1, col2 = st.columns([4, 1])
+        with col2:
+            if st.button("🚪 Logout", use_container_width=True):
+                st.session_state.admin_autenticado = False
+                st.rerun()
         
         st.markdown("---")
         
@@ -899,6 +1149,16 @@ elif st.session_state.pagina == "Dashboard":
                 colunas_exibir = [col for col in df.columns if col not in ['ID', 'Timestamp']]
                 df_display = df[colunas_exibir].copy()
                 
+                # Ordena por data (mais recente primeiro)
+                if 'Data' in df_display.columns:
+                    # Converte datas para formato ordenável
+                    try:
+                        df_display['Data_Ordenavel'] = pd.to_datetime(df_display['Data'], format='%d/%m/%Y', errors='coerce')
+                        df_display = df_display.sort_values('Data_Ordenavel', ascending=False)
+                        df_display = df_display.drop('Data_Ordenavel', axis=1)
+                    except:
+                        df_display = df_display.sort_values('Data', ascending=False)
+                
                 # Adiciona contadores
                 total = len(df_display)
                 pendentes = len(df_display[df_display['Status'] == 'Pendente'])
@@ -909,15 +1169,15 @@ elif st.session_state.pagina == "Dashboard":
                 with col1:
                     st.metric("Total Reservas", total)
                 with col2:
-                    st.metric("Pendentes", pendentes)
+                    st.metric("Pendentes", pendentes, delta=None)
                 with col3:
-                    st.metric("Confirmados", confirmados)
+                    st.metric("Confirmados", confirmados, delta=None)
                 
                 st.markdown("---")
                 
                 # Tabela interativa
                 st.dataframe(
-                    df_display.sort_values('Data', ascending=False),
+                    df_display,
                     use_container_width=True,
                     hide_index=True,
                     column_config={
@@ -925,7 +1185,13 @@ elif st.session_state.pagina == "Dashboard":
                             "Status",
                             options=["Pendente", "Confirmado", "Cancelado"],
                             required=True,
-                        )
+                        ),
+                        "Aluno": st.column_config.TextColumn("Aluno", width="medium"),
+                        "E-mail": st.column_config.TextColumn("E-mail", width="large"),
+                        "Serviço": st.column_config.TextColumn("Serviço", width="medium"),
+                        "Unidade": st.column_config.TextColumn("Unidade", width="medium"),
+                        "Data": st.column_config.TextColumn("Data", width="small"),
+                        "Horário": st.column_config.TextColumn("Horário", width="small"),
                     }
                 )
                 
@@ -942,7 +1208,7 @@ elif st.session_state.pagina == "Dashboard":
                     st.download_button(
                         label="📥 Exportar CSV",
                         data=csv,
-                        file_name="reservas_tennis_class.csv",
+                        file_name=f"reservas_tennis_class_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
                         mime="text/csv",
                         use_container_width=True
                     )
@@ -951,22 +1217,23 @@ elif st.session_state.pagina == "Dashboard":
                 st.markdown("### 📧 Reenviar E-mail de Confirmação")
                 col_id, col_btn = st.columns([3, 1])
                 with col_id:
-                    reserva_id = st.text_input("ID da Reserva para reenviar e-mail:")
+                    reserva_id = st.text_input("ID da Reserva para reenviar e-mail:", placeholder="Ex: abc12345")
                 with col_btn:
                     if st.button("↻ Reenviar", use_container_width=True):
                         if reserva_id and not df.empty:
                             reserva = df[df['ID'] == reserva_id]
                             if not reserva.empty:
                                 reserva_info = reserva.iloc[0].to_dict()
-                                if enviar_email_confirmacao(
-                                    aluno=reserva_info.get('Aluno', ''),
-                                    email=reserva_info.get('E-mail', ''),
-                                    reserva_info=reserva_info,
-                                    reserva_id=reserva_id
-                                ):
-                                    st.success(f"✅ E-mail reenviado para {reserva_info.get('E-mail', '')}")
-                                else:
-                                    st.error("❌ Erro ao reenviar e-mail")
+                                with st.spinner("Enviando e-mail..."):
+                                    if enviar_email_confirmacao(
+                                        aluno=reserva_info.get('Aluno', ''),
+                                        email=reserva_info.get('E-mail', ''),
+                                        reserva_info=reserva_info,
+                                        reserva_id=reserva_id
+                                    ):
+                                        st.success(f"✅ E-mail reenviado para {reserva_info.get('E-mail', '')}")
+                                    else:
+                                        st.error("❌ Erro ao reenviar e-mail")
                             else:
                                 st.error("❌ Reserva não encontrada")
                         else:
@@ -990,9 +1257,19 @@ elif st.session_state.pagina == "Contato":
         st.markdown("### 📧 E-mail")
         st.markdown("""
         <div style='padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px;'>
-            <h4 style='margin:0;'>aranha.corp@gmail.com</h4>
+            <h4 style='margin:0; color: white;'>aranha.corp@gmail.com</h4>
             <p style='margin:5px 0 0 0; color: #ccc;'>
             Respondemos em até 24h
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("### 🏢 Endereço Principal")
+        st.markdown("""
+        <div style='padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px;'>
+            <p style='margin:0; color: white;'>São Paulo - SP</p>
+            <p style='margin:5px 0 0 0; color: #ccc;'>
+            Atendemos em todas as academias parceiras
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -1001,34 +1278,14 @@ elif st.session_state.pagina == "Contato":
         st.markdown("### 📱 WhatsApp")
         st.markdown("""
         <div style='padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px;'>
-            <h4 style='margin:0;'>(11) 97142-5028</h4>
+            <h4 style='margin:0; color: white;'>(11) 97142-5028</h4>
             <p style='margin:5px 0 0 0; color: #ccc;'>
             Segunda a Sábado, 8h às 20h
             </p>
         </div>
         """, unsafe_allow_html=True)
-    
-    st.markdown("---")
-    
-    # Mapa de localização (opcional)
-    st.markdown("### 📍 Localização Principal")
-    st.markdown("""
-    <div style='padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px;'>
-        <p style='margin:0;'>📍 São Paulo - SP</p>
-        <p style='margin:5px 0 0 0; color: #ccc;'>
-        Atendemos em todas as academias parceiras listadas no menu lateral
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-
-# ============================================
-# 7. RODAPÉ E INFORMAÇÕES ADICIONAIS
-# ============================================
-
-st.markdown("""
-<div style='text-align: center; margin-top: 40px; color: rgba(255,255,255,0.6); font-size: 12px;'>
-    <hr style='border-color: rgba(255,255,255,0.2);'>
-    <p>TENNIS CLASS © 2024 - Todos os direitos reservados</p>
-    <p>Desenvolvido por André Aranha</p>
-</div>
-""", unsafe_allow_html=True)
+        
+        st.markdown("### ⏰ Horário de Atendimento")
+        st.markdown("""
+        <div style='padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px;'>
+            <p style='margin:0; color:

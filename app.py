@@ -1030,8 +1030,5 @@ st.markdown("""
     <hr style='border-color: rgba(255,255,255,0.2);'>
     <p>TENNIS CLASS © 2024 - Todos os direitos reservados</p>
     <p>Desenvolvido por André Aranha</p>
-    <p style='font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 5px;'>
-    MASTER CODE DEEP SEEK v.5.1 | Sistema de e-mail corrigido e testado
-    </p>
 </div>
 """, unsafe_allow_html=True)

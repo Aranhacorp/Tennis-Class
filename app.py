@@ -23,14 +23,21 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Constantes organizadas
+# Constantes organizadas - Serviços atualizados com pacotes
 SERVICOS = {
-    "particular": {"nome": "Aula particular", "preco": 250},
-    "grupo": {"nome": "Aula em grupo", "preco": 200},
-    "kids": {"nome": "Aula Kids", "preco": 200},
-    "personal": {"nome": "Personal trainer", "preco": 250},
-    "competitivo": {"nome": "Treinamento competitivo", "preco": 1400},
-    "eventos": {"nome": "Eventos", "preco": 0}
+    "particular_hora": {"nome": "Aula particular", "preco": 250, "tipo": "Hora"},
+    "grupo_hora": {"nome": "Aula em grupo", "preco": 200, "tipo": "Hora"},
+    "kids_hora": {"nome": "Aula Kids", "preco": 200, "tipo": "Hora"},
+    "personal_hora": {"nome": "Personal trainer", "preco": 250, "tipo": "Hora"},
+    "competitivo": {"nome": "Treinamento competitivo", "preco": 1400, "tipo": "Mês"},
+    "eventos": {"nome": "Eventos", "preco": 0, "tipo": "Hora"},
+    # Novos pacotes adicionados
+    "pacote_particular_4": {"nome": "Pacote aula particular", "preco": 1000, "tipo": "4 aulas de 1 hora"},
+    "pacote_grupo_4": {"nome": "Pacote aula em grupo", "preco": 800, "tipo": "4 aulas de 1 hora"},
+    "pacote_particular_8": {"nome": "Pacote aula particular", "preco": 2000, "tipo": "8 aulas de 1 hora"},
+    "pacote_grupo_8": {"nome": "Pacote aula em grupo", "preco": 1600, "tipo": "8 aulas de 1 hora"},
+    "pacote_kids_4": {"nome": "Pacote aula Kids", "preco": 800, "tipo": "4 aulas de 1 hora"},
+    "pacote_personal_4": {"nome": "Pacote Personal Trainer", "preco": 1000, "tipo": "4 aulas de 1 hora"}
 }
 
 ACADEMIAS = {
@@ -628,12 +635,16 @@ if st.session_state.pagina == "Home":
                 label_visibility="visible"
             )
             
-            # Lista de serviços formatada
-            servicos_lista = [
-                f"{SERVICOS[key]['nome']} R$ {SERVICOS[key]['preco']}"
-                f"{'/hora' if key != 'competitivo' else '/mês'}"
-                for key in SERVICOS.keys()
-            ]
+            # Lista de serviços formatada com os novos pacotes
+            servicos_lista = []
+            for key, info in SERVICOS.items():
+                if info['tipo'] == "Hora":
+                    servicos_lista.append(f"{info['nome']} R$ {info['preco']}/hora")
+                elif info['tipo'] == "Mês":
+                    servicos_lista.append(f"{info['nome']} R$ {info['preco']}/mês")
+                else:
+                    # Para pacotes
+                    servicos_lista.append(f"{info['nome']} R$ {info['preco']} / {info['tipo']}")
             
             servico = st.selectbox("Serviço *", servicos_lista)
             unidade = st.selectbox("Unidade *", list(ACADEMIAS.keys()))
@@ -787,12 +798,26 @@ elif st.session_state.pagina == "Preços":
     st.markdown("### 🎾 Tabela de Preços")
     st.markdown("---")
     
+    # Agrupar serviços por categoria
+    st.markdown("#### 📋 Aulas Avulsas")
     for key, info in SERVICOS.items():
-        if key == "eventos":
+        if info['tipo'] == "Hora" and "Pacote" not in info['nome']:
+            st.markdown(f"* **{info['nome']}:** R$ {info['preco']}/hora")
+    
+    st.markdown("#### 📦 Pacotes de Aulas")
+    for key, info in SERVICOS.items():
+        if "Pacote" in info['nome']:
+            st.markdown(f"* **{info['nome']}:** R$ {info['preco']} / {info['tipo']}")
+    
+    st.markdown("#### 🏆 Treinamento Competitivo")
+    for key, info in SERVICOS.items():
+        if info['tipo'] == "Mês":
+            st.markdown(f"* **{info['nome']}:** R$ {info['preco']}/mês")
+    
+    st.markdown("#### 🎉 Eventos")
+    for key, info in SERVICOS.items():
+        if info['nome'] == "Eventos":
             st.markdown(f"* **{info['nome']}:** Valor a combinar")
-        else:
-            unidade = "/hora" if key != "competitivo" else "/mês"
-            st.markdown(f"* **{info['nome']}:** R$ {info['preco']} {unidade}")
 
 # PÁGINA: CADASTRO (COM LINKS CORRIGIDOS)
 elif st.session_state.pagina == "Cadastro":
@@ -1030,8 +1055,5 @@ st.markdown("""
     <hr style='border-color: rgba(255,255,255,0.2);'>
     <p>TENNIS CLASS © 2024 - Todos os direitos reservados</p>
     <p>Desenvolvido por André Aranha</p>
-    <p style='font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 5px;'>
-    MASTER CODE DEEP SEEK v.5.1 | Sistema de e-mail corrigido e testado
-    </p>
 </div>
 """, unsafe_allow_html=True)

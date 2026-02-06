@@ -1,7 +1,7 @@
 # ============================================
-# TENNIS CLASS APP - MASTER CODE DEEP SEEK v9.0
+# TENNIS CLASS APP - MASTER CODE DEEP SEEK v9.1
 # ============================================
-# Sistema completo com todas as melhorias implementadas
+# Versão sem exibição de disponibilidade de horários
 # Data: 2024-12-06
 # ============================================
 
@@ -702,25 +702,6 @@ st.markdown("""
         text-align: center;
     }
     
-    /* Status de disponibilidade */
-    .disponibilidade-box {
-        padding: 10px;
-        margin: 5px 0;
-        border-radius: 5px;
-        text-align: center;
-        font-weight: bold;
-    }
-    .disponivel {
-        background-color: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
-    }
-    .indisponivel {
-        background-color: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
-    }
-    
     /* Botões */
     .stButton > button {
         transition: all 0.3s ease;
@@ -761,26 +742,6 @@ def mostrar_timer(tempo_total: int, inicio_time: float) -> Tuple[bool, str]:
 def card_com_estilo(conteudo: str, classe: str = "custom-card") -> str:
     """Retorna HTML de card estilizado."""
     return f'<div class="{classe}">{conteudo}</div>'
-
-def exibir_disponibilidade(data: str, unidade: str):
-    """Exibe tabela de disponibilidade para uma data."""
-    disponibilidade = carregar_disponibilidade(data, unidade)
-    
-    st.markdown("### 📊 Disponibilidade por Horário")
-    
-    # Criar colunas para os horários
-    colunas = st.columns(4)
-    for idx, (hora, vagas) in enumerate(disponibilidade.items()):
-        col = colunas[idx % 4]
-        with col:
-            status_class = "disponivel" if vagas > 0 else "indisponivel"
-            status_icon = "✅" if vagas > 0 else "❌"
-            st.markdown(f"""
-            <div class="disponibilidade-box {status_class}">
-                {status_icon} {hora}<br>
-                <small>{vagas} vaga(s)</small>
-            </div>
-            """, unsafe_allow_html=True)
 
 # ============================================
 # 12. MENU LATERAL
@@ -917,11 +878,6 @@ if st.session_state.pagina == "Home":
             
             with col2:
                 hr = st.selectbox("Horário *", Config.HORARIOS_DISPONIVEIS)
-            
-            # Exibir disponibilidade
-            if dt and unidade:
-                data_str = dt.strftime("%d/%m/%Y")
-                exibir_disponibilidade(data_str, unidade)
             
             # Botão de submissão
             submit = st.form_submit_button(
@@ -1489,7 +1445,7 @@ st.markdown("""
 <div style='text-align: center; margin-top: 40px; color: rgba(255,255,255,0.6); font-size: 12px;'>
     <hr style='border-color: rgba(255,255,255,0.2);'>
     <p>TENNIS CLASS © 2024 - Sistema de Gestão Completo</p>
-    <p>Desenvolvido por André Aranha | MASTER CODE DEEP SEEK v9.0</p>
+    <p>Desenvolvido por André Aranha | MASTER CODE DEEP SEEK v9.1</p>
     <p style='font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 5px;'>
     Última atualização: 2024-12-06 | Sistema otimizado e testado
     </p>

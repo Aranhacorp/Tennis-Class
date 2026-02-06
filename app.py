@@ -1057,3 +1057,4 @@ st.markdown("""
     <p>Desenvolvido por André Aranha</p>
 </div>
 """, unsafe_allow_html=True)
+

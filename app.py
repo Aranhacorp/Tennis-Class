@@ -1,7 +1,7 @@
 # ============================================
-# TENNIS CLASS APP - MASTER CODE DEEP SEEK v9.1
+# TENNIS CLASS APP - MASTER CODE DEEP SEEK v10
 # ============================================
-# Versão sem exibição de disponibilidade de horários
+# Versão completa com segurança reforçada
 # Data: 2024-12-06
 # ============================================
 
@@ -80,18 +80,13 @@ class Config:
         """Obtém credenciais de e-mail com fallback hierárquico."""
         try:
             secrets = st.secrets
-            email_user = secrets.get("EMAIL_USER", "aranha.corp@gmail.com")
+            email_user = secrets.get("EMAIL_USER", "")
             email_password = secrets.get("EMAIL_PASSWORD", "")
             
-            if email_password:
+            if email_user and email_password:
                 return email_user, email_password
         except Exception:
             pass
-        
-        # Fallback para variáveis de ambiente
-        email_password_env = os.environ.get("EMAIL_PASSWORD", "")
-        if email_password_env:
-            return "aranha.corp@gmail.com", email_password_env
         
         return "", ""
 
@@ -710,6 +705,14 @@ st.markdown("""
         transform: translateY(-2px);
         box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
+    
+    /* Configurações seguras */
+    .secure-config {
+        background: rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        border-radius: 10px;
+        margin: 10px 0;
+    }
 </style>
 
 <!-- Botão flutuante do WhatsApp -->
@@ -744,18 +747,22 @@ def card_com_estilo(conteudo: str, classe: str = "custom-card") -> str:
     return f'<div class="{classe}">{conteudo}</div>'
 
 # ============================================
-# 12. MENU LATERAL
+# 12. MENU LATERAL SEGURO
 # ============================================
 
 with st.sidebar:
     st.markdown("<h2 style='color: white; text-align: center;'>🎾 MENU</h2>", 
                 unsafe_allow_html=True)
     
-    # Navegação
-    for item in ["Home", "Preços", "Cadastro", "Dashboard", "Contato"]:
+    # Navegação atualizada com Configurações
+    menu_itens = ["Home", "Preços", "Cadastro", "Dashboard", "Contato", "Configurações"]
+    
+    for item in menu_itens:
         if st.button(item, key=f"nav_{item}", use_container_width=True):
             st.session_state.pagina = item
             st.session_state.pagamento_ativo = False
+            if item in ["Dashboard", "Configurações"]:
+                st.session_state.admin_autenticado = False
             st.rerun()
     
     st.markdown("---")
@@ -770,48 +777,20 @@ with st.sidebar:
             unsafe_allow_html=True
         )
     
-    # Configurações
+    # Apenas ajuda, sem configurações sensíveis
     st.markdown("---")
-    with st.expander("⚙️ Configurações do Sistema"):
+    with st.expander("❓ Ajuda"):
         st.markdown("""
-        ### 🔐 Segurança
+        ### Precisa de ajuda?
         
-        Para configurar o sistema:
+        **Contato técnico:**
+        - WhatsApp: (11) 97142-5028
+        - Email: aranha.corp@gmail.com
         
-        1. **Crie o arquivo `.streamlit/secrets.toml`**
-        
-        2. **Adicione as configurações:**
-        
-        ```toml
-        [connections.gsheets]
-        spreadsheet = "https://docs.google.com/spreadsheets/d/SEU_ID/"
-        
-        EMAIL_USER = "aranha.corp@gmail.com"
-        EMAIL_PASSWORD = "sua_senha_de_app"
-        ADMIN_PASSWORD_HASH = "hash_da_senha"
-        ```
-        
-        3. **Gere o hash da senha:**
-        
-        ```python
-        import hashlib
-        senha = "sua_senha"
-        hash_senha = hashlib.sha256(senha.encode()).hexdigest()
-        print(f"Hash: {hash_senha}")
-        ```
-        
-        4. **Configure o Gmail:**
-           - Ative verificação em 2 etapas
-           - Gere senha de app em:
-           - Google Account → Segurança → Senhas de app
+        **Horário de atendimento:**
+        Seg-Sex: 9h-18h
+        Sáb: 9h-13h
         """)
-        
-        # Botão para gerar hash
-        if st.button("🔑 Gerar Hash da Senha"):
-            senha = st.text_input("Digite a senha:", type="password")
-            if senha:
-                hash_senha = hashlib.sha256(senha.encode()).hexdigest()
-                st.code(f"ADMIN_PASSWORD_HASH = \"{hash_senha}\"")
     
     # Status do sistema
     st.markdown("---")
@@ -822,7 +801,7 @@ with st.sidebar:
         total_reservas = len(df) if not df.empty else 0
         st.metric("Reservas totais", total_reservas)
     except:
-        st.metric("Reservas totais", "Erro")
+        st.metric("Reservas totais", "0")
 
 # ============================================
 # 13. PÁGINA PRINCIPAL - HOME
@@ -1363,7 +1342,156 @@ elif st.session_state.pagina == "Dashboard":
             st.error(f"❌ Erro no dashboard: {str(e)}")
 
 # ============================================
-# 17. PÁGINA DE CONTATO
+# 17. PÁGINA DE CONFIGURAÇÕES (NOVA)
+# ============================================
+
+elif st.session_state.pagina == "Configurações":
+    st.markdown(card_com_estilo(""), unsafe_allow_html=True)
+    
+    if not st.session_state.admin_autenticado:
+        st.subheader("🔐 Acesso Restrito - Configurações")
+        
+        senha = st.text_input(
+            "Digite a senha de administrador:", 
+            type="password",
+            help="Esta área é restrita apenas para administradores",
+            placeholder="Digite a senha de administrador..."
+        )
+        
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            if st.button("🔓 Acessar Configurações", use_container_width=True):
+                if verificar_senha_admin(senha):
+                    st.session_state.admin_autenticado = True
+                    st.success("✅ Acesso concedido!")
+                    time.sleep(1)
+                    st.rerun()
+                else:
+                    st.error("❌ Senha incorreta!")
+    
+    else:
+        st.subheader("⚙️ Configurações do Sistema")
+        
+        # Botão de logout
+        if st.button("🚪 Sair das Configurações", type="secondary", use_container_width=True):
+            st.session_state.admin_autenticado = False
+            st.rerun()
+        
+        st.markdown("---")
+        
+        # Verificação do sistema
+        st.markdown("### ✅ Verificação do Sistema")
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            # Verificar Google Sheets
+            try:
+                df = carregar_dados()
+                if not df.empty:
+                    st.success("✅ Google Sheets: CONECTADO")
+                    st.caption(f"{len(df)} reservas carregadas")
+                else:
+                    st.warning("⚠️ Google Sheets: SEM DADOS")
+            except:
+                st.error("❌ Google Sheets: ERRO")
+        
+        with col2:
+            # Verificar E-mail
+            email_user, email_pass = Config.get_email_credentials()
+            if email_user and email_pass:
+                st.success("✅ E-mail: CONFIGURADO")
+                st.caption(f"Usuário: {email_user}")
+            else:
+                st.error("❌ E-mail: NÃO CONFIGURADO")
+        
+        with col3:
+            # Verificar Admin
+            if st.secrets.get("ADMIN_PASSWORD_HASH", ""):
+                st.success("✅ Admin: CONFIGURADO")
+            else:
+                st.warning("⚠️ Admin: NÃO CONFIGURADO")
+        
+        st.markdown("---")
+        
+        # Instruções de configuração (APENAS PARA ADMIN)
+        st.markdown("### 📋 Configuração do Sistema")
+        
+        st.markdown("""
+        Para configurar o sistema, você precisa criar um arquivo `secrets.toml` 
+        no Streamlit Cloud com as seguintes informações:
+        """)
+        
+        st.code("""[connections.gsheets]
+spreadsheet = "https://docs.google.com/spreadsheets/d/SUA_ID_AQUI/"
+
+EMAIL_USER = "aranha.corp@gmail.com"
+EMAIL_PASSWORD = "sua_senha_de_app_do_gmail"
+ADMIN_PASSWORD_HASH = "hash_gerado_pelo_sistema"
+""", language="toml")
+        
+        st.markdown("""
+        ### 📋 Passo a Passo:
+        
+        1. **Acesse o Streamlit Cloud:**
+           - Vá em: https://share.streamlit.io/
+           - Selecione seu app "TENNIS CLASS"
+           - Clique em "Settings" ⚙️
+           - Vá na aba "Secrets"
+        
+        2. **Cole o código acima** substituindo:
+           - `SUA_ID_AQUI` pelo ID da sua planilha Google Sheets
+           - `sua_senha_de_app_do_gmail` pela senha de app do Gmail
+           - `hash_gerado_pelo_sistema` pelo hash da senha admin
+        
+        3. **Salve e reinicie** o app
+        """)
+        
+        # Gerador de hash
+        st.markdown("---")
+        st.markdown("#### 🔑 Gerar Hash da Senha Admin")
+        
+        senha_input = st.text_input(
+            "Digite a senha para gerar o hash:",
+            type="password",
+            help="Esta senha será usada para acessar o Dashboard e Configurações"
+        )
+        
+        if senha_input:
+            hash_senha = hashlib.sha256(senha_input.encode()).hexdigest()
+            st.code(f"ADMIN_PASSWORD_HASH = \"{hash_senha}\"")
+            st.success("✅ Hash gerado! Cole este valor no campo ADMIN_PASSWORD_HASH")
+        
+        # Informações para Gmail
+        st.markdown("---")
+        with st.expander("📧 Configurar Gmail"):
+            st.markdown("""
+            ### Como configurar o Gmail:
+            
+            1. **Acesse:** https://myaccount.google.com/security
+            
+            2. **Ative "Verificação em duas etapas"** (se não estiver ativa)
+            
+            3. **Gere uma "senha de app":**
+               - Vá em "Senhas de app"
+               - Selecione "E-mail" como aplicativo
+               - Selecione "Outro" como dispositivo
+               - Digite um nome (ex: "Tennis Class App")
+               - Clique em "Gerar"
+            
+            4. **Use a senha gerada** no campo `EMAIL_PASSWORD`
+            
+            5. **Email de remetente:** Use `aranha.corp@gmail.com`
+            """)
+        
+        # Limpar cache
+        st.markdown("---")
+        if st.button("🗑️ Limpar Cache do Sistema", type="secondary"):
+            st.cache_data.clear()
+            st.success("✅ Cache limpo com sucesso!")
+
+# ============================================
+# 18. PÁGINA DE CONTATO
 # ============================================
 
 elif st.session_state.pagina == "Contato":
@@ -1438,22 +1566,22 @@ elif st.session_state.pagina == "Contato":
                 st.warning("⚠️ Preencha todos os campos obrigatórios.")
 
 # ============================================
-# 18. RODAPÉ
+# 19. RODAPÉ
 # ============================================
 
 st.markdown("""
 <div style='text-align: center; margin-top: 40px; color: rgba(255,255,255,0.6); font-size: 12px;'>
     <hr style='border-color: rgba(255,255,255,0.2);'>
     <p>TENNIS CLASS © 2024 - Sistema de Gestão Completo</p>
-    <p>Desenvolvido por André Aranha | MASTER CODE DEEP SEEK v9.1</p>
+    <p>Desenvolvido por André Aranha | MASTER CODE DEEP SEEK v10</p>
     <p style='font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 5px;'>
-    Última atualização: 2024-12-06 | Sistema otimizado e testado
+    Última atualização: 2024-12-06 | Sistema otimizado e seguro
     </p>
 </div>
 """, unsafe_allow_html=True)
 
 # ============================================
-# 19. INICIALIZAÇÃO DO SISTEMA
+# 20. INICIALIZAÇÃO DO SISTEMA
 # ============================================
 
 if __name__ == "__main__":
@@ -1461,23 +1589,8 @@ if __name__ == "__main__":
     email_user, email_pass = Config.get_email_credentials()
     
     if not email_pass:
-        st.sidebar.warning("""
-        ⚠️ **Configuração pendente**
-        
-        Para o sistema funcionar completamente:
-        
-        1. Crie o arquivo `.streamlit/secrets.toml`
-        2. Adicione as credenciais:
-        
-        ```toml
-        [connections.gsheets]
-        spreadsheet = "sua_url_do_google_sheets"
-        
-        EMAIL_USER = "aranha.corp@gmail.com"
-        EMAIL_PASSWORD = "sua_senha_de_app"
-        ADMIN_PASSWORD_HASH = "hash_da_senha"
-        ```
-        """)
+        # Aviso discreto apenas no console/log
+        logger.warning("Configuração de e-mail pendente")
     
     # Log de inicialização
-    logger.info("Sistema TENNIS CLASS iniciado com sucesso")
+    logger.info("Sistema TENNIS CLASS v10 iniciado com sucesso")

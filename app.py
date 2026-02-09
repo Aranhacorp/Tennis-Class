@@ -1339,12 +1339,11 @@ if st.session_state.pagina == "Home":
                     # Mostra formatação correta
                     st.caption(f"📱 Formatado: {formatar_telefone(telefone)}")
             
-            # Botão de submissão
+            # Botão de submissão - CORREÇÃO DO ERRO: removido use_container_width duplicado
             col_botoes = st.columns([3, 2])
             with col_botoes[1]:
                 submit = st.form_submit_button(
                     "AVANÇAR PARA PAGAMENTO", 
-                    use_container_width=True,
                     type="primary",
                     use_container_width=True
                 )
@@ -1581,19 +1580,611 @@ if st.session_state.pagina == "Home":
     """, unsafe_allow_html=True)
 
 # ============================================
-# 14. OUTRAS PÁGINAS (MANTIDAS COMO ESTÃO)
+# 14. PÁGINA DE PREÇOS
 # ============================================
 
-# Nota: As páginas Preços, Cadastro, Dashboard, Configurações e Contato 
-# permanecem exatamente como estavam no v10 original.
-# Apenas foram melhoradas as funções internas e o fluxo principal.
-
-# Para manter o código dentro do limite, não repetirei essas páginas aqui.
-# Elas continuam funcionando exatamente como antes, apenas usando as 
-# funções otimizadas internamente.
+elif st.session_state.pagina == "Preços":
+    st.markdown('<h2 style="color: white; text-align: center;">💰 TABELA DE PREÇOS</h2>', unsafe_allow_html=True)
+    
+    with st.container():
+        st.markdown(card_com_estilo("""
+        <div style="text-align: center; padding: 20px;">
+            <h3 style="color: #2c3e50; margin-bottom: 30px;">🎾 Escolha o plano ideal para você</h3>
+        </div>
+        """), unsafe_allow_html=True)
+    
+    # Tabela de serviços organizada por categoria
+    for categoria_key, categoria_data in SERVICOS.items():
+        st.markdown(f'### {categoria_data["categoria"]}')
+        
+        # Criar tabela
+        dados_tabela = []
+        for servico_key, servico_info in categoria_data["itens"].items():
+            dados_tabela.append({
+                "Serviço": servico_info["nome"],
+                "Tipo": servico_info["tipo"],
+                "Preço": f"R$ {servico_info['preco']:.2f}"
+            })
+        
+        df_servicos = pd.DataFrame(dados_tabela)
+        st.dataframe(
+            df_servicos,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "Serviço": st.column_config.TextColumn("Serviço", width="medium"),
+                "Tipo": st.column_config.TextColumn("Tipo", width="small"),
+                "Preço": st.column_config.TextColumn("Preço", width="small")
+            }
+        )
+    
+    # Comparativo de pacotes
+    st.markdown("---")
+    st.markdown("### 📊 Comparativo de Pacotes")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown(card_com_estilo("""
+        <div style="text-align: center; padding: 15px;">
+            <h4 style="color: #2c3e50; margin-bottom: 10px;">Pacote 4 Aulas</h4>
+            <p style="font-size: 24px; color: #1a5f7a; font-weight: bold;">R$ 800-1000</p>
+            <p style="color: #666; font-size: 14px;">Economia de até 20%</p>
+            <hr style="margin: 15px 0;">
+            <p style="color: #666; font-size: 12px;">✔️ Válido por 60 dias</p>
+            <p style="color: #666; font-size: 12px;">✔️ Flexibilidade de horários</p>
+            <p style="color: #666; font-size: 12px;">✔️ Renovação automática</p>
+        </div>
+        """, "custom-card"), unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown(card_com_estilo("""
+        <div style="text-align: center; padding: 15px; border: 2px solid #2a8bb8;">
+            <h4 style="color: #2c3e50; margin-bottom: 10px;">Pacote 8 Aulas</h4>
+            <p style="font-size: 28px; color: #1a5f7a; font-weight: bold;">R$ 1600-2000</p>
+            <p style="color: #666; font-size: 14px;">Economia de até 25%</p>
+            <hr style="margin: 15px 0;">
+            <p style="color: #666; font-size: 12px;">✔️ Válido por 90 dias</p>
+            <p style="color: #666; font-size: 12px;">✔️ Horários preferenciais</p>
+            <p style="color: #666; font-size: 12px;">✔️ 1 aula bônus grátis</p>
+        </div>
+        """, "custom-card"), unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown(card_com_estilo("""
+        <div style="text-align: center; padding: 15px;">
+            <h4 style="color: #2c3e50; margin-bottom: 10px;">Treino Competitivo</h4>
+            <p style="font-size: 24px; color: #1a5f7a; font-weight: bold;">R$ 1400/mês</p>
+            <p style="color: #666; font-size: 14px;">Treinamento especializado</p>
+            <hr style="margin: 15px 0;">
+            <p style="color: #666; font-size: 12px;">✔️ 3x por semana</p>
+            <p style="color: #666; font-size: 12px;">✔️ Avaliação física</p>
+            <p style="color: #666; font-size: 12px;">✔️ Planejamento personalizado</p>
+        </div>
+        """, "custom-card"), unsafe_allow_html=True)
+    
+    # Informações adicionais
+    st.markdown("---")
+    st.markdown("### 💡 Informações Importantes")
+    
+    col_info1, col_info2 = st.columns(2)
+    
+    with col_info1:
+        with st.expander("📝 Política de Cancelamento", expanded=False):
+            st.markdown("""
+            - **Cancelamento com 24h de antecedência:** Reembolso de 100%
+            - **Cancelamento com menos de 24h:** Reembolso de 50%
+            - **Cancelamento no dia:** Sem reembolso
+            - **Remarcações:** Permitidas com 12h de antecedência
+            """)
+    
+    with col_info2:
+        with st.expander("🎁 Promoções Especiais", expanded=False):
+            st.markdown("""
+            - **Indique um amigo:** Ganhe 10% de desconto
+            - **Pacote familiar:** 15% de desconto para famílias
+            - **Estudantes:** 20% de desconto com comprovante
+            - **Aniversariante do mês:** Aula gratuita
+            """)
+    
+    # Botão para agendar
+    st.markdown("---")
+    col_agendar = st.columns([1, 2, 1])
+    with col_agendar[1]:
+        if st.button("📅 AGENDAR AULA AGORA", type="primary", use_container_width=True):
+            st.session_state.pagina = "Home"
+            st.rerun()
 
 # ============================================
-# 15. INICIALIZAÇÃO E LOG DE SISTEMA
+# 15. PÁGINA DE CADASTRO
+# ============================================
+
+elif st.session_state.pagina == "Cadastro":
+    st.markdown('<h2 style="color: white; text-align: center;">📝 CADASTRO</h2>', unsafe_allow_html=True)
+    
+    tab1, tab2, tab3 = st.tabs(["👨‍🎓 Aluno", "👨‍🏫 Professor", "🏢 Academia"])
+    
+    with tab1:
+        st.markdown("### Cadastro de Aluno")
+        st.info("Preencha o formulário abaixo para se cadastrar como aluno.")
+        
+        # Formulário embutido
+        st.markdown(f"""
+        <iframe src="{FORM_LINKS['aluno']}" 
+                width="100%" 
+                height="600" 
+                frameborder="0" 
+                marginheight="0" 
+                marginwidth="0">
+            Carregando…
+        </iframe>
+        """, unsafe_allow_html=True)
+    
+    with tab2:
+        st.markdown("### Cadastro de Professor")
+        st.info("Preencha o formulário abaixo para se cadastrar como professor.")
+        
+        # Formulário embutido
+        st.markdown(f"""
+        <iframe src="{FORM_LINKS['professor']}" 
+                width="100%" 
+                height="600" 
+                frameborder="0" 
+                marginheight="0" 
+                marginwidth="0">
+            Carregando…
+        </iframe>
+        """, unsafe_allow_html=True)
+    
+    with tab3:
+        st.markdown("### Cadastro de Academia")
+        st.info("Preencha o formulário abaixo para cadastrar sua academia.")
+        
+        # Formulário embutido
+        st.markdown(f"""
+        <iframe src="{FORM_LINKS['academia']}" 
+                width="100%" 
+                height="600" 
+                frameborder="0" 
+                marginheight="0" 
+                marginwidth="0">
+            Carregando…
+        </iframe>
+        """, unsafe_allow_html=True)
+    
+    # Informações de contato
+    st.markdown("---")
+    st.markdown("### 📞 Dúvidas sobre cadastro?")
+    col_duv1, col_duv2 = st.columns(2)
+    
+    with col_duv1:
+        st.markdown("""
+        **WhatsApp:** (11) 97142-5028  
+        **Email:** aranha.corp@gmail.com  
+        **Horário:** Seg-Sex 8h-20h
+        """)
+    
+    with col_duv2:
+        st.markdown("""
+        **Processo de aprovação:** 24-48h  
+        **Documentação necessária:** RG e CPF  
+        **Taxa de cadastro:** Isenta
+        """)
+
+# ============================================
+# 16. PÁGINA DASHBOARD (SIMPLIFICADA)
+# ============================================
+
+elif st.session_state.pagina == "Dashboard":
+    st.markdown('<h2 style="color: white; text-align: center;">📊 DASHBOARD ADMINISTRATIVO</h2>', unsafe_allow_html=True)
+    
+    # Sistema de autenticação simples
+    if not st.session_state.admin_autenticado:
+        st.warning("⚠️ Acesso restrito à administração")
+        
+        with st.form("login_admin"):
+            senha = st.text_input("Senha de administração:", type="password")
+            login_button = st.form_submit_button("🔑 Entrar")
+            
+            if login_button:
+                # Verificação simples (em produção, usar hash e salt)
+                senha_hash = hashlib.sha256(senha.encode()).hexdigest()
+                senha_correta_hash = hashlib.sha256("admin123".encode()).hexdigest()  # Senha padrão
+                
+                if senha_hash == senha_correta_hash:
+                    st.session_state.admin_autenticado = True
+                    st.success("✅ Autenticação bem-sucedida!")
+                    time.sleep(1)
+                    st.rerun()
+                else:
+                    st.error("❌ Senha incorreta!")
+                    st.session_state.tentativas_login += 1
+                    
+                    if st.session_state.tentativas_login >= 3:
+                        st.error("⚠️ Muitas tentativas falhas. Tente novamente mais tarde.")
+                        time.sleep(5)
+                        st.stop()
+    else:
+        # Dashboard administrativo
+        st.success(f"✅ Logado como Administrador | Sessão: {st.session_state.session_id}")
+        
+        # Carregar dados
+        df = carregar_dados_otimizado()
+        
+        if not df.empty:
+            # Métricas principais
+            col1, col2, col3, col4 = st.columns(4)
+            
+            total_reservas = len(df)
+            hoje = datetime.now().strftime("%d/%m/%Y")
+            reservas_hoje = len(df[df['Data'] == hoje])
+            reservas_pendentes = len(df[df['Status'] == 'Pendente'])
+            reservas_confirmadas = len(df[df['Status'] == 'Confirmado'])
+            
+            with col1:
+                st.metric("Total Reservas", total_reservas)
+            with col2:
+                st.metric("Hoje", reservas_hoje)
+            with col3:
+                st.metric("Pendentes", reservas_pendentes)
+            with col4:
+                st.metric("Confirmadas", reservas_confirmadas)
+            
+            # Filtros
+            st.markdown("### 📈 Filtros e Análises")
+            
+            col_filtro1, col_filtro2 = st.columns(2)
+            
+            with col_filtro1:
+                data_inicio = st.date_input("Data início", 
+                                          value=datetime.now().date() - timedelta(days=7))
+            
+            with col_filtro2:
+                data_fim = st.date_input("Data fim", 
+                                       value=datetime.now().date())
+            
+            # Converter para filtro
+            df['Data_Formatada'] = pd.to_datetime(df['Data'], format='%d/%m/%Y', errors='coerce')
+            df_filtrado = df[
+                (df['Data_Formatada'] >= pd.to_datetime(data_inicio)) &
+                (df['Data_Formatada'] <= pd.to_datetime(data_fim))
+            ]
+            
+            # Gráficos
+            tab_graficos, tab_dados, tab_acoes = st.tabs(["📊 Gráficos", "📋 Dados", "⚡ Ações"])
+            
+            with tab_graficos:
+                col_chart1, col_chart2 = st.columns(2)
+                
+                with col_chart1:
+                    # Reservas por status
+                    if 'Status' in df_filtrado.columns:
+                        status_counts = df_filtrado['Status'].value_counts()
+                        st.bar_chart(status_counts)
+                
+                with col_chart2:
+                    # Reservas por unidade
+                    if 'Unidade' in df_filtrado.columns:
+                        unidade_counts = df_filtrado['Unidade'].value_counts()
+                        st.bar_chart(unidade_counts)
+            
+            with tab_dados:
+                # Tabela de dados
+                st.dataframe(
+                    df_filtrado.sort_values('Data_Formatada', ascending=False),
+                    use_container_width=True,
+                    column_config={
+                        "ID": st.column_config.TextColumn("ID", width="small"),
+                        "Aluno": st.column_config.TextColumn("Aluno", width="medium"),
+                        "Data": st.column_config.TextColumn("Data", width="small"),
+                        "Horário": st.column_config.TextColumn("Horário", width="small"),
+                        "Unidade": st.column_config.TextColumn("Unidade", width="medium"),
+                        "Status": st.column_config.TextColumn("Status", width="small"),
+                        "Data_Criacao": st.column_config.TextColumn("Criação", width="medium")
+                    }
+                )
+                
+                # Exportar dados
+                csv = criar_backup_seguro()
+                if csv:
+                    st.download_button(
+                        label="📥 Exportar CSV",
+                        data=csv,
+                        file_name=f"reservas_tennis_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+                        mime="text/csv",
+                        use_container_width=True
+                    )
+            
+            with tab_acoes:
+                # Ações administrativas
+                st.markdown("### ⚡ Ações Rápidas")
+                
+                col_acao1, col_acao2 = st.columns(2)
+                
+                with col_acao1:
+                    if st.button("🔄 Atualizar Dados", use_container_width=True):
+                        st.cache_data.clear()
+                        st.success("✅ Cache limpo! Dados atualizados.")
+                        time.sleep(2)
+                        st.rerun()
+                    
+                    if st.button("📧 Testar Email", use_container_width=True):
+                        email_user, _ = Config.get_email_credentials()
+                        if email_user:
+                            st.info(f"Configuração de email: {email_user}")
+                            st.success("✅ Configuração OK")
+                        else:
+                            st.error("❌ Configuração de email não encontrada")
+                
+                with col_acao2:
+                    if st.button("🧹 Limpar Reservas Antigas", use_container_width=True):
+                        st.warning("Funcionalidade em desenvolvimento")
+                    
+                    if st.button("🚪 Sair", use_container_width=True):
+                        st.session_state.admin_autenticado = False
+                        st.success("✅ Logout realizado!")
+                        time.sleep(2)
+                        st.rerun()
+        
+        else:
+            st.error("❌ Nenhum dado encontrado para exibição")
+
+# ============================================
+# 17. PÁGINA CONFIGURAÇÕES (SIMPLIFICADA)
+# ============================================
+
+elif st.session_state.pagina == "Configurações":
+    st.markdown('<h2 style="color: white; text-align: center;">⚙️ CONFIGURAÇÕES</h2>', unsafe_allow_html=True)
+    
+    # Sistema de autenticação para configurações
+    if not st.session_state.admin_autenticado:
+        st.warning("⚠️ Acesso restrito à administração")
+        
+        with st.form("login_config"):
+            senha = st.text_input("Senha de administração:", type="password")
+            login_button = st.form_submit_button("🔑 Entrar")
+            
+            if login_button:
+                senha_hash = hashlib.sha256(senha.encode()).hexdigest()
+                senha_correta_hash = hashlib.sha256("admin123".encode()).hexdigest()
+                
+                if senha_hash == senha_correta_hash:
+                    st.session_state.admin_autenticado = True
+                    st.success("✅ Autenticação bem-sucedida!")
+                    time.sleep(1)
+                    st.rerun()
+                else:
+                    st.error("❌ Senha incorreta!")
+    else:
+        # Configurações do sistema
+        tab_config1, tab_config2, tab_config3 = st.tabs(["📋 Sistema", "📧 Email", "🔒 Segurança"])
+        
+        with tab_config1:
+            st.markdown("### Configurações do Sistema")
+            
+            with st.form("config_sistema"):
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    max_alunos = st.number_input(
+                        "Máximo alunos por horário:",
+                        min_value=1,
+                        max_value=10,
+                        value=Config.MAX_ALUNOS_POR_HORARIO
+                    )
+                    
+                    tempo_pagamento = st.number_input(
+                        "Tempo para pagamento (minutos):",
+                        min_value=1,
+                        max_value=30,
+                        value=Config.TEMPO_PAGAMENTO // 60
+                    )
+                
+                with col2:
+                    max_dias = st.number_input(
+                        "Máximo dias antecedência:",
+                        min_value=1,
+                        max_value=180,
+                        value=Config.MAX_DIAS_ANTECEDENCIA
+                    )
+                    
+                    cache_ttl = st.number_input(
+                        "Cache TTL (minutos):",
+                        min_value=1,
+                        max_value=60,
+                        value=Config.CACHE_TTL // 60
+                    )
+                
+                if st.form_submit_button("💾 Salvar Configurações"):
+                    # Atualizar configurações na sessão
+                    Config.MAX_ALUNOS_POR_HORARIO = max_alunos
+                    Config.TEMPO_PAGAMENTO = tempo_pagamento * 60
+                    Config.MAX_DIAS_ANTECEDENCIA = max_dias
+                    Config.CACHE_TTL = cache_ttl * 60
+                    
+                    st.success("✅ Configurações salvas na sessão atual!")
+        
+        with tab_config2:
+            st.markdown("### Configurações de Email")
+            
+            email_user, email_pass = Config.get_email_credentials()
+            
+            if email_user:
+                st.success(f"✅ Email configurado: {email_user}")
+                st.info("As credenciais de email são gerenciadas via secrets ou variáveis de ambiente.")
+            else:
+                st.error("❌ Email não configurado")
+            
+            st.markdown("""
+            #### Instruções para configuração:
+            1. No Streamlit Cloud, vá para "App settings" → "Secrets"
+            2. Adicione as seguintes chaves:
+            ```
+            EMAIL_USER = "seuemail@gmail.com"
+            EMAIL_PASSWORD = "suasenhaapp"
+            ```
+            3. Salve e reinicie o aplicativo
+            """)
+        
+        with tab_config3:
+            st.markdown("### Configurações de Segurança")
+            
+            col_sec1, col_sec2 = st.columns(2)
+            
+            with col_sec1:
+                st.metric("Tentativas login falhas", st.session_state.tentativas_login)
+                st.metric("Sessão ativa desde", 
+                         datetime.fromisoformat(st.session_state.ultima_atualizacao).strftime("%H:%M"))
+            
+            with col_sec2:
+                st.info("**Logs do sistema:**")
+                log_files = []
+                if os.path.exists("logs"):
+                    log_files = os.listdir("logs")
+                
+                if log_files:
+                    for log_file in sorted(log_files)[-3:]:  # Últimos 3 logs
+                        st.caption(f"📄 {log_file}")
+                else:
+                    st.caption("Nenhum arquivo de log encontrado")
+            
+            if st.button("📋 Ver Logs Completos", use_container_width=True):
+                if os.path.exists("logs"):
+                    log_files = os.listdir("logs")
+                    if log_files:
+                        latest_log = sorted(log_files)[-1]
+                        with open(f"logs/{latest_log}", "r", encoding="utf-8") as f:
+                            st.text_area("Log mais recente:", f.read(), height=300)
+                    else:
+                        st.warning("Nenhum arquivo de log encontrado")
+                else:
+                    st.warning("Diretório de logs não existe")
+        
+        # Botão para sair
+        st.markdown("---")
+        if st.button("🚪 Sair do Modo Admin", type="secondary", use_container_width=True):
+            st.session_state.admin_autenticado = False
+            st.success("✅ Modo administrador encerrado!")
+            time.sleep(2)
+            st.rerun()
+
+# ============================================
+# 18. PÁGINA CONTATO
+# ============================================
+
+elif st.session_state.pagina == "Contato":
+    st.markdown('<h2 style="color: white; text-align: center;">📞 CONTATO</h2>', unsafe_allow_html=True)
+    
+    # Informações de contato principal
+    col_contato1, col_contato2 = st.columns(2)
+    
+    with col_contato1:
+        st.markdown(card_com_estilo(f"""
+        <div style="text-align: center; padding: 30px;">
+            <div style="font-size: 48px; margin-bottom: 20px;">📱</div>
+            <h3 style="color: #2c3e50; margin-bottom: 15px;">WhatsApp</h3>
+            <p style="font-size: 20px; color: #1a5f7a; font-weight: bold;">
+                {formatar_telefone(Config.WHATSAPP_NUMBER)}
+            </p>
+            <p style="color: #666; margin: 20px 0;">
+                Atendimento rápido e direto
+            </p>
+            <a href="https://wa.me/{Config.WHATSAPP_NUMBER}" 
+               target="_blank" 
+               style="display: inline-block; background: #25D366; color: white; padding: 12px 25px; 
+                      text-decoration: none; border-radius: 8px; font-weight: bold;">
+                Abrir WhatsApp
+            </a>
+        </div>
+        """), unsafe_allow_html=True)
+    
+    with col_contato2:
+        st.markdown(card_com_estilo(f"""
+        <div style="text-align: center; padding: 30px;">
+            <div style="font-size: 48px; margin-bottom: 20px;">✉️</div>
+            <h3 style="color: #2c3e50; margin-bottom: 15px;">E-mail</h3>
+            <p style="font-size: 20px; color: #1a5f7a; font-weight: bold;">
+                aranha.corp@gmail.com
+            </p>
+            <p style="color: #666; margin: 20px 0;">
+                Resposta em até 24h
+            </p>
+            <a href="mailto:aranha.corp@gmail.com" 
+               style="display: inline-block; background: #2a8bb8; color: white; padding: 12px 25px; 
+                      text-decoration: none; border-radius: 8px; font-weight: bold;">
+                Enviar E-mail
+            </a>
+        </div>
+        """), unsafe_allow_html=True)
+    
+    # Lista de academias completa
+    st.markdown("---")
+    st.markdown("### 🏢 Nossas Academias Parceiras")
+    
+    for nome, info in ACADEMIAS.items():
+        with st.expander(f"📍 {nome}", expanded=False):
+            col_acad1, col_acad2 = st.columns([2, 1])
+            
+            with col_acad1:
+                st.markdown(f"""
+                **Endereço:** {info['endereco']}  
+                **Telefone:** {info['telefone']}  
+                **Horário:** {info['horario_funcionamento']}  
+                **Zona:** {info['zona']}
+                """)
+            
+            with col_acad2:
+                # Botão para ver no mapa (simulado)
+                if st.button("🗺️ Ver no Mapa", key=f"mapa_{nome}"):
+                    st.info(f"Localização: {info['endereco']}")
+    
+    # Formulário de avaliação
+    st.markdown("---")
+    st.markdown("### ⭐ Avalie Nossos Serviços")
+    
+    st.markdown(f"""
+    <iframe src="{FORM_LINKS['avaliacao']}" 
+            width="100%" 
+            height="500" 
+            frameborder="0" 
+            marginheight="0" 
+            marginwidth="0">
+        Carregando…
+    </iframe>
+    """, unsafe_allow_html=True)
+    
+    # Horário de atendimento
+    st.markdown("---")
+    st.markdown("### 🕒 Horário de Atendimento")
+    
+    col_horario1, col_horario2 = st.columns(2)
+    
+    with col_horario1:
+        st.markdown("""
+        **Atendimento ao Cliente:**
+        - Segunda a Sexta: 8h às 20h
+        - Sábado: 8h às 18h
+        - Domingo: Fechado
+        
+        **Aulas:**
+        - Segunda a Sexta: 7h às 22h
+        - Sábado: 7h às 20h
+        - Domingo: Fechado
+        """)
+    
+    with col_horario2:
+        st.markdown("""
+        **Feriados:**
+        - Consulte disponibilidade
+        - Horários especiais
+        
+        **Emergências:**
+        - WhatsApp 24h
+        - Apenas para cancelamentos urgentes
+        """)
+
+# ============================================
+# 19. INICIALIZAÇÃO E LOG DE SISTEMA
 # ============================================
 
 if __name__ == "__main__":
@@ -1638,7 +2229,7 @@ if __name__ == "__main__":
         """)
 
 # ============================================
-# 16. RODAPÉ ATUALIZADO
+# 20. RODAPÉ ATUALIZADO
 # ============================================
 
 st.markdown(f"""
@@ -1655,7 +2246,7 @@ st.markdown(f"""
         
         <div style='text-align: center;'>
             <p style='margin: 0;'>Desenvolvido por André Aranha</p>
-            <p style='margin: 5px 0 0 0; font-size: 10px; color: rgba(255,255,255,0.4);'>
+            <p style='margin: 5px 0 0 0; font-size: 10px; color: rgba(255,255,255,0.4);">
             MASTER CODE DEEP SEEK v10.1
             </p>
         </div>

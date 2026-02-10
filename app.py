@@ -1,7 +1,7 @@
 # ============================================
-# TENNIS CLASS APP - MASTER CODE DEEP SEEK v10
+# TENNIS CLASS APP - MASTER CODE v11
 # ============================================
-# Versão sem envio de e-mail de confirmação
+# Versão otimizada sem e-mail e QR Code
 # Data: 2024-12-06
 # ============================================
 
@@ -11,10 +11,11 @@ import pandas as pd
 import time
 import re
 import uuid
-import logging
 import hashlib
+import urllib.parse
 from datetime import datetime, timedelta
 from typing import Dict, Any, Tuple, List, Optional
+import logging
 from functools import lru_cache
 
 # ============================================
@@ -64,6 +65,14 @@ class Config:
     
     # Horários disponíveis
     HORARIOS_DISPONIVEIS = [f"{h:02d}:00" for h in range(7, 23)]
+    
+    @classmethod
+    def get_admin_password(cls) -> str:
+        """Obtém senha do admin."""
+        try:
+            return st.secrets.get("ADMIN_PASSWORD", "aranha2026")
+        except:
+            return "aranha2026"
 
 class ReservaError(Exception):
     """Exceção personalizada para erros de reserva."""
@@ -243,7 +252,7 @@ def salvar_reserva(reserva: Dict[str, Any]) -> Tuple[bool, str]:
         # Adiciona campos de sistema
         reserva["ID"] = reserva_id
         reserva["Timestamp"] = datetime.now().isoformat()
-        reserva["Status"] = "Confirmado"  # Confirmado diretamente
+        reserva["Status"] = "Confirmado"  # Agora confirma automaticamente
         reserva["Data_Criacao"] = datetime.now().strftime("%d/%m/%Y %H:%M")
         
         # Converte para DataFrame e salva
@@ -274,13 +283,45 @@ def criar_backup() -> bytes:
         return b""
 
 # ============================================
-# 6. FUNÇÕES DE PROCESSAMENTO DE RESERVA (SIMPLIFICADA)
+# 6. FUNÇÕES DE NOTIFICAÇÕES
+# ============================================
+
+def enviar_notificacao_whatsapp(telefone: str, aluno: str, reserva_id: str) -> bool:
+    """Gera link para notificação via WhatsApp."""
+    try:
+        mensagem = f"""
+🎾 *TENNIS CLASS - Confirmação de Reserva*
+
+Olá {aluno}!
+
+Sua reserva foi confirmada com sucesso!
+
+*ID da Reserva:* {reserva_id}
+
+Compareça na data e horário agendados com este ID.
+
+Em caso de dúvidas, entre em contato.
+
+Até breve! 🎾
+        """
+        
+        # Codificar mensagem para URL
+        mensagem_codificada = urllib.parse.quote(mensagem)
+        whatsapp_url = f"https://wa.me/{telefone}?text={mensagem_codificada}"
+        
+        logger.info(f"Link WhatsApp gerado: {whatsapp_url}")
+        return True
+    except Exception as e:
+        logger.error(f"Erro ao gerar notificação WhatsApp: {e}")
+        return False
+
+# ============================================
+# 7. FUNÇÕES DE PROCESSAMENTO DE RESERVA
 # ============================================
 
 def processar_reserva_seguro(reserva: Dict[str, Any]) -> Tuple[bool, str, str]:
     """
     Processa reserva com tratamento completo de erros.
-    VERSÃO SEM ENVIO DE E-MAIL.
     
     Returns:
         Tuple[bool, str, str]: (sucesso, reserva_id, mensagem)
@@ -310,7 +351,6 @@ def processar_reserva_seguro(reserva: Dict[str, Any]) -> Tuple[bool, str, str]:
             raise ReservaError("Falha ao salvar reserva no sistema.")
         
         mensagem_final = "✅ Reserva confirmada com sucesso!"
-        
         return True, reserva_id, mensagem_final
         
     except ReservaError as e:
@@ -320,30 +360,20 @@ def processar_reserva_seguro(reserva: Dict[str, Any]) -> Tuple[bool, str, str]:
         return False, "", f"Erro inesperado: {str(e)}"
 
 # ============================================
-# 7. FUNÇÕES DE SEGURANÇA
+# 8. FUNÇÕES DE SEGURANÇA
 # ============================================
 
 def verificar_senha_admin(senha_digitada: str) -> bool:
-    """Verifica senha do admin com hash SHA-256."""
+    """Verifica senha do admin."""
     try:
-        # Obter hash da senha correta
-        senha_correta_hash = st.secrets.get("ADMIN_PASSWORD_HASH", "")
-        
-        if not senha_correta_hash:
-            # Fallback para senha em texto (apenas desenvolvimento)
-            senha_correta = st.secrets.get("ADMIN_PASSWORD", "aranha2026")
-            return senha_digitada == senha_correta
-        
-        # Calcular hash da senha digitada
-        hash_digitado = hashlib.sha256(senha_digitada.encode()).hexdigest()
-        return hash_digitado == senha_correta_hash
-        
+        senha_correta = Config.get_admin_password()
+        return senha_digitada == senha_correta
     except Exception as e:
         logger.error(f"Erro na verificação de senha: {e}")
         return False
 
 # ============================================
-# 8. ESTADOS DA SESSÃO
+# 9. ESTADOS DA SESSÃO
 # ============================================
 
 # Inicializar estados da sessão
@@ -369,7 +399,7 @@ if 'reserva_id_gerada' not in st.session_state:
     st.session_state.reserva_id_gerada = None
 
 # ============================================
-# 9. CSS E ESTILOS
+# 10. CSS E ESTILOS
 # ============================================
 
 st.markdown("""
@@ -510,8 +540,8 @@ st.markdown("""
         color: #28a745;
     }
     
-    /* Status de e-mail */
-    .email-confirmation {
+    /* Confirmação */
+    .confirmation-box {
         background-color: #e8f5e9;
         border: 2px solid #4CAF50;
         border-radius: 10px;
@@ -529,26 +559,27 @@ st.markdown("""
         box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
     
-    /* Configurações seguras */
-    .secure-config {
-        background: rgba(0, 0, 0, 0.1);
-        padding: 20px;
+    /* Chave PIX */
+    .pix-key {
+        background-color: #f8f9fa;
+        border: 2px solid #007bff;
         border-radius: 10px;
-        margin: 10px 0;
+        padding: 15px;
+        margin: 15px 0;
+        font-family: 'Courier New', monospace;
+        font-size: 1.1rem;
+        font-weight: bold;
+        text-align: center;
+        color: #007bff;
     }
     
-    /* Estilo para resumo da reserva */
-    .resumo-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
-        margin-bottom: 25px;
-    }
-    
-    .email-section {
-        margin-top: 25px;
-        padding-top: 20px;
-        border-top: 2px solid #dee2e6;
+    /* Instruções de pagamento */
+    .payment-instructions {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 15px 0;
     }
 </style>
 
@@ -567,7 +598,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ============================================
-# 10. COMPONENTES REUTILIZÁVEIS
+# 11. COMPONENTES REUTILIZÁVEIS
 # ============================================
 
 def mostrar_timer(tempo_total: int, inicio_time: float) -> Tuple[bool, str]:
@@ -583,55 +614,15 @@ def card_com_estilo(conteudo: str, classe: str = "custom-card") -> str:
     """Retorna HTML de card estilizado."""
     return f'<div class="{classe}">{conteudo}</div>'
 
-def mostrar_resumo_reserva_html(reserva: dict, titulo: str = "📋 Resumo da Reserva") -> str:
-    """Retorna HTML formatado para o resumo da reserva."""
-    html = f"""
-    <div style="background-color: #f8f9fa; padding: 25px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #dee2e6;">
-        <h3 style="color: #2c3e50; margin-bottom: 20px;">{titulo}</h3>
-        
-        <div class="resumo-grid">
-            <div>
-                <strong style="color: #666; font-size: 12px;">ALUNO</strong>
-                <div style="font-size: 18px; color: #2c3e50; font-weight: 600;">{reserva.get('Aluno', '')}</div>
-            </div>
-            
-            <div>
-                <strong style="color: #666; font-size: 12px;">SERVIÇO</strong>
-                <div style="font-size: 16px; color: #2c3e50;">{reserva.get('Serviço', '')}</div>
-            </div>
-            
-            <div>
-                <strong style="color: #666; font-size: 12px;">UNIDADE</strong>
-                <div style="font-size: 16px; color: #2c3e50;">{reserva.get('Unidade', '')}</div>
-            </div>
-            
-            <div>
-                <strong style="color: #666; font-size: 12px;">DATA E HORÁRIO</strong>
-                <div style="font-size: 16px; color: #2c3e50;">
-                    {reserva.get('Data', '')} às {reserva.get('Horário', '')}
-                </div>
-            </div>
-        </div>
-        
-        <div class="email-section">
-            <strong style="color: #666; font-size: 12px;">E-MAIL PARA CONTATO</strong>
-            <div style="font-size: 15px; color: #2980b9; word-break: break-all;">
-                {reserva.get('E-mail', '')}
-            </div>
-        </div>
-    </div>
-    """
-    return html
-
 # ============================================
-# 11. MENU LATERAL SEGURO
+# 12. MENU LATERAL SEGURO
 # ============================================
 
 with st.sidebar:
     st.markdown("<h2 style='color: white; text-align: center;'>🎾 MENU</h2>", 
                 unsafe_allow_html=True)
     
-    # Navegação
+    # Navegação atualizada
     menu_itens = ["Home", "Preços", "Cadastro", "Dashboard", "Contato"]
     
     for item in menu_itens:
@@ -662,11 +653,15 @@ with st.sidebar:
         
         **Contato técnico:**
         - WhatsApp: (11) 97142-5028
-        - Email: aranha.corp@gmail.com
         
         **Horário de atendimento:**
         Seg-Sex: 9h-18h
         Sáb: 9h-13h
+        
+        **Instruções de pagamento:**
+        1. Transfira via PIX para a chave abaixo
+        2. Clique em "Confirmar Pagamento"
+        3. Guarde o ID da reserva
         """)
     
     # Status do sistema
@@ -681,7 +676,7 @@ with st.sidebar:
         st.metric("Reservas totais", "0")
 
 # ============================================
-# 12. PÁGINA PRINCIPAL - HOME
+# 13. PÁGINA PRINCIPAL - HOME
 # ============================================
 
 st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
@@ -705,7 +700,7 @@ if st.session_state.pagina == "Home":
             with col2:
                 email = st.text_input(
                     "E-mail *",
-                    help="Digite um e-mail válido para contato",
+                    help="Digite um e-mail válido para confirmação",
                     placeholder="exemplo@email.com"
                 )
             
@@ -779,26 +774,35 @@ if st.session_state.pagina == "Home":
     else:  # PAGAMENTO ATIVO
         st.subheader("💳 Pagamento via PIX")
         
-        # QR Code
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            st.image(
-                "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=aranha.corp@gmail.com",
-                use_column_width=False,
-                width=250
-            )
+        # Informações de pagamento
+        st.markdown("### Chave PIX:")
+        st.markdown('<div class="pix-key">aranha.corp@gmail.com</div>', unsafe_allow_html=True)
         
-        # Chave PIX
-        st.markdown("### Chave PIX (Copie e Cole):")
-        st.code("aranha.corp@gmail.com", language="text")
+        # Instruções de pagamento
+        st.markdown("""
+        <div class="payment-instructions">
+        <h4>📋 Instruções de Pagamento:</h4>
+        <ol>
+            <li>Abra o app do seu banco</li>
+            <li>Acesse a área PIX</li>
+            <li>Escolha "PIX Copia e Cola"</li>
+            <li>Cole a chave PIX acima</li>
+            <li>Confirme o valor e realize o pagamento</li>
+            <li>Após pagar, clique no botão abaixo</li>
+        </ol>
+        </div>
+        """, unsafe_allow_html=True)
         
         # Informações da reserva
         st.markdown("### 📋 Resumo da Reserva")
         reserva = st.session_state.reserva_temp
-        
-        # Usando a função para mostrar o resumo
-        html_resumo = mostrar_resumo_reserva_html(reserva, "📋 Detalhes da Reserva")
-        st.markdown(html_resumo, unsafe_allow_html=True)
+        st.info(f"""
+        **Aluno:** {reserva.get('Aluno', '')}  
+        **Serviço:** {reserva.get('Serviço', '')}  
+        **Unidade:** {reserva.get('Unidade', '')}  
+        **Data:** {reserva.get('Data', '')} às {reserva.get('Horário', '')}
+        **E-mail:** {reserva.get('E-mail', '')}
+        """)
         
         # Timer
         timer_box = st.empty()
@@ -836,31 +840,15 @@ if st.session_state.pagina == "Home":
                     # Mostrar confirmação
                     st.balloons()
                     
-                    # Confirmação da reserva
                     st.markdown(f"""
-                    <div style="background-color: #e8f5e9; padding: 30px; border-radius: 15px; border: 2px solid #4CAF50; margin: 20px 0;">
-                        <div style="text-align: center; margin-bottom: 25px;">
-                            <h2 style="color: #2c3e50; margin-bottom: 10px;">🎾 RESERVA CONFIRMADA!</h2>
-                            <p style="color: #666; font-size: 16px;">{mensagem}</p>
+                    <div class="confirmation-box">
+                        <h3>✅ Reserva Confirmada!</h3>
+                        <p>{mensagem}</p>
+                        <div class="reserva-id-box">
+                            ID da Reserva: {reserva_id}
                         </div>
-                        
-                        {mostrar_resumo_reserva_html(st.session_state.reserva_temp, "📋 Detalhes da Reserva")}
-                        
-                        <div style="background-color: #f8f9fa; border: 2px solid #28a745; border-radius: 10px; padding: 20px; margin: 20px 0; text-align: center;">
-                            <h4 style="color: #2c3e50; margin-bottom: 10px;">🆔 ID DA RESERVA</h4>
-                            <div style="font-family: 'Courier New', monospace; font-size: 24px; font-weight: bold; color: #28a745; letter-spacing: 2px;">
-                                {reserva_id}
-                            </div>
-                            <p style="color: #666; margin-top: 10px; font-size: 14px;">
-                                Guarde este ID para consultas futuras e apresentação na unidade.
-                            </p>
-                        </div>
-                        
-                        <div style="text-align: center; margin-top: 25px;">
-                            <p style="color: #666; font-size: 14px;">
-                                <i class="fas fa-info-circle"></i> A reserva foi salva no sistema. Não será enviado e-mail de confirmação.
-                            </p>
-                        </div>
+                        <p><strong>Guarde este ID para apresentar na academia.</strong></p>
+                        <p>Em caso de dúvidas, entre em contato via WhatsApp.</p>
                     </div>
                     """, unsafe_allow_html=True)
                     
@@ -899,7 +887,7 @@ if st.session_state.pagina == "Home":
     """, unsafe_allow_html=True)
 
 # ============================================
-# 13. PÁGINA DE PREÇOS
+# 14. PÁGINA DE PREÇOS
 # ============================================
 
 elif st.session_state.pagina == "Preços":
@@ -979,7 +967,7 @@ elif st.session_state.pagina == "Preços":
         st.success(f"**Total:** R$ {total:,.2f} por {quantidade} aulas")
 
 # ============================================
-# 14. PÁGINA DE CADASTRO
+# 15. PÁGINA DE CADASTRO
 # ============================================
 
 elif st.session_state.pagina == "Cadastro":
@@ -1037,12 +1025,12 @@ elif st.session_state.pagina == "Cadastro":
     <div style='text-align: center; margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px; color: #ccc;'>
         <p><strong>📋 Instruções:</strong> Os formulários abrem em uma nova aba.</p>
         <p>Preencha todos os campos obrigatórios e clique em "Enviar" ao final.</p>
-        <p>Após o envio, você receberá um e-mail de confirmação.</p>
+        <p>Após o envio, você receberá uma confirmação no formulário.</p>
     </div>
     """, unsafe_allow_html=True)
 
 # ============================================
-# 15. PÁGINA DASHBOARD
+# 16. PÁGINA DASHBOARD
 # ============================================
 
 elif st.session_state.pagina == "Dashboard":
@@ -1074,16 +1062,12 @@ elif st.session_state.pagina == "Dashboard":
                 st.info("""
                 Para configurar a senha:
                 
-                1. Gere o hash da senha:
-                ```python
-                import hashlib
-                hash_senha = hashlib.sha256("sua_senha".encode()).hexdigest()
+                1. No Streamlit Cloud, adicione ao secrets.toml:
+                ```
+                ADMIN_PASSWORD = "sua_senha"
                 ```
                 
-                2. Adicione ao secrets.toml:
-                ```
-                ADMIN_PASSWORD_HASH = "hash_gerado"
-                ```
+                2. A senha padrão é "aranha2026"
                 """)
     
     else:
@@ -1106,11 +1090,6 @@ elif st.session_state.pagina == "Dashboard":
                     st.metric("Confirmados", confirmados)
                 with col3:
                     st.metric("Cancelados", cancelados)
-                
-                # Taxa de conversão
-                taxa_conversao = (confirmados / total * 100) if total > 0 else 0
-                st.progress(taxa_conversao / 100, 
-                          text=f"Taxa de conversão: {taxa_conversao:.1f}%")
                 
                 st.markdown("---")
                 
@@ -1151,18 +1130,14 @@ elif st.session_state.pagina == "Dashboard":
                         "E-mail": st.column_config.TextColumn("E-mail"),
                         "Serviço": st.column_config.TextColumn("Serviço"),
                         "Unidade": st.column_config.TextColumn("Unidade"),
-                        "Status": st.column_config.SelectboxColumn(
-                            "Status",
-                            options=["Confirmado", "Cancelado"],
-                            required=True,
-                        ),
+                        "Status": st.column_config.TextColumn("Status"),
                         "Data_Criacao": st.column_config.DatetimeColumn("Data Criação"),
                     }
                 )
                 
                 # Ações
                 st.markdown("### 🛠️ Ações")
-                col1, col2, col3 = st.columns(3)
+                col1, col2 = st.columns(2)
                 
                 with col1:
                     if st.button("🔄 Atualizar Dados", use_container_width=True):
@@ -1181,18 +1156,6 @@ elif st.session_state.pagina == "Dashboard":
                         use_container_width=True
                     )
                 
-                with col3:
-                    # Backup
-                    backup_csv = criar_backup()
-                    if backup_csv:
-                        st.download_button(
-                            label="💾 Backup Completo",
-                            data=backup_csv,
-                            file_name=f"backup_completo_{datetime.now().strftime('%Y%m%d')}.csv",
-                            mime="text/csv",
-                            use_container_width=True
-                        )
-                
                 # Logout
                 st.markdown("---")
                 if st.button("🚪 Logout", type="secondary", use_container_width=True):
@@ -1206,7 +1169,7 @@ elif st.session_state.pagina == "Dashboard":
             st.error(f"❌ Erro no dashboard: {str(e)}")
 
 # ============================================
-# 16. PÁGINA DE CONTATO
+# 17. PÁGINA DE CONTATO
 # ============================================
 
 elif st.session_state.pagina == "Contato":
@@ -1223,7 +1186,7 @@ elif st.session_state.pagina == "Contato":
         <div style='padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px;'>
             <h4 style='margin:0; color: white;'>aranha.corp@gmail.com</h4>
             <p style='margin:5px 0 0 0; color: #ccc;'>
-            Respondemos em até 24h
+            Para informações gerais
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -1281,24 +1244,24 @@ elif st.session_state.pagina == "Contato":
                 st.warning("⚠️ Preencha todos os campos obrigatórios.")
 
 # ============================================
-# 17. RODAPÉ
+# 18. RODAPÉ
 # ============================================
 
 st.markdown("""
 <div style='text-align: center; margin-top: 40px; color: rgba(255,255,255,0.6); font-size: 12px;'>
     <hr style='border-color: rgba(255,255,255,0.2);'>
     <p>TENNIS CLASS © 2024 - Sistema de Gestão Completo</p>
-    <p>Desenvolvido por André Aranha | MASTER CODE DEEP SEEK v10</p>
+    <p>Desenvolvido por André Aranha | VERSÃO OTIMIZADA v11</p>
     <p style='font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 5px;'>
-    Última atualização: 2024-12-06 | Sistema otimizado e seguro
+    Última atualização: 2024-12-06 | Sem e-mail e QR Code
     </p>
 </div>
 """, unsafe_allow_html=True)
 
 # ============================================
-# 18. INICIALIZAÇÃO DO SISTEMA
+# 19. INICIALIZAÇÃO DO SISTEMA
 # ============================================
 
 if __name__ == "__main__":
     # Log de inicialização
-    logger.info("Sistema TENNIS CLASS v10 iniciado com sucesso - VERSÃO SEM E-MAIL")
+    logger.info("Sistema TENNIS CLASS v11 iniciado com sucesso")

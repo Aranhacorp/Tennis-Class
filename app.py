@@ -3,6 +3,7 @@
 # ============================================
 # Versão completa com segurança reforçada
 # Data: 2024-12-06
+# CORREÇÕES APLICADAS: Resumo da Reserva corrigido
 # ============================================
 
 import streamlit as st
@@ -326,7 +327,7 @@ def enviar_email_confirmacao(aluno: str, email: str, reserva_info: Dict[str, Any
         data = reserva_info.get('Data', '')
         horario = reserva_info.get('Horário', '')
         
-        # HTML do e-mail
+        # HTML do e-mail - VERSÃO CORRIGIDA
         html = f"""
         <!DOCTYPE html>
         <html>
@@ -341,19 +342,47 @@ def enviar_email_confirmacao(aluno: str, email: str, reserva_info: Dict[str, Any
                     <h2 style="color: #2c3e50;">Olá, {aluno}!</h2>
                     <p>Sua reserva foi confirmada com sucesso:</p>
                     
-                    <div style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
-                        <h3 style="color: #2c3e50; margin-top: 0;">📋 Detalhes da Reserva</h3>
-                        <p><strong>ID:</strong> {reserva_id}</p>
-                        <p><strong>Serviço:</strong> {servico}</p>
-                        <p><strong>Data:</strong> {data}</p>
-                        <p><strong>Horário:</strong> {horario}</p>
-                        <p><strong>Unidade:</strong> {unidade}</p>
-                        <p><strong>Status:</strong> <span style="color: green; font-weight: bold;">CONFIRMADO</span></p>
+                    <div style="background: #f8f9fa; padding: 25px; border-radius: 10px; margin: 20px 0;">
+                        <h3 style="color: #2c3e50; margin-top: 0; margin-bottom: 20px;">📋 Detalhes da Reserva</h3>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+                            <div>
+                                <strong style="color: #666; font-size: 12px;">ALUNO</strong>
+                                <div style="font-size: 18px; color: #2c3e50; font-weight: 600;">{aluno}</div>
+                            </div>
+                            <div>
+                                <strong style="color: #666; font-size: 12px;">SERVIÇO</strong>
+                                <div style="font-size: 16px; color: #2c3e50;">{servico}</div>
+                            </div>
+                            <div>
+                                <strong style="color: #666; font-size: 12px;">UNIDADE</strong>
+                                <div style="font-size: 16px; color: #2c3e50;">{unidade}</div>
+                            </div>
+                            <div>
+                                <strong style="color: #666; font-size: 12px;">DATA E HORÁRIO</strong>
+                                <div style="font-size: 16px; color: #2c3e50;">{data} às {horario}</div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 25px; padding-top: 20px; border-top: 2px solid #dee2e6;">
+                            <strong style="color: #666; font-size: 12px;">E-MAIL PARA CONFIRMAÇÃO</strong>
+                            <div style="font-size: 15px; color: #2980b9; word-break: break-all;">{email}</div>
+                        </div>
+                    </div>
+                    
+                    <div style="background: #f0f8ff; padding: 20px; border-radius: 10px; margin: 25px 0; text-align: center; border: 2px solid #3498db;">
+                        <h4 style="color: #2c3e50; margin-bottom: 15px;">🆔 ID da Reserva</h4>
+                        <div style="font-family: 'Courier New', monospace; font-size: 24px; font-weight: bold; color: #3498db; letter-spacing: 2px;">
+                            {reserva_id}
+                        </div>
+                        <p style="color: #666; margin-top: 10px; font-size: 14px;">
+                            Apresente este ID na unidade no dia da sua aula.
+                        </p>
                     </div>
                     
                     <div style="text-align: center; margin: 30px 0;">
                         <a href="https://wa.me/{Config.WHATSAPP_NUMBER}?text=Olá! Tenho uma reserva com ID {reserva_id}" 
-                           style="background: #25D366; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                           style="background: #25D366; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
                             📱 Falar no WhatsApp
                         </a>
                     </div>
@@ -713,6 +742,107 @@ st.markdown("""
         border-radius: 10px;
         margin: 10px 0;
     }
+    
+    /* ============================================
+    CORREÇÕES APLICADAS - ESTILOS PARA RESUMO DA RESERVA
+    ============================================ */
+    
+    /* Estilos para o resumo da reserva - VERSÃO CORRIGIDA */
+    .resumo-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 25px;
+    }
+    
+    .resumo-item {
+        margin-bottom: 5px;
+    }
+    
+    .resumo-label {
+        color: #666;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+        display: block;
+    }
+    
+    .resumo-value {
+        font-size: 16px;
+        color: #2c3e50;
+    }
+    
+    .resumo-value.large {
+        font-size: 18px;
+        font-weight: 600;
+    }
+    
+    .email-section-corrected {
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 2px solid #dee2e6;
+    }
+    
+    .email-label-corrected {
+        color: #666;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+        display: block;
+    }
+    
+    .email-value-corrected {
+        font-size: 15px;
+        color: #2980b9;
+        word-break: break-all;
+    }
+    
+    /* Container do resumo */
+    .resumo-container {
+        background-color: #f8f9fa;
+        padding: 25px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        border: 1px solid #dee2e6;
+    }
+    
+    /* Confirmação de reserva */
+    .confirmacao-completa {
+        background-color: #e8f5e9;
+        padding: 30px;
+        border-radius: 15px;
+        border: 2px solid #4CAF50;
+        margin: 20px 0;
+    }
+    
+    .id-reserva-destaque {
+        background-color: #f8f9fa;
+        border: 2px solid #28a745;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        text-align: center;
+        font-family: 'Courier New', monospace;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #28a745;
+    }
+    
+    /* Estilo específico para grid do resumo */
+    .summary-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+    
+    .summary-section {
+        background-color: #f8f9fa;
+        padding: 25px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
 </style>
 
 <!-- Botão flutuante do WhatsApp -->
@@ -745,6 +875,109 @@ def mostrar_timer(tempo_total: int, inicio_time: float) -> Tuple[bool, str]:
 def card_com_estilo(conteudo: str, classe: str = "custom-card") -> str:
     """Retorna HTML de card estilizado."""
     return f'<div class="{classe}">{conteudo}</div>'
+
+def mostrar_resumo_reserva_html(reserva: dict, titulo: str = "📋 Resumo da Reserva") -> str:
+    """Retorna HTML formatado para o resumo da reserva (CORREÇÃO APLICADA)."""
+    html = f"""
+    <div class="resumo-container">
+        <h3 style="color: #2c3e50; margin-bottom: 20px;">{titulo}</h3>
+        
+        <div class="summary-grid">
+            <div class="resumo-item">
+                <strong style="color: #666; font-size: 12px;">ALUNO</strong>
+                <div style="font-size: 18px; color: #2c3e50; font-weight: 600;">{reserva.get('Aluno', '')}</div>
+            </div>
+            
+            <div class="resumo-item">
+                <strong style="color: #666; font-size: 12px;">SERVIÇO</strong>
+                <div style="font-size: 16px; color: #2c3e50;">{reserva.get('Serviço', '')}</div>
+            </div>
+            
+            <div class="resumo-item">
+                <strong style="color: #666; font-size: 12px;">UNIDADE</strong>
+                <div style="font-size: 16px; color: #2c3e50;">{reserva.get('Unidade', '')}</div>
+            </div>
+            
+            <div class="resumo-item">
+                <strong style="color: #666; font-size: 12px;">DATA E HORÁRIO</strong>
+                <div style="font-size: 16px; color: #2c3e50;">
+                    {reserva.get('Data', '')} às {reserva.get('Horário', '')}
+                </div>
+            </div>
+        </div>
+        
+        <div class="email-section-corrected">
+            <strong style="color: #666; font-size: 12px;">E-MAIL PARA CONFIRMAÇÃO</strong>
+            <div style="font-size: 15px; color: #2980b9; word-break: break-all;">
+                {reserva.get('E-mail', '')}
+            </div>
+        </div>
+    </div>
+    """
+    return html
+
+def mostrar_confirmacao_reserva_html(reserva: dict, reserva_id: str, mensagem: str = "✅ Reserva confirmada com sucesso!") -> str:
+    """Retorna HTML formatado para confirmação da reserva (CORREÇÃO APLICADA)."""
+    html = f"""
+    <div class="confirmacao-completa">
+        <div style="text-align: center; margin-bottom: 25px;">
+            <h2 style="color: #2c3e50; margin-bottom: 10px;">🎾 RESERVA CONFIRMADA!</h2>
+            <p style="color: #666; font-size: 16px;">{mensagem}</p>
+        </div>
+        
+        <div style="background-color: white; padding: 25px; border-radius: 10px; margin-bottom: 20px;">
+            <h3 style="color: #2c3e50; margin-bottom: 20px; text-align: center;">📋 Detalhes da Reserva</h3>
+            
+            <div class="summary-grid" style="margin-bottom: 25px;">
+                <div class="resumo-item">
+                    <strong style="color: #666; font-size: 12px;">ALUNO</strong>
+                    <div style="font-size: 18px; color: #2c3e50; font-weight: 600;">{reserva.get('Aluno', '')}</div>
+                </div>
+                
+                <div class="resumo-item">
+                    <strong style="color: #666; font-size: 12px;">SERVIÇO</strong>
+                    <div style="font-size: 16px; color: #2c3e50;">{reserva.get('Serviço', '')}</div>
+                </div>
+                
+                <div class="resumo-item">
+                    <strong style="color: #666; font-size: 12px;">UNIDADE</strong>
+                    <div style="font-size: 16px; color: #2c3e50;">{reserva.get('Unidade', '')}</div>
+                </div>
+                
+                <div class="resumo-item">
+                    <strong style="color: #666; font-size: 12px;">DATA E HORÁRIO</strong>
+                    <div style="font-size: 16px; color: #2c3e50;">
+                        {reserva.get('Data', '')} às {reserva.get('Horário', '')}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="email-section-corrected">
+                <strong style="color: #666; font-size: 12px;">E-MAIL PARA CONFIRMAÇÃO</strong>
+                <div style="font-size: 15px; color: #2980b9; word-break: break-all;">
+                    {reserva.get('E-mail', '')}
+                </div>
+            </div>
+        </div>
+        
+        <div class="id-reserva-destaque">
+            <h4 style="color: #2c3e50; margin-bottom: 10px;">🆔 ID DA RESERVA</h4>
+            <div style="font-family: 'Courier New', monospace; font-size: 24px; font-weight: bold; color: #28a745; letter-spacing: 2px;">
+                {reserva_id}
+            </div>
+            <p style="color: #666; margin-top: 10px; font-size: 14px;">
+                Guarde este ID para consultas futuras e apresentação na unidade.
+            </p>
+        </div>
+        
+        <div style="text-align: center; margin-top: 25px;">
+            <p style="color: #666; font-size: 14px;">
+                <i class="fas fa-info-circle"></i> Um e-mail de confirmação foi enviado para o endereço informado.
+            </p>
+        </div>
+    </div>
+    """
+    return html
 
 # ============================================
 # 12. MENU LATERAL SEGURO
@@ -804,7 +1037,7 @@ with st.sidebar:
         st.metric("Reservas totais", "0")
 
 # ============================================
-# 13. PÁGINA PRINCIPAL - HOME
+# 13. PÁGINA PRINCIPAL - HOME (COM CORREÇÕES)
 # ============================================
 
 st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
@@ -899,74 +1132,29 @@ if st.session_state.pagina == "Home":
                         st.markdown(f'<div class="error-message">❌ {mensagem}</div>', 
                                   unsafe_allow_html=True)
     
-    else:  # PAGAMENTO ATIVO
+    else:  # PAGAMENTO ATIVO (COM CORREÇÕES APLICADAS)
         st.subheader("💳 Pagamento via PIX")
         
-        # Chave PIX - REMOVIDO O QR CODE
-        st.markdown("### 🔑 Chave PIX (Copie e Cole):")
+        # QR Code
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.image(
+                "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=aranha.corp@gmail.com",
+                use_column_width=False,
+                width=250
+            )
         
-        # Chave PIX destacada
-        st.markdown("""
-        <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); 
-                    padding: 25px; 
-                    border-radius: 12px; 
-                    border: 2px solid #2a8bb8;
-                    margin: 20px 0;
-                    text-align: center;">
-            <h3 style="color: #2c3e50; margin-bottom: 15px;">aranha.corp@gmail.com</h3>
-            <p style="color: #666; font-size: 14px;">
-                Use esta chave PIX para realizar o pagamento
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
+        # Chave PIX
+        st.markdown("### Chave PIX (Copie e Cole):")
+        st.code("aranha.corp@gmail.com", language="text")
         
-        # Botão para copiar a chave PIX
-        if st.button("📋 Copiar Chave PIX", use_container_width=True):
-            st.success("Chave PIX copiada para a área de transferência!")
-            # Em um ambiente real, você usaria JavaScript para copiar
-            # st.markdown("""
-            # <script>
-            # navigator.clipboard.writeText("aranha.corp@gmail.com");
-            # </script>
-            # """, unsafe_allow_html=True)
-        
-        # Informações da reserva
+        # Informações da reserva - VERSÃO CORRIGIDA
         st.markdown("### 📋 Resumo da Reserva")
         reserva = st.session_state.reserva_temp
         
-        st.markdown(f"""
-        <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); 
-                    padding: 25px; 
-                    border-radius: 12px; 
-                    border-left: 5px solid #2a8bb8;">
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <div>
-                    <strong style="color: #666; font-size: 12px;">ALUNO</strong>
-                    <div style="font-size: 18px; color: #2c3e50;">{reserva.get('Aluno', '')}</div>
-                </div>
-                <div>
-                    <strong style="color: #666; font-size: 12px;">SERVIÇO</strong>
-                    <div style="font-size: 16px; color: #2c3e50;">{reserva.get('Serviço', '')}</div>
-                </div>
-                <div>
-                    <strong style="color: #666; font-size: 12px;">UNIDADE</strong>
-                    <div style="font-size: 16px; color: #2c3e50;">{reserva.get('Unidade', '')}</div>
-                </div>
-                <div>
-                    <strong style="color: #666; font-size: 12px;">DATA E HORÁRIO</strong>
-                    <div style="font-size: 16px; color: #2c3e50;">
-                        {reserva.get('Data', '')} às {reserva.get('Horário', '')}
-                    </div>
-                </div>
-            </div>
-            
-            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #dee2e6;">
-                <strong style="color: #666; font-size: 12px;">E-MAIL PARA CONFIRMAÇÃO</strong>
-                <div style="font-size: 14px; color: #2c3e50;">{reserva.get('E-mail', '')}</div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        # Usando a função corrigida para mostrar o resumo
+        html_resumo = mostrar_resumo_reserva_html(reserva, "📋 Detalhes da Reserva")
+        st.markdown(html_resumo, unsafe_allow_html=True)
         
         # Timer
         timer_box = st.empty()
@@ -1001,20 +1189,16 @@ if st.session_state.pagina == "Home":
                     st.session_state.reserva_id_gerada = reserva_id
                     st.session_state.pagamento_ativo = False
                     
-                    # Mostrar confirmação
+                    # Mostrar confirmação - VERSÃO CORRIGIDA
                     st.balloons()
                     
-                    st.markdown(f"""
-                    <div class="email-confirmation">
-                        <h3>✅ Reserva Confirmada!</h3>
-                        <p>{mensagem}</p>
-                        <div class="reserva-id-box">
-                            ID da Reserva: {reserva_id}
-                        </div>
-                        <p>Guarde este ID para futuras consultas.</p>
-                        <p><strong>Email enviado para:</strong> {reserva.get('E-mail', '')}</p>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    # Usando a função corrigida para mostrar a confirmação
+                    html_confirmacao = mostrar_confirmacao_reserva_html(
+                        st.session_state.reserva_temp, 
+                        reserva_id, 
+                        mensagem
+                    )
+                    st.markdown(html_confirmacao, unsafe_allow_html=True)
                     
                     # Botões de ação
                     col1, col2 = st.columns(2)
@@ -1027,8 +1211,7 @@ if st.session_state.pagina == "Home":
                         if st.button("📱 Abrir WhatsApp", use_container_width=True):
                             st.markdown(
                                 f'<a href="https://wa.me/{Config.WHATSAPP_NUMBER}" target="_blank">'
-                                f'<button style="width: 100%; padding: 10px; background: #25D366; color: white; border: none; border-radius: 5px; cursor: pointer;">'
-                                f'Abrir WhatsApp</button>'
+                                f'<button style="width: 100%; padding: 10px;">Abrir WhatsApp</button>'
                                 f'</a>',
                                 unsafe_allow_html=True
                             )
@@ -1386,7 +1569,7 @@ elif st.session_state.pagina == "Dashboard":
             st.error(f"❌ Erro no dashboard: {str(e)}")
 
 # ============================================
-# 17. PÁGINA DE CONFIGURAÇÕES (NOVA)
+# 17. PÁGINA DE CONFIGURAÇÕES
 # ============================================
 
 elif st.session_state.pagina == "Configurações":
@@ -1619,7 +1802,7 @@ st.markdown("""
     <p>TENNIS CLASS © 2024 - Sistema de Gestão Completo</p>
     <p>Desenvolvido por André Aranha | MASTER CODE DEEP SEEK v10</p>
     <p style='font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 5px;'>
-    Última atualização: 2024-12-06 | Sistema otimizado e seguro
+    Última atualização: 2024-12-06 | Sistema otimizado e seguro | CORREÇÕES APLICADAS
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -1637,4 +1820,4 @@ if __name__ == "__main__":
         logger.warning("Configuração de e-mail pendente")
     
     # Log de inicialização
-    logger.info("Sistema TENNIS CLASS v10 iniciado com sucesso")
+    logger.info("Sistema TENNIS CLASS v10 iniciado com sucesso - CORREÇÕES APLICADAS")

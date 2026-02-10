@@ -1,7 +1,8 @@
 # ============================================
-# TENNIS CLASS APP - MASTER CODE v11
+# MASTER CODE DEEP SEEK v.11
 # ============================================
-# Versão otimizada sem e-mail e QR Code
+# TENNIS CLASS APP - Sistema Completo Otimizado
+# Versão: 11.0 (Sem instruções de pagamento)
 # Data: 2024-12-06
 # ============================================
 
@@ -19,7 +20,7 @@ import logging
 from functools import lru_cache
 
 # ============================================
-# 1. CONFIGURAÇÃO E LOGGING
+# 1. CONFIGURAÇÃO INICIAL
 # ============================================
 
 # Configuração da página
@@ -46,17 +47,17 @@ def setup_logging():
 logger = setup_logging()
 
 # ============================================
-# 2. CLASSES DE CONFIGURAÇÃO E EXCEÇÕES
+# 2. CONFIGURAÇÕES DO SISTEMA
 # ============================================
 
 class Config:
-    """Classe de configuração centralizada."""
+    """Classe de configuração centralizada do sistema."""
     
     # Google Sheets
     SPREADSHEET_URL = ""
     WORKSHEET_NAME = "Página1"
     
-    # WhatsApp
+    # Contato
     WHATSAPP_NUMBER = "5511971425028"
     
     # Limites do sistema
@@ -68,7 +69,7 @@ class Config:
     
     @classmethod
     def get_admin_password(cls) -> str:
-        """Obtém senha do admin."""
+        """Obtém senha do admin com fallback seguro."""
         try:
             return st.secrets.get("ADMIN_PASSWORD", "aranha2026")
         except:
@@ -79,10 +80,10 @@ class ReservaError(Exception):
     pass
 
 # ============================================
-# 3. CONSTANTES E DADOS
+# 3. DADOS DO SISTEMA
 # ============================================
 
-# Serviços atualizados com pacotes
+# Serviços oferecidos
 SERVICOS = {
     "particular_hora": {"nome": "Aula particular", "preco": 250, "tipo": "Hora"},
     "grupo_hora": {"nome": "Aula em grupo", "preco": 200, "tipo": "Hora"},
@@ -90,7 +91,7 @@ SERVICOS = {
     "personal_hora": {"nome": "Personal trainer", "preco": 250, "tipo": "Hora"},
     "competitivo": {"nome": "Treinamento competitivo", "preco": 1400, "tipo": "Mês"},
     "eventos": {"nome": "Eventos", "preco": 0, "tipo": "Hora"},
-    # Pacotes
+    # Pacotes promocionais
     "pacote_particular_4": {"nome": "Pacote aula particular", "preco": 1000, "tipo": "4 aulas de 1 hora"},
     "pacote_grupo_4": {"nome": "Pacote aula em grupo", "preco": 800, "tipo": "4 aulas de 1 hora"},
     "pacote_particular_8": {"nome": "Pacote aula particular", "preco": 2000, "tipo": "8 aulas de 1 hora"},
@@ -99,6 +100,7 @@ SERVICOS = {
     "pacote_personal_4": {"nome": "Pacote Personal Trainer", "preco": 1000, "tipo": "4 aulas de 1 hora"}
 }
 
+# Academias parceiras
 ACADEMIAS = {
     "PLAY TENNIS Ibirapuera": {
         "endereco": "R. Estado de Israel, 860 - SP",
@@ -118,6 +120,7 @@ ACADEMIAS = {
     }
 }
 
+# Links para formulários de cadastro
 FORM_LINKS = {
     "professor": "https://docs.google.com/forms/d/e/1FAIpQLSdHicvD5MsOTnpfWwmpXOm8b268_S6gXoBZEysIo4Wj5cL2yw/viewform?usp=dialog",
     "aluno": "https://docs.google.com/forms/d/e/1FAIpQLSdehkMHlLyCNd1owC-dSNO_-ROXq07w41jgymyKyFugvUZ0fA/viewform?usp=dialog",
@@ -125,15 +128,15 @@ FORM_LINKS = {
 }
 
 # ============================================
-# 4. FUNÇÕES AUXILIARES - VALIDAÇÕES
+# 4. FUNÇÕES DE VALIDAÇÃO
 # ============================================
 
 def validar_nome(nome: str) -> bool:
-    """Valida nome (mínimo 3 caracteres, apenas letras e espaços)."""
+    """Valida nome do aluno."""
     nome_limpo = nome.strip()
     if len(nome_limpo) < 3:
         return False
-    # Permite letras, espaços e caracteres acentuados em português
+    # Permite letras, espaços e caracteres acentuados
     return bool(re.match(r'^[a-zA-ZÀ-ÿ\s\.\-]+$', nome_limpo))
 
 def validar_email(email: str) -> bool:
@@ -142,60 +145,53 @@ def validar_email(email: str) -> bool:
     return re.match(pattern, email) is not None
 
 def validar_telefone(telefone: str) -> bool:
-    """Valida formato de telefone brasileiro."""
-    # Remove caracteres não numéricos
+    """Valida telefone brasileiro."""
     telefone_limpo = re.sub(r'\D', '', telefone)
-    # Valida se tem 10 ou 11 dígitos (com DDD)
     return len(telefone_limpo) in [10, 11]
 
 def validar_data_horario(data: str, horario: str, unidade: str) -> Tuple[bool, str]:
     """
-    Valida se data/horário estão disponíveis.
+    Valida disponibilidade de data/horário.
     
-    Args:
-        data: Data no formato DD/MM/YYYY
-        horario: Horário no formato HH:00
-        unidade: Nome da unidade
-        
     Returns:
-        Tuple[bool, str]: (disponível, mensagem de erro)
+        Tuple[bool, str]: (disponível, mensagem)
     """
     try:
-        # Não permitir reservas no passado
+        # Não permitir datas passadas
         data_obj = datetime.strptime(data, "%d/%m/%Y")
         if data_obj.date() < datetime.now().date():
             return False, "Não é possível agendar para datas passadas."
         
-        # Não permitir reservas com mais de 60 dias de antecedência
+        # Limite de 60 dias
         if (data_obj.date() - datetime.now().date()).days > 60:
             return False, "Só é possível agendar com até 60 dias de antecedência."
         
-        # Verificar disponibilidade no horário
+        # Verificar disponibilidade
         disponibilidade = carregar_disponibilidade(data, unidade)
         vagas = disponibilidade.get(horario, Config.MAX_ALUNOS_POR_HORARIO)
         
         if vagas <= 0:
-            return False, f"Horário indisponível na {unidade}. Todas as vagas estão preenchidas."
+            return False, f"Horário indisponível na {unidade}."
         
         return True, ""
         
     except ValueError:
         return False, "Formato de data inválido."
     except Exception as e:
-        logger.error(f"Erro na validação de data/horário: {e}")
+        logger.error(f"Erro na validação: {e}")
         return True, ""  # Em caso de erro, permite continuar
 
 # ============================================
 # 5. FUNÇÕES DE DADOS - GOOGLE SHEETS
 # ============================================
 
-@st.cache_data(ttl=300)  # Cache de 5 minutos
+@st.cache_data(ttl=300)
 def carregar_dados() -> pd.DataFrame:
-    """Carrega dados do Google Sheets com cache e tratamento de erros."""
+    """Carrega dados do Google Sheets."""
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
         df = conn.read(worksheet="Página1")
-        logger.info(f"Dados carregados com {len(df)} registros")
+        logger.info(f"Dados carregados: {len(df)} registros")
         return df
     except Exception as e:
         logger.error(f"Erro ao carregar dados: {str(e)}")
@@ -204,31 +200,25 @@ def carregar_dados() -> pd.DataFrame:
 
 @lru_cache(maxsize=128)
 def carregar_disponibilidade(data: str, unidade: str) -> Dict[str, int]:
-    """
-    Carrega disponibilidade para uma data e unidade específicas.
-    
-    Returns:
-        Dict com horário como chave e vagas disponíveis como valor
-    """
+    """Carrega disponibilidade para data/unidade."""
     try:
         df = carregar_dados()
         if df.empty:
             return {hora: Config.MAX_ALUNOS_POR_HORARIO for hora in Config.HORARIOS_DISPONIVEIS}
         
-        # Filtra reservas para a data e unidade
+        # Filtra reservas ativas
         filtrado = df[
             (df['Data'] == data) &
             (df['Unidade'] == unidade) &
             (df['Status'].isin(['Pendente', 'Confirmado']))
         ]
         
-        # Conta reservas por horário
+        # Calcula vagas por horário
         disponibilidade = {}
         for hora in Config.HORARIOS_DISPONIVEIS:
             count = len(filtrado[filtrado['Horário'] == hora])
             disponibilidade[hora] = Config.MAX_ALUNOS_POR_HORARIO - count
             
-        logger.info(f"Disponibilidade para {data} em {unidade}: {disponibilidade}")
         return disponibilidade
         
     except Exception as e:
@@ -236,12 +226,7 @@ def carregar_disponibilidade(data: str, unidade: str) -> Dict[str, int]:
         return {hora: Config.MAX_ALUNOS_POR_HORARIO for hora in Config.HORARIOS_DISPONIVEIS}
 
 def salvar_reserva(reserva: Dict[str, Any]) -> Tuple[bool, str]:
-    """
-    Salva uma reserva no Google Sheets.
-    
-    Returns:
-        Tuple[bool, str]: (sucesso, reserva_id ou mensagem de erro)
-    """
+    """Salva reserva no Google Sheets."""
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
         df = carregar_dados()
@@ -249,13 +234,13 @@ def salvar_reserva(reserva: Dict[str, Any]) -> Tuple[bool, str]:
         # Gera ID único
         reserva_id = str(uuid.uuid4())[:8].upper()
         
-        # Adiciona campos de sistema
+        # Adiciona campos do sistema
         reserva["ID"] = reserva_id
         reserva["Timestamp"] = datetime.now().isoformat()
-        reserva["Status"] = "Confirmado"  # Agora confirma automaticamente
+        reserva["Status"] = "Confirmado"
         reserva["Data_Criacao"] = datetime.now().strftime("%d/%m/%Y %H:%M")
         
-        # Converte para DataFrame e salva
+        # Salva dados
         df_novo = pd.concat([df, pd.DataFrame([reserva])], ignore_index=True)
         conn.update(worksheet="Página1", data=df_novo)
         
@@ -270,62 +255,22 @@ def salvar_reserva(reserva: Dict[str, Any]) -> Tuple[bool, str]:
         return False, str(e)
 
 def criar_backup() -> bytes:
-    """Cria backup dos dados em formato CSV."""
+    """Cria backup dos dados em CSV."""
     try:
         df = carregar_dados()
         if not df.empty:
-            csv = df.to_csv(index=False).encode('utf-8')
-            logger.info("Backup criado com sucesso")
-            return csv
+            return df.to_csv(index=False).encode('utf-8')
         return b""
     except Exception as e:
         logger.error(f"Erro ao criar backup: {e}")
         return b""
 
 # ============================================
-# 6. FUNÇÕES DE NOTIFICAÇÕES
+# 6. FUNÇÕES DE PROCESSAMENTO
 # ============================================
 
-def enviar_notificacao_whatsapp(telefone: str, aluno: str, reserva_id: str) -> bool:
-    """Gera link para notificação via WhatsApp."""
-    try:
-        mensagem = f"""
-🎾 *TENNIS CLASS - Confirmação de Reserva*
-
-Olá {aluno}!
-
-Sua reserva foi confirmada com sucesso!
-
-*ID da Reserva:* {reserva_id}
-
-Compareça na data e horário agendados com este ID.
-
-Em caso de dúvidas, entre em contato.
-
-Até breve! 🎾
-        """
-        
-        # Codificar mensagem para URL
-        mensagem_codificada = urllib.parse.quote(mensagem)
-        whatsapp_url = f"https://wa.me/{telefone}?text={mensagem_codificada}"
-        
-        logger.info(f"Link WhatsApp gerado: {whatsapp_url}")
-        return True
-    except Exception as e:
-        logger.error(f"Erro ao gerar notificação WhatsApp: {e}")
-        return False
-
-# ============================================
-# 7. FUNÇÕES DE PROCESSAMENTO DE RESERVA
-# ============================================
-
-def processar_reserva_seguro(reserva: Dict[str, Any]) -> Tuple[bool, str, str]:
-    """
-    Processa reserva com tratamento completo de erros.
-    
-    Returns:
-        Tuple[bool, str, str]: (sucesso, reserva_id, mensagem)
-    """
+def processar_reserva(reserva: Dict[str, Any]) -> Tuple[bool, str, str]:
+    """Processa reserva com tratamento de erros."""
     try:
         # Validações
         if not validar_nome(reserva.get('Aluno', '')):
@@ -348,20 +293,15 @@ def processar_reserva_seguro(reserva: Dict[str, Any]) -> Tuple[bool, str, str]:
         sucesso, reserva_id = salvar_reserva(reserva)
         
         if not sucesso:
-            raise ReservaError("Falha ao salvar reserva no sistema.")
+            raise ReservaError("Falha ao salvar reserva.")
         
-        mensagem_final = "✅ Reserva confirmada com sucesso!"
-        return True, reserva_id, mensagem_final
+        return True, reserva_id, "✅ Reserva confirmada com sucesso!"
         
     except ReservaError as e:
         return False, "", str(e)
     except Exception as e:
-        logger.error(f"Erro inesperado no processamento: {e}")
+        logger.error(f"Erro inesperado: {e}")
         return False, "", f"Erro inesperado: {str(e)}"
-
-# ============================================
-# 8. FUNÇÕES DE SEGURANÇA
-# ============================================
 
 def verificar_senha_admin(senha_digitada: str) -> bool:
     """Verifica senha do admin."""
@@ -369,14 +309,14 @@ def verificar_senha_admin(senha_digitada: str) -> bool:
         senha_correta = Config.get_admin_password()
         return senha_digitada == senha_correta
     except Exception as e:
-        logger.error(f"Erro na verificação de senha: {e}")
+        logger.error(f"Erro na verificação: {e}")
         return False
 
 # ============================================
-# 9. ESTADOS DA SESSÃO
+# 7. ESTADOS DA SESSÃO
 # ============================================
 
-# Inicializar estados da sessão
+# Inicializar estados
 if 'pagina' not in st.session_state:
     st.session_state.pagina = "Home"
 
@@ -399,7 +339,7 @@ if 'reserva_id_gerada' not in st.session_state:
     st.session_state.reserva_id_gerada = None
 
 # ============================================
-# 10. CSS E ESTILOS
+# 8. ESTILOS CSS
 # ============================================
 
 st.markdown("""
@@ -430,17 +370,6 @@ st.markdown("""
         border-radius: 20px; 
         color: #333; 
         position: relative; 
-    }
-    
-    /* Balões translúcidos */
-    .translucent-balloon { 
-        background-color: rgba(50, 50, 50, 0.85); 
-        padding: 25px; 
-        border-radius: 15px; 
-        color: white; 
-        backdrop-filter: blur(10px); 
-        margin-bottom: 20px; 
-        border: 1px solid rgba(255,255,255,0.1); 
     }
     
     /* Links */
@@ -488,7 +417,7 @@ st.markdown("""
         text-decoration: none; 
     }
     
-    /* Mensagens de status */
+    /* Mensagens */
     .error-message {
         color: #ff4444;
         font-size: 14px;
@@ -504,14 +433,6 @@ st.markdown("""
         padding: 5px;
         border-radius: 4px;
         background-color: rgba(0, 200, 81, 0.1);
-    }
-    .warning-message {
-        color: #ff8800;
-        font-size: 14px;
-        margin-top: 5px;
-        padding: 5px;
-        border-radius: 4px;
-        background-color: rgba(255, 136, 0, 0.1);
     }
     
     /* Timer */
@@ -550,15 +471,6 @@ st.markdown("""
         text-align: center;
     }
     
-    /* Botões */
-    .stButton > button {
-        transition: all 0.3s ease;
-    }
-    .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    }
-    
     /* Chave PIX */
     .pix-key {
         background-color: #f8f9fa;
@@ -573,21 +485,21 @@ st.markdown("""
         color: #007bff;
     }
     
-    /* Instruções de pagamento */
-    .payment-instructions {
-        background-color: #fff3cd;
-        border: 1px solid #ffeaa7;
-        border-radius: 8px;
-        padding: 15px;
-        margin: 15px 0;
+    /* Botões */
+    .stButton > button {
+        transition: all 0.3s ease;
+    }
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
 </style>
 
-<!-- Botão flutuante do WhatsApp -->
+<!-- Botão WhatsApp -->
 <a href="https://wa.me/5511971425028" class="whatsapp-float" target="_blank" 
    aria-label="Contato via WhatsApp">
     <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" 
-         width="35" alt="Ícone do WhatsApp">
+         width="35" alt="WhatsApp">
 </a>
 
 <!-- Assinatura -->
@@ -598,11 +510,11 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ============================================
-# 11. COMPONENTES REUTILIZÁVEIS
+# 9. COMPONENTES REUTILIZÁVEIS
 # ============================================
 
 def mostrar_timer(tempo_total: int, inicio_time: float) -> Tuple[bool, str]:
-    """Calcula e formata o tempo restante."""
+    """Calcula tempo restante."""
     restante = tempo_total - (time.time() - inicio_time)
     if restante <= 0:
         return False, "⏰ Tempo esgotado!"
@@ -610,19 +522,19 @@ def mostrar_timer(tempo_total: int, inicio_time: float) -> Tuple[bool, str]:
     m, s = divmod(int(restante), 60)
     return True, f"⏱️ Expira em: {m:02d}:{s:02d}"
 
-def card_com_estilo(conteudo: str, classe: str = "custom-card") -> str:
-    """Retorna HTML de card estilizado."""
+def card_com_estilo(conteudo: str = "", classe: str = "custom-card") -> str:
+    """Retorna HTML de card."""
     return f'<div class="{classe}">{conteudo}</div>'
 
 # ============================================
-# 12. MENU LATERAL SEGURO
+# 10. MENU LATERAL
 # ============================================
 
 with st.sidebar:
     st.markdown("<h2 style='color: white; text-align: center;'>🎾 MENU</h2>", 
                 unsafe_allow_html=True)
     
-    # Navegação atualizada
+    # Navegação
     menu_itens = ["Home", "Preços", "Cadastro", "Dashboard", "Contato"]
     
     for item in menu_itens:
@@ -634,7 +546,7 @@ with st.sidebar:
             st.rerun()
     
     st.markdown("---")
-    st.markdown("### 🏢 ACADEMIAS RECOMENDADAS")
+    st.markdown("### 🏢 ACADEMIAS PARCEIRAS")
     
     for nome, info in ACADEMIAS.items():
         st.markdown(
@@ -647,61 +559,53 @@ with st.sidebar:
     
     # Ajuda
     st.markdown("---")
-    with st.expander("❓ Ajuda"):
+    with st.expander("❓ Ajuda Rápida"):
         st.markdown("""
-        ### Precisa de ajuda?
+        **Contato:** (11) 97142-5028
         
-        **Contato técnico:**
-        - WhatsApp: (11) 97142-5028
-        
-        **Horário de atendimento:**
+        **Horário:**
         Seg-Sex: 9h-18h
         Sáb: 9h-13h
-        
-        **Instruções de pagamento:**
-        1. Transfira via PIX para a chave abaixo
-        2. Clique em "Confirmar Pagamento"
-        3. Guarde o ID da reserva
         """)
     
-    # Status do sistema
+    # Status
     st.markdown("---")
-    st.markdown("### 📊 Status do Sistema")
+    st.markdown("### 📊 Status")
     
     try:
         df = carregar_dados()
-        total_reservas = len(df) if not df.empty else 0
-        st.metric("Reservas totais", total_reservas)
+        total = len(df) if not df.empty else 0
+        st.metric("Reservas ativas", total)
     except:
-        st.metric("Reservas totais", "0")
+        st.metric("Reservas ativas", "0")
 
 # ============================================
-# 13. PÁGINA PRINCIPAL - HOME
+# 11. PÁGINA PRINCIPAL - HOME
 # ============================================
 
 st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
 
 if st.session_state.pagina == "Home":
-    st.markdown(card_com_estilo(""), unsafe_allow_html=True)
+    st.markdown(card_com_estilo(), unsafe_allow_html=True)
     
     if not st.session_state.pagamento_ativo:
         with st.form("reserva_form", clear_on_submit=True):
             st.subheader("📅 Agendar Aula")
             
-            # Campos do formulário
+            # Formulário
             col1, col2 = st.columns(2)
             with col1:
                 aluno = st.text_input(
                     "Nome do Aluno *",
-                    help="Digite seu nome completo (mínimo 3 caracteres)",
-                    placeholder="Ex: João Silva"
+                    placeholder="Ex: João Silva",
+                    help="Nome completo (mínimo 3 caracteres)"
                 )
             
             with col2:
                 email = st.text_input(
                     "E-mail *",
-                    help="Digite um e-mail válido para confirmação",
-                    placeholder="exemplo@email.com"
+                    placeholder="exemplo@email.com",
+                    help="Para confirmação"
                 )
             
             # Serviços formatados
@@ -730,7 +634,7 @@ if st.session_state.pagina == "Home":
             with col2:
                 hr = st.selectbox("Horário *", Config.HORARIOS_DISPONIVEIS)
             
-            # Botão de submissão
+            # Submissão
             submit = st.form_submit_button(
                 "AVANÇAR PARA PAGAMENTO", 
                 use_container_width=True,
@@ -742,12 +646,12 @@ if st.session_state.pagina == "Home":
                 
                 # Validações
                 if not validar_nome(aluno):
-                    st.session_state.erros_form['aluno'] = "Nome inválido. Use apenas letras (mínimo 3 caracteres)."
+                    st.session_state.erros_form['aluno'] = "Nome inválido."
                 
                 if not validar_email(email):
-                    st.session_state.erros_form['email'] = "E-mail inválido. Digite um e-mail válido."
+                    st.session_state.erros_form['email'] = "E-mail inválido."
                 
-                # Validar disponibilidade
+                # Disponibilidade
                 data_str = dt.strftime("%d/%m/%Y")
                 disponivel, mensagem = validar_data_horario(data_str, hr, unidade)
                 if not disponivel:
@@ -771,29 +675,14 @@ if st.session_state.pagina == "Home":
                         st.markdown(f'<div class="error-message">❌ {mensagem}</div>', 
                                   unsafe_allow_html=True)
     
-    else:  # PAGAMENTO ATIVO
+    else:  # TELA DE PAGAMENTO
         st.subheader("💳 Pagamento via PIX")
         
-        # Informações de pagamento
+        # Chave PIX
         st.markdown("### Chave PIX:")
         st.markdown('<div class="pix-key">aranha.corp@gmail.com</div>', unsafe_allow_html=True)
         
-        # Instruções de pagamento
-        st.markdown("""
-        <div class="payment-instructions">
-        <h4>📋 Instruções de Pagamento:</h4>
-        <ol>
-            <li>Abra o app do seu banco</li>
-            <li>Acesse a área PIX</li>
-            <li>Escolha "PIX Copia e Cola"</li>
-            <li>Cole a chave PIX acima</li>
-            <li>Confirme o valor e realize o pagamento</li>
-            <li>Após pagar, clique no botão abaixo</li>
-        </ol>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Informações da reserva
+        # Resumo da reserva
         st.markdown("### 📋 Resumo da Reserva")
         reserva = st.session_state.reserva_temp
         st.info(f"""
@@ -820,24 +709,21 @@ if st.session_state.pagina == "Home":
                 )
             else:
                 st.session_state.pagamento_ativo = False
-                timer_box.warning("⏰ Tempo esgotado! Por favor, inicie uma nova reserva.")
+                timer_box.warning("⏰ Tempo esgotado!")
                 time.sleep(2)
                 st.rerun()
         
-        # Botão de confirmação
+        # Confirmação
         if st.button("✅ CONFIRMAR PAGAMENTO", type="primary", use_container_width=True):
-            with st.spinner("Processando reserva..."):
-                # Processar reserva
-                sucesso, reserva_id, mensagem = processar_reserva_seguro(
+            with st.spinner("Processando..."):
+                sucesso, reserva_id, mensagem = processar_reserva(
                     st.session_state.reserva_temp
                 )
                 
                 if sucesso:
-                    # Limpar estado
                     st.session_state.reserva_id_gerada = reserva_id
                     st.session_state.pagamento_ativo = False
                     
-                    # Mostrar confirmação
                     st.balloons()
                     
                     st.markdown(f"""
@@ -848,11 +734,10 @@ if st.session_state.pagina == "Home":
                             ID da Reserva: {reserva_id}
                         </div>
                         <p><strong>Guarde este ID para apresentar na academia.</strong></p>
-                        <p>Em caso de dúvidas, entre em contato via WhatsApp.</p>
                     </div>
                     """, unsafe_allow_html=True)
                     
-                    # Botões de ação
+                    # Ações
                     col1, col2 = st.columns(2)
                     with col1:
                         if st.button("📅 Nova Reserva", use_container_width=True):
@@ -874,7 +759,7 @@ if st.session_state.pagina == "Home":
                 else:
                     st.error(f"❌ {mensagem}")
     
-    # Link do regulamento
+    # Regulamento
     st.markdown("""
     <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
     <a href="https://docs.google.com/document/d/1LW9CNdmgYxwnpXlDYRrE8rKsLdajbPi3fniwXVsBqco/edit?usp=sharing" 
@@ -887,16 +772,16 @@ if st.session_state.pagina == "Home":
     """, unsafe_allow_html=True)
 
 # ============================================
-# 14. PÁGINA DE PREÇOS
+# 12. PÁGINA DE PREÇOS
 # ============================================
 
 elif st.session_state.pagina == "Preços":
-    st.markdown(card_com_estilo(""), unsafe_allow_html=True)
+    st.markdown(card_com_estilo(), unsafe_allow_html=True)
     
     st.markdown("### 🎾 Tabela de Preços")
     st.markdown("---")
     
-    # Categorias de serviços
+    # Categorias
     col1, col2 = st.columns(2)
     
     with col1:
@@ -921,7 +806,7 @@ elif st.session_state.pagina == "Preços":
                 """, unsafe_allow_html=True)
     
     with col2:
-        st.markdown("#### 📦 Pacotes de Aulas")
+        st.markdown("#### 📦 Pacotes")
         for key, info in SERVICOS.items():
             if "Pacote" in info['nome']:
                 st.markdown(f"""
@@ -941,9 +826,9 @@ elif st.session_state.pagina == "Preços":
                 </div>
                 """, unsafe_allow_html=True)
     
-    # Calculadora de preços
+    # Calculadora
     st.markdown("---")
-    st.markdown("#### 🧮 Calculadora de Preços")
+    st.markdown("#### 🧮 Calculadora")
     
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -956,7 +841,6 @@ elif st.session_state.pagina == "Preços":
         calcular = st.button("Calcular")
     
     if calcular:
-        # Encontrar preço
         preco_por_aula = 0
         for key, info in SERVICOS.items():
             if info['nome'] == tipo_aula:
@@ -967,11 +851,11 @@ elif st.session_state.pagina == "Preços":
         st.success(f"**Total:** R$ {total:,.2f} por {quantidade} aulas")
 
 # ============================================
-# 15. PÁGINA DE CADASTRO
+# 13. PÁGINA DE CADASTRO
 # ============================================
 
 elif st.session_state.pagina == "Cadastro":
-    st.markdown(card_com_estilo(""), unsafe_allow_html=True)
+    st.markdown(card_com_estilo(), unsafe_allow_html=True)
     
     st.markdown("<h2 style='text-align: center;'>📝 Portal de Cadastros</h2><br>", 
                 unsafe_allow_html=True)
@@ -982,13 +866,9 @@ elif st.session_state.pagina == "Cadastro":
         st.markdown(f"""
         <a href="{FORM_LINKS['professor']}" 
            class="clean-link" 
-           target="_blank"
-           aria-label="Cadastro de Professor de Tênis">
+           target="_blank">
             <div class="icon-text">👨‍🏫</div>
             <div class="label-text">PROFESSOR</div>
-            <div style="font-size: 12px; margin-top: 10px; opacity: 0.8;">
-                Cadastre-se como professor
-            </div>
         </a>
         """, unsafe_allow_html=True)
     
@@ -996,13 +876,9 @@ elif st.session_state.pagina == "Cadastro":
         st.markdown(f"""
         <a href="{FORM_LINKS['aluno']}" 
            class="clean-link" 
-           target="_blank"
-           aria-label="Cadastro de Aluno de Tênis">
+           target="_blank">
             <div class="icon-text">👤</div>
             <div class="label-text">ALUNO</div>
-            <div style="font-size: 12px; margin-top: 10px; opacity: 0.8;">
-                Cadastre-se como aluno
-            </div>
         </a>
         """, unsafe_allow_html=True)
     
@@ -1010,39 +886,34 @@ elif st.session_state.pagina == "Cadastro":
         st.markdown(f"""
         <a href="{FORM_LINKS['academia']}" 
            class="clean-link" 
-           target="_blank"
-           aria-label="Cadastro de Academia de Tênis">
+           target="_blank">
             <div class="icon-text">🏢</div>
             <div class="label-text">ACADEMIA</div>
-            <div style="font-size: 12px; margin-top: 10px; opacity: 0.8;">
-                Cadastre sua academia
-            </div>
         </a>
         """, unsafe_allow_html=True)
     
     # Instruções
     st.markdown("""
     <div style='text-align: center; margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px; color: #ccc;'>
-        <p><strong>📋 Instruções:</strong> Os formulários abrem em uma nova aba.</p>
-        <p>Preencha todos os campos obrigatórios e clique em "Enviar" ao final.</p>
-        <p>Após o envio, você receberá uma confirmação no formulário.</p>
+        <p><strong>📋 Instruções:</strong> Os formulários abrem em nova aba.</p>
+        <p>Preencha todos os campos obrigatórios.</p>
+        <p>Clique em "Enviar" ao final.</p>
     </div>
     """, unsafe_allow_html=True)
 
 # ============================================
-# 16. PÁGINA DASHBOARD
+# 14. PÁGINA DASHBOARD
 # ============================================
 
 elif st.session_state.pagina == "Dashboard":
-    st.markdown(card_com_estilo(""), unsafe_allow_html=True)
+    st.markdown(card_com_estilo(), unsafe_allow_html=True)
     
     if not st.session_state.admin_autenticado:
         st.subheader("🔐 Acesso Administrativo")
         
         senha = st.text_input(
-            "Digite a senha de administrador:", 
+            "Senha de administrador:", 
             type="password",
-            help="Senha para acesso ao dashboard",
             placeholder="Digite a senha..."
         )
         
@@ -1056,24 +927,10 @@ elif st.session_state.pagina == "Dashboard":
                     st.rerun()
                 else:
                     st.error("❌ Senha incorreta!")
-        
-        with col2:
-            if st.button("🆘 Ajuda", use_container_width=True):
-                st.info("""
-                Para configurar a senha:
-                
-                1. No Streamlit Cloud, adicione ao secrets.toml:
-                ```
-                ADMIN_PASSWORD = "sua_senha"
-                ```
-                
-                2. A senha padrão é "aranha2026"
-                """)
     
     else:
         st.subheader("📊 Dashboard - Reservas")
         
-        # Cabeçalho com métricas
         try:
             df = carregar_dados()
             
@@ -1085,7 +942,7 @@ elif st.session_state.pagina == "Dashboard":
                 
                 col1, col2, col3 = st.columns(3)
                 with col1:
-                    st.metric("Total Reservas", total)
+                    st.metric("Total", total)
                 with col2:
                     st.metric("Confirmados", confirmados)
                 with col3:
@@ -1094,21 +951,18 @@ elif st.session_state.pagina == "Dashboard":
                 st.markdown("---")
                 
                 # Filtros
-                col1, col2, col3 = st.columns(3)
+                col1, col2 = st.columns(2)
                 with col1:
                     filtro_status = st.multiselect(
-                        "Filtrar por Status",
+                        "Status",
                         options=["Confirmado", "Cancelado"],
                         default=["Confirmado"]
                     )
                 with col2:
                     filtro_unidade = st.multiselect(
-                        "Filtrar por Unidade",
+                        "Unidade",
                         options=list(ACADEMIAS.keys())
                     )
-                with col3:
-                    data_inicio = st.date_input("Data início")
-                    data_fim = st.date_input("Data fim")
                 
                 # Aplicar filtros
                 df_filtrado = df.copy()
@@ -1121,18 +975,7 @@ elif st.session_state.pagina == "Dashboard":
                 st.dataframe(
                     df_filtrado,
                     use_container_width=True,
-                    hide_index=True,
-                    column_config={
-                        "ID": st.column_config.TextColumn("ID", width="small"),
-                        "Data": st.column_config.DateColumn("Data", format="DD/MM/YYYY"),
-                        "Horário": st.column_config.TextColumn("Horário", width="small"),
-                        "Aluno": st.column_config.TextColumn("Aluno"),
-                        "E-mail": st.column_config.TextColumn("E-mail"),
-                        "Serviço": st.column_config.TextColumn("Serviço"),
-                        "Unidade": st.column_config.TextColumn("Unidade"),
-                        "Status": st.column_config.TextColumn("Status"),
-                        "Data_Criacao": st.column_config.DatetimeColumn("Data Criação"),
-                    }
+                    hide_index=True
                 )
                 
                 # Ações
@@ -1140,18 +983,17 @@ elif st.session_state.pagina == "Dashboard":
                 col1, col2 = st.columns(2)
                 
                 with col1:
-                    if st.button("🔄 Atualizar Dados", use_container_width=True):
+                    if st.button("🔄 Atualizar", use_container_width=True):
                         st.cache_data.clear()
                         st.success("Dados atualizados!")
                         st.rerun()
                 
                 with col2:
-                    # Exportar dados
                     csv = df_filtrado.to_csv(index=False).encode('utf-8')
                     st.download_button(
                         label="📥 Exportar CSV",
                         data=csv,
-                        file_name=f"reservas_tennis_class_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                        file_name=f"reservas_{datetime.now().strftime('%Y%m%d')}.csv",
                         mime="text/csv",
                         use_container_width=True
                     )
@@ -1166,14 +1008,14 @@ elif st.session_state.pagina == "Dashboard":
                 st.info("📭 Nenhuma reserva encontrada.")
                 
         except Exception as e:
-            st.error(f"❌ Erro no dashboard: {str(e)}")
+            st.error(f"❌ Erro: {str(e)}")
 
 # ============================================
-# 17. PÁGINA DE CONTATO
+# 15. PÁGINA DE CONTATO
 # ============================================
 
 elif st.session_state.pagina == "Contato":
-    st.markdown(card_com_estilo(""), unsafe_allow_html=True)
+    st.markdown(card_com_estilo(), unsafe_allow_html=True)
     
     st.subheader("📞 Canais de Atendimento")
     st.markdown("---")
@@ -1185,19 +1027,13 @@ elif st.session_state.pagina == "Contato":
         st.markdown("""
         <div style='padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px;'>
             <h4 style='margin:0; color: white;'>aranha.corp@gmail.com</h4>
-            <p style='margin:5px 0 0 0; color: #ccc;'>
-            Para informações gerais
-            </p>
         </div>
         """, unsafe_allow_html=True)
         
-        st.markdown("### 🏢 Endereço Principal")
+        st.markdown("### 🏢 Endereço")
         st.markdown("""
         <div style='padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px;'>
             <p style='margin:0; color: white;'>São Paulo - SP</p>
-            <p style='margin:5px 0 0 0; color: #ccc;'>
-            Atendemos em todas as academias parceiras
-            </p>
         </div>
         """, unsafe_allow_html=True)
     
@@ -1207,61 +1043,53 @@ elif st.session_state.pagina == "Contato":
         <div style='padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px;'>
             <h4 style='margin:0; color: white;'>(11) 97142-5028</h4>
             <p style='margin:5px 0 0 0; color: #ccc;'>
-            Segunda a Sábado, 8h às 20h
+            Seg-Sab: 8h-20h
             </p>
         </div>
         """, unsafe_allow_html=True)
         
-        st.markdown("### ⏰ Horário de Atendimento")
+        st.markdown("### ⏰ Horário")
         st.markdown("""
         <div style='padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px;'>
-            <p style='margin:0; color: white;'>Segunda a Sexta: 8h às 20h</p>
-            <p style='margin:5px 0 0 0; color: #ccc;'>
-            Sábado: 8h às 18h<br>
-            Domingo: Fechado
-            </p>
+            <p style='margin:0; color: white;'>Seg-Sex: 8h-20h</p>
+            <p style='margin:5px 0 0 0; color: #ccc;'>Sáb: 8h-18h</p>
         </div>
         """, unsafe_allow_html=True)
     
-    st.markdown("---")
-    
     # Formulário de contato
+    st.markdown("---")
     st.markdown("### ✉️ Envie uma mensagem")
+    
     with st.form("contato_form"):
-        nome_contato = st.text_input("Seu nome", placeholder="Digite seu nome")
-        email_contato = st.text_input("Seu e-mail", placeholder="Digite seu e-mail")
-        telefone_contato = st.text_input("Seu telefone (opcional)", placeholder="(11) 99999-9999")
-        mensagem = st.text_area("Sua mensagem", placeholder="Digite sua mensagem aqui...", height=100)
+        nome = st.text_input("Seu nome", placeholder="Digite seu nome")
+        email = st.text_input("Seu e-mail", placeholder="Digite seu e-mail")
+        telefone = st.text_input("Telefone (opcional)", placeholder="(11) 99999-9999")
+        mensagem = st.text_area("Mensagem", placeholder="Sua mensagem...", height=100)
         
-        col1, col2 = st.columns([3, 1])
-        with col2:
-            submit = st.form_submit_button("📤 Enviar", use_container_width=True)
-        
-        if submit:
-            if nome_contato and email_contato and mensagem:
-                st.success("✅ Mensagem enviada! Entraremos em contato em breve.")
+        if st.form_submit_button("📤 Enviar", use_container_width=True):
+            if nome and email and mensagem:
+                st.success("✅ Mensagem enviada!")
             else:
-                st.warning("⚠️ Preencha todos os campos obrigatórios.")
+                st.warning("⚠️ Preencha todos os campos.")
 
 # ============================================
-# 18. RODAPÉ
+# 16. RODAPÉ
 # ============================================
 
 st.markdown("""
 <div style='text-align: center; margin-top: 40px; color: rgba(255,255,255,0.6); font-size: 12px;'>
     <hr style='border-color: rgba(255,255,255,0.2);'>
-    <p>TENNIS CLASS © 2024 - Sistema de Gestão Completo</p>
-    <p>Desenvolvido por André Aranha | VERSÃO OTIMIZADA v11</p>
+    <p>TENNIS CLASS © 2024 - Sistema Completo</p>
+    <p>MASTER CODE DEEP SEEK v.11</p>
     <p style='font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 5px;'>
-    Última atualização: 2024-12-06 | Sem e-mail e QR Code
+    Versão otimizada sem instruções de pagamento
     </p>
 </div>
 """, unsafe_allow_html=True)
 
 # ============================================
-# 19. INICIALIZAÇÃO DO SISTEMA
+# 17. INICIALIZAÇÃO
 # ============================================
 
 if __name__ == "__main__":
-    # Log de inicialização
-    logger.info("Sistema TENNIS CLASS v11 iniciado com sucesso")
+    logger.info("MASTER CODE DEEP SEEK v.11 iniciado")

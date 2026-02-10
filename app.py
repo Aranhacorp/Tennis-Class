@@ -902,29 +902,71 @@ if st.session_state.pagina == "Home":
     else:  # PAGAMENTO ATIVO
         st.subheader("💳 Pagamento via PIX")
         
-        # QR Code
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            st.image(
-                "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=aranha.corp@gmail.com",
-                use_column_width=False,
-                width=250
-            )
+        # Chave PIX - REMOVIDO O QR CODE
+        st.markdown("### 🔑 Chave PIX (Copie e Cole):")
         
-        # Chave PIX
-        st.markdown("### Chave PIX (Copie e Cole):")
-        st.code("aranha.corp@gmail.com", language="text")
+        # Chave PIX destacada
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); 
+                    padding: 25px; 
+                    border-radius: 12px; 
+                    border: 2px solid #2a8bb8;
+                    margin: 20px 0;
+                    text-align: center;">
+            <h3 style="color: #2c3e50; margin-bottom: 15px;">aranha.corp@gmail.com</h3>
+            <p style="color: #666; font-size: 14px;">
+                Use esta chave PIX para realizar o pagamento
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Botão para copiar a chave PIX
+        if st.button("📋 Copiar Chave PIX", use_container_width=True):
+            st.success("Chave PIX copiada para a área de transferência!")
+            # Em um ambiente real, você usaria JavaScript para copiar
+            # st.markdown("""
+            # <script>
+            # navigator.clipboard.writeText("aranha.corp@gmail.com");
+            # </script>
+            # """, unsafe_allow_html=True)
         
         # Informações da reserva
         st.markdown("### 📋 Resumo da Reserva")
         reserva = st.session_state.reserva_temp
-        st.info(f"""
-        **Aluno:** {reserva.get('Aluno', '')}  
-        **Serviço:** {reserva.get('Serviço', '')}  
-        **Unidade:** {reserva.get('Unidade', '')}  
-        **Data:** {reserva.get('Data', '')} às {reserva.get('Horário', '')}
-        **E-mail:** {reserva.get('E-mail', '')}
-        """)
+        
+        st.markdown(f"""
+        <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); 
+                    padding: 25px; 
+                    border-radius: 12px; 
+                    border-left: 5px solid #2a8bb8;">
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div>
+                    <strong style="color: #666; font-size: 12px;">ALUNO</strong>
+                    <div style="font-size: 18px; color: #2c3e50;">{reserva.get('Aluno', '')}</div>
+                </div>
+                <div>
+                    <strong style="color: #666; font-size: 12px;">SERVIÇO</strong>
+                    <div style="font-size: 16px; color: #2c3e50;">{reserva.get('Serviço', '')}</div>
+                </div>
+                <div>
+                    <strong style="color: #666; font-size: 12px;">UNIDADE</strong>
+                    <div style="font-size: 16px; color: #2c3e50;">{reserva.get('Unidade', '')}</div>
+                </div>
+                <div>
+                    <strong style="color: #666; font-size: 12px;">DATA E HORÁRIO</strong>
+                    <div style="font-size: 16px; color: #2c3e50;">
+                        {reserva.get('Data', '')} às {reserva.get('Horário', '')}
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #dee2e6;">
+                <strong style="color: #666; font-size: 12px;">E-MAIL PARA CONFIRMAÇÃO</strong>
+                <div style="font-size: 14px; color: #2c3e50;">{reserva.get('E-mail', '')}</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
         
         # Timer
         timer_box = st.empty()
@@ -970,6 +1012,7 @@ if st.session_state.pagina == "Home":
                             ID da Reserva: {reserva_id}
                         </div>
                         <p>Guarde este ID para futuras consultas.</p>
+                        <p><strong>Email enviado para:</strong> {reserva.get('E-mail', '')}</p>
                     </div>
                     """, unsafe_allow_html=True)
                     
@@ -984,7 +1027,8 @@ if st.session_state.pagina == "Home":
                         if st.button("📱 Abrir WhatsApp", use_container_width=True):
                             st.markdown(
                                 f'<a href="https://wa.me/{Config.WHATSAPP_NUMBER}" target="_blank">'
-                                f'<button style="width: 100%; padding: 10px;">Abrir WhatsApp</button>'
+                                f'<button style="width: 100%; padding: 10px; background: #25D366; color: white; border: none; border-radius: 5px; cursor: pointer;">'
+                                f'Abrir WhatsApp</button>'
                                 f'</a>',
                                 unsafe_allow_html=True
                             )

@@ -1,7 +1,7 @@
 # ============================================
 # TENNIS CLASS APP - MASTER CODE DEEP SEEK v10
 # ============================================
-# Versão completa com segurança reforçada
+# Versão sem envio de e-mail de confirmação
 # Data: 2024-12-06
 # ============================================
 
@@ -11,16 +11,10 @@ import pandas as pd
 import time
 import re
 import uuid
-import smtplib
 import logging
 import hashlib
-import urllib.parse
 from datetime import datetime, timedelta
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from typing import Dict, Any, Tuple, List, Optional
-import ssl
-import os
 from functools import lru_cache
 
 # ============================================
@@ -61,10 +55,6 @@ class Config:
     SPREADSHEET_URL = ""
     WORKSHEET_NAME = "Página1"
     
-    # Email
-    EMAIL_HOST = "smtp.gmail.com"
-    EMAIL_PORT = 587
-    
     # WhatsApp
     WHATSAPP_NUMBER = "5511971425028"
     
@@ -74,21 +64,6 @@ class Config:
     
     # Horários disponíveis
     HORARIOS_DISPONIVEIS = [f"{h:02d}:00" for h in range(7, 23)]
-    
-    @classmethod
-    def get_email_credentials(cls) -> Tuple[str, str]:
-        """Obtém credenciais de e-mail com fallback hierárquico."""
-        try:
-            secrets = st.secrets
-            email_user = secrets.get("EMAIL_USER", "")
-            email_password = secrets.get("EMAIL_PASSWORD", "")
-            
-            if email_user and email_password:
-                return email_user, email_password
-        except Exception:
-            pass
-        
-        return "", ""
 
 class ReservaError(Exception):
     """Exceção personalizada para erros de reserva."""
@@ -268,7 +243,7 @@ def salvar_reserva(reserva: Dict[str, Any]) -> Tuple[bool, str]:
         # Adiciona campos de sistema
         reserva["ID"] = reserva_id
         reserva["Timestamp"] = datetime.now().isoformat()
-        reserva["Status"] = "Pendente"
+        reserva["Status"] = "Confirmado"  # Confirmado diretamente
         reserva["Data_Criacao"] = datetime.now().strftime("%d/%m/%Y %H:%M")
         
         # Converte para DataFrame e salva
@@ -299,155 +274,13 @@ def criar_backup() -> bytes:
         return b""
 
 # ============================================
-# 6. FUNÇÕES DE E-MAIL E NOTIFICAÇÕES
-# ============================================
-
-def enviar_email_confirmacao(aluno: str, email: str, reserva_info: Dict[str, Any], reserva_id: str) -> bool:
-    """Envia e-mail de confirmação de reserva."""
-    try:
-        # Obter credenciais
-        email_remetente, email_senha = Config.get_email_credentials()
-        
-        if not email_senha:
-            logger.warning("Credenciais de e-mail não configuradas")
-            st.warning("⚠️ Configuração de e-mail pendente. Configure os secrets.")
-            return False
-        
-        # Configuração do e-mail
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = f"🎾 Tennis Class - Confirmação de Reserva #{reserva_id}"
-        msg['From'] = f"Tennis Class <{email_remetente}>"
-        msg['To'] = email
-        msg['Reply-To'] = "aranha.corp@gmail.com"
-        
-        # Extrair dados
-        servico = reserva_info.get('Serviço', '')
-        unidade = reserva_info.get('Unidade', '')
-        data = reserva_info.get('Data', '')
-        horario = reserva_info.get('Horário', '')
-        
-        # HTML do e-mail
-        html = f"""
-        <!DOCTYPE html>
-        <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6;">
-            <div style="max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 20px;">
-                <div style="background: linear-gradient(135deg, #1a5f7a, #2a8bb8); color: white; padding: 30px; text-align: center;">
-                    <h1 style="margin: 0;">🎾 TENNIS CLASS</h1>
-                    <p style="margin: 10px 0 0 0;">Confirmação de Reserva</p>
-                </div>
-                
-                <div style="background: white; padding: 30px; margin-top: 20px; border-radius: 10px;">
-                    <h2 style="color: #2c3e50;">Olá, {aluno}!</h2>
-                    <p>Sua reserva foi confirmada com sucesso:</p>
-                    
-                    <div style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
-                        <h3 style="color: #2c3e50; margin-top: 0;">📋 Detalhes da Reserva</h3>
-                        <p><strong>ID:</strong> {reserva_id}</p>
-                        <p><strong>Serviço:</strong> {servico}</p>
-                        <p><strong>Data:</strong> {data}</p>
-                        <p><strong>Horário:</strong> {horario}</p>
-                        <p><strong>Unidade:</strong> {unidade}</p>
-                        <p><strong>Status:</strong> <span style="color: green; font-weight: bold;">CONFIRMADO</span></p>
-                    </div>
-                    
-                    <div style="text-align: center; margin: 30px 0;">
-                        <a href="https://wa.me/{Config.WHATSAPP_NUMBER}?text=Olá! Tenho uma reserva com ID {reserva_id}" 
-                           style="background: #25D366; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
-                            📱 Falar no WhatsApp
-                        </a>
-                    </div>
-                </div>
-                
-                <div style="text-align: center; margin-top: 30px; color: #666; font-size: 12px;">
-                    <p>TENNIS CLASS © {datetime.now().year}</p>
-                    <p>Este é um e-mail automático, por favor não responda.</p>
-                </div>
-            </div>
-        </body>
-        </html>
-        """
-        
-        # Texto alternativo
-        texto = f"""
-        TENNIS CLASS - Confirmação de Reserva #{reserva_id}
-        
-        Olá {aluno},
-        
-        Sua reserva foi confirmada:
-        
-        ID: {reserva_id}
-        Serviço: {servico}
-        Data: {data}
-        Horário: {horario}
-        Unidade: {unidade}
-        Status: CONFIRMADO
-        
-        Entre em contato: (11) 97142-5028
-        
-        TENNIS CLASS © {datetime.now().year}
-        """
-        
-        # Anexar partes
-        msg.attach(MIMEText(texto, 'plain'))
-        msg.attach(MIMEText(html, 'html'))
-        
-        # Enviar
-        context = ssl.create_default_context()
-        with smtplib.SMTP(Config.EMAIL_HOST, Config.EMAIL_PORT) as server:
-            server.ehlo()
-            server.starttls(context=context)
-            server.ehlo()
-            server.login(email_remetente, email_senha)
-            server.send_message(msg)
-        
-        logger.info(f"E-mail enviado para {email}")
-        return True
-        
-    except smtplib.SMTPAuthenticationError:
-        logger.error("Erro de autenticação SMTP")
-        st.error("❌ Erro de autenticação. Verifique as credenciais.")
-        return False
-    except Exception as e:
-        logger.error(f"Erro ao enviar e-mail: {e}")
-        return False
-
-def enviar_notificacao_whatsapp(telefone: str, aluno: str, reserva_id: str) -> bool:
-    """Envia notificação via WhatsApp."""
-    try:
-        mensagem = f"""
-🎾 *TENNIS CLASS - Confirmação de Reserva*
-
-Olá {aluno}!
-
-Sua reserva foi confirmada com sucesso!
-
-*ID da Reserva:* {reserva_id}
-
-Compareça na data e horário agendados com este ID.
-
-Em caso de dúvidas, entre em contato.
-
-Até breve! 🎾
-        """
-        
-        # Codificar mensagem para URL
-        mensagem_codificada = urllib.parse.quote(mensagem)
-        whatsapp_url = f"https://wa.me/{telefone}?text={mensagem_codificada}"
-        
-        logger.info(f"Link WhatsApp gerado: {whatsapp_url}")
-        return True
-    except Exception as e:
-        logger.error(f"Erro ao gerar notificação WhatsApp: {e}")
-        return False
-
-# ============================================
-# 7. FUNÇÕES DE PROCESSAMENTO DE RESERVA
+# 6. FUNÇÕES DE PROCESSAMENTO DE RESERVA (SIMPLIFICADA)
 # ============================================
 
 def processar_reserva_seguro(reserva: Dict[str, Any]) -> Tuple[bool, str, str]:
     """
     Processa reserva com tratamento completo de erros.
+    VERSÃO SEM ENVIO DE E-MAIL.
     
     Returns:
         Tuple[bool, str, str]: (sucesso, reserva_id, mensagem)
@@ -476,17 +309,7 @@ def processar_reserva_seguro(reserva: Dict[str, Any]) -> Tuple[bool, str, str]:
         if not sucesso:
             raise ReservaError("Falha ao salvar reserva no sistema.")
         
-        # Enviar e-mail
-        email_enviado = enviar_email_confirmacao(
-            aluno=reserva["Aluno"],
-            email=reserva["E-mail"],
-            reserva_info=reserva,
-            reserva_id=reserva_id
-        )
-        
         mensagem_final = "✅ Reserva confirmada com sucesso!"
-        if not email_enviado:
-            mensagem_final += " (O e-mail não pôde ser enviado, mas a reserva está confirmada)"
         
         return True, reserva_id, mensagem_final
         
@@ -497,7 +320,7 @@ def processar_reserva_seguro(reserva: Dict[str, Any]) -> Tuple[bool, str, str]:
         return False, "", f"Erro inesperado: {str(e)}"
 
 # ============================================
-# 8. FUNÇÕES DE SEGURANÇA
+# 7. FUNÇÕES DE SEGURANÇA
 # ============================================
 
 def verificar_senha_admin(senha_digitada: str) -> bool:
@@ -520,7 +343,7 @@ def verificar_senha_admin(senha_digitada: str) -> bool:
         return False
 
 # ============================================
-# 9. ESTADOS DA SESSÃO
+# 8. ESTADOS DA SESSÃO
 # ============================================
 
 # Inicializar estados da sessão
@@ -546,7 +369,7 @@ if 'reserva_id_gerada' not in st.session_state:
     st.session_state.reserva_id_gerada = None
 
 # ============================================
-# 10. CSS E ESTILOS
+# 9. CSS E ESTILOS
 # ============================================
 
 st.markdown("""
@@ -713,6 +536,20 @@ st.markdown("""
         border-radius: 10px;
         margin: 10px 0;
     }
+    
+    /* Estilo para resumo da reserva */
+    .resumo-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 25px;
+    }
+    
+    .email-section {
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 2px solid #dee2e6;
+    }
 </style>
 
 <!-- Botão flutuante do WhatsApp -->
@@ -730,7 +567,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ============================================
-# 11. COMPONENTES REUTILIZÁVEIS
+# 10. COMPONENTES REUTILIZÁVEIS
 # ============================================
 
 def mostrar_timer(tempo_total: int, inicio_time: float) -> Tuple[bool, str]:
@@ -746,22 +583,62 @@ def card_com_estilo(conteudo: str, classe: str = "custom-card") -> str:
     """Retorna HTML de card estilizado."""
     return f'<div class="{classe}">{conteudo}</div>'
 
+def mostrar_resumo_reserva_html(reserva: dict, titulo: str = "📋 Resumo da Reserva") -> str:
+    """Retorna HTML formatado para o resumo da reserva."""
+    html = f"""
+    <div style="background-color: #f8f9fa; padding: 25px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #dee2e6;">
+        <h3 style="color: #2c3e50; margin-bottom: 20px;">{titulo}</h3>
+        
+        <div class="resumo-grid">
+            <div>
+                <strong style="color: #666; font-size: 12px;">ALUNO</strong>
+                <div style="font-size: 18px; color: #2c3e50; font-weight: 600;">{reserva.get('Aluno', '')}</div>
+            </div>
+            
+            <div>
+                <strong style="color: #666; font-size: 12px;">SERVIÇO</strong>
+                <div style="font-size: 16px; color: #2c3e50;">{reserva.get('Serviço', '')}</div>
+            </div>
+            
+            <div>
+                <strong style="color: #666; font-size: 12px;">UNIDADE</strong>
+                <div style="font-size: 16px; color: #2c3e50;">{reserva.get('Unidade', '')}</div>
+            </div>
+            
+            <div>
+                <strong style="color: #666; font-size: 12px;">DATA E HORÁRIO</strong>
+                <div style="font-size: 16px; color: #2c3e50;">
+                    {reserva.get('Data', '')} às {reserva.get('Horário', '')}
+                </div>
+            </div>
+        </div>
+        
+        <div class="email-section">
+            <strong style="color: #666; font-size: 12px;">E-MAIL PARA CONTATO</strong>
+            <div style="font-size: 15px; color: #2980b9; word-break: break-all;">
+                {reserva.get('E-mail', '')}
+            </div>
+        </div>
+    </div>
+    """
+    return html
+
 # ============================================
-# 12. MENU LATERAL SEGURO
+# 11. MENU LATERAL SEGURO
 # ============================================
 
 with st.sidebar:
     st.markdown("<h2 style='color: white; text-align: center;'>🎾 MENU</h2>", 
                 unsafe_allow_html=True)
     
-    # Navegação atualizada com Configurações
-    menu_itens = ["Home", "Preços", "Cadastro", "Dashboard", "Contato", "Configurações"]
+    # Navegação
+    menu_itens = ["Home", "Preços", "Cadastro", "Dashboard", "Contato"]
     
     for item in menu_itens:
         if st.button(item, key=f"nav_{item}", use_container_width=True):
             st.session_state.pagina = item
             st.session_state.pagamento_ativo = False
-            if item in ["Dashboard", "Configurações"]:
+            if item == "Dashboard":
                 st.session_state.admin_autenticado = False
             st.rerun()
     
@@ -777,7 +654,7 @@ with st.sidebar:
             unsafe_allow_html=True
         )
     
-    # Apenas ajuda, sem configurações sensíveis
+    # Ajuda
     st.markdown("---")
     with st.expander("❓ Ajuda"):
         st.markdown("""
@@ -804,7 +681,7 @@ with st.sidebar:
         st.metric("Reservas totais", "0")
 
 # ============================================
-# 13. PÁGINA PRINCIPAL - HOME
+# 12. PÁGINA PRINCIPAL - HOME
 # ============================================
 
 st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
@@ -828,7 +705,7 @@ if st.session_state.pagina == "Home":
             with col2:
                 email = st.text_input(
                     "E-mail *",
-                    help="Digite um e-mail válido para confirmação",
+                    help="Digite um e-mail válido para contato",
                     placeholder="exemplo@email.com"
                 )
             
@@ -918,13 +795,10 @@ if st.session_state.pagina == "Home":
         # Informações da reserva
         st.markdown("### 📋 Resumo da Reserva")
         reserva = st.session_state.reserva_temp
-        st.info(f"""
-        **Aluno:** {reserva.get('Aluno', '')}  
-        **Serviço:** {reserva.get('Serviço', '')}  
-        **Unidade:** {reserva.get('Unidade', '')}  
-        **Data:** {reserva.get('Data', '')} às {reserva.get('Horário', '')}
-        **E-mail:** {reserva.get('E-mail', '')}
-        """)
+        
+        # Usando a função para mostrar o resumo
+        html_resumo = mostrar_resumo_reserva_html(reserva, "📋 Detalhes da Reserva")
+        st.markdown(html_resumo, unsafe_allow_html=True)
         
         # Timer
         timer_box = st.empty()
@@ -962,14 +836,31 @@ if st.session_state.pagina == "Home":
                     # Mostrar confirmação
                     st.balloons()
                     
+                    # Confirmação da reserva
                     st.markdown(f"""
-                    <div class="email-confirmation">
-                        <h3>✅ Reserva Confirmada!</h3>
-                        <p>{mensagem}</p>
-                        <div class="reserva-id-box">
-                            ID da Reserva: {reserva_id}
+                    <div style="background-color: #e8f5e9; padding: 30px; border-radius: 15px; border: 2px solid #4CAF50; margin: 20px 0;">
+                        <div style="text-align: center; margin-bottom: 25px;">
+                            <h2 style="color: #2c3e50; margin-bottom: 10px;">🎾 RESERVA CONFIRMADA!</h2>
+                            <p style="color: #666; font-size: 16px;">{mensagem}</p>
                         </div>
-                        <p>Guarde este ID para futuras consultas.</p>
+                        
+                        {mostrar_resumo_reserva_html(st.session_state.reserva_temp, "📋 Detalhes da Reserva")}
+                        
+                        <div style="background-color: #f8f9fa; border: 2px solid #28a745; border-radius: 10px; padding: 20px; margin: 20px 0; text-align: center;">
+                            <h4 style="color: #2c3e50; margin-bottom: 10px;">🆔 ID DA RESERVA</h4>
+                            <div style="font-family: 'Courier New', monospace; font-size: 24px; font-weight: bold; color: #28a745; letter-spacing: 2px;">
+                                {reserva_id}
+                            </div>
+                            <p style="color: #666; margin-top: 10px; font-size: 14px;">
+                                Guarde este ID para consultas futuras e apresentação na unidade.
+                            </p>
+                        </div>
+                        
+                        <div style="text-align: center; margin-top: 25px;">
+                            <p style="color: #666; font-size: 14px;">
+                                <i class="fas fa-info-circle"></i> A reserva foi salva no sistema. Não será enviado e-mail de confirmação.
+                            </p>
+                        </div>
                     </div>
                     """, unsafe_allow_html=True)
                     
@@ -1008,7 +899,7 @@ if st.session_state.pagina == "Home":
     """, unsafe_allow_html=True)
 
 # ============================================
-# 14. PÁGINA DE PREÇOS
+# 13. PÁGINA DE PREÇOS
 # ============================================
 
 elif st.session_state.pagina == "Preços":
@@ -1088,7 +979,7 @@ elif st.session_state.pagina == "Preços":
         st.success(f"**Total:** R$ {total:,.2f} por {quantidade} aulas")
 
 # ============================================
-# 15. PÁGINA DE CADASTRO
+# 14. PÁGINA DE CADASTRO
 # ============================================
 
 elif st.session_state.pagina == "Cadastro":
@@ -1151,7 +1042,7 @@ elif st.session_state.pagina == "Cadastro":
     """, unsafe_allow_html=True)
 
 # ============================================
-# 16. PÁGINA DASHBOARD
+# 15. PÁGINA DASHBOARD
 # ============================================
 
 elif st.session_state.pagina == "Dashboard":
@@ -1205,18 +1096,15 @@ elif st.session_state.pagina == "Dashboard":
             if not df.empty:
                 # Métricas
                 total = len(df)
-                pendentes = len(df[df['Status'] == 'Pendente'])
                 confirmados = len(df[df['Status'] == 'Confirmado'])
                 cancelados = len(df[df['Status'] == 'Cancelado'])
                 
-                col1, col2, col3, col4 = st.columns(4)
+                col1, col2, col3 = st.columns(3)
                 with col1:
                     st.metric("Total Reservas", total)
                 with col2:
-                    st.metric("Pendentes", pendentes)
-                with col3:
                     st.metric("Confirmados", confirmados)
-                with col4:
+                with col3:
                     st.metric("Cancelados", cancelados)
                 
                 # Taxa de conversão
@@ -1231,8 +1119,8 @@ elif st.session_state.pagina == "Dashboard":
                 with col1:
                     filtro_status = st.multiselect(
                         "Filtrar por Status",
-                        options=["Pendente", "Confirmado", "Cancelado"],
-                        default=["Pendente", "Confirmado"]
+                        options=["Confirmado", "Cancelado"],
+                        default=["Confirmado"]
                     )
                 with col2:
                     filtro_unidade = st.multiselect(
@@ -1265,7 +1153,7 @@ elif st.session_state.pagina == "Dashboard":
                         "Unidade": st.column_config.TextColumn("Unidade"),
                         "Status": st.column_config.SelectboxColumn(
                             "Status",
-                            options=["Pendente", "Confirmado", "Cancelado"],
+                            options=["Confirmado", "Cancelado"],
                             required=True,
                         ),
                         "Data_Criacao": st.column_config.DatetimeColumn("Data Criação"),
@@ -1305,30 +1193,6 @@ elif st.session_state.pagina == "Dashboard":
                             use_container_width=True
                         )
                 
-                # Reenviar e-mail
-                st.markdown("### 📧 Reenviar E-mail")
-                col_id, col_btn = st.columns([3, 1])
-                with col_id:
-                    reserva_id = st.text_input("ID da Reserva:", placeholder="Ex: ABC12345")
-                with col_btn:
-                    if st.button("↻ Reenviar", use_container_width=True):
-                        if reserva_id:
-                            reserva = df[df['ID'] == reserva_id.upper()]
-                            if not reserva.empty:
-                                reserva_info = reserva.iloc[0].to_dict()
-                                with st.spinner("Enviando..."):
-                                    if enviar_email_confirmacao(
-                                        aluno=reserva_info.get('Aluno', ''),
-                                        email=reserva_info.get('E-mail', ''),
-                                        reserva_info=reserva_info,
-                                        reserva_id=reserva_id
-                                    ):
-                                        st.success("✅ E-mail reenviado!")
-                                    else:
-                                        st.error("❌ Erro ao enviar e-mail")
-                            else:
-                                st.error("❌ Reserva não encontrada")
-                
                 # Logout
                 st.markdown("---")
                 if st.button("🚪 Logout", type="secondary", use_container_width=True):
@@ -1342,156 +1206,7 @@ elif st.session_state.pagina == "Dashboard":
             st.error(f"❌ Erro no dashboard: {str(e)}")
 
 # ============================================
-# 17. PÁGINA DE CONFIGURAÇÕES (NOVA)
-# ============================================
-
-elif st.session_state.pagina == "Configurações":
-    st.markdown(card_com_estilo(""), unsafe_allow_html=True)
-    
-    if not st.session_state.admin_autenticado:
-        st.subheader("🔐 Acesso Restrito - Configurações")
-        
-        senha = st.text_input(
-            "Digite a senha de administrador:", 
-            type="password",
-            help="Esta área é restrita apenas para administradores",
-            placeholder="Digite a senha de administrador..."
-        )
-        
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            if st.button("🔓 Acessar Configurações", use_container_width=True):
-                if verificar_senha_admin(senha):
-                    st.session_state.admin_autenticado = True
-                    st.success("✅ Acesso concedido!")
-                    time.sleep(1)
-                    st.rerun()
-                else:
-                    st.error("❌ Senha incorreta!")
-    
-    else:
-        st.subheader("⚙️ Configurações do Sistema")
-        
-        # Botão de logout
-        if st.button("🚪 Sair das Configurações", type="secondary", use_container_width=True):
-            st.session_state.admin_autenticado = False
-            st.rerun()
-        
-        st.markdown("---")
-        
-        # Verificação do sistema
-        st.markdown("### ✅ Verificação do Sistema")
-        
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            # Verificar Google Sheets
-            try:
-                df = carregar_dados()
-                if not df.empty:
-                    st.success("✅ Google Sheets: CONECTADO")
-                    st.caption(f"{len(df)} reservas carregadas")
-                else:
-                    st.warning("⚠️ Google Sheets: SEM DADOS")
-            except:
-                st.error("❌ Google Sheets: ERRO")
-        
-        with col2:
-            # Verificar E-mail
-            email_user, email_pass = Config.get_email_credentials()
-            if email_user and email_pass:
-                st.success("✅ E-mail: CONFIGURADO")
-                st.caption(f"Usuário: {email_user}")
-            else:
-                st.error("❌ E-mail: NÃO CONFIGURADO")
-        
-        with col3:
-            # Verificar Admin
-            if st.secrets.get("ADMIN_PASSWORD_HASH", ""):
-                st.success("✅ Admin: CONFIGURADO")
-            else:
-                st.warning("⚠️ Admin: NÃO CONFIGURADO")
-        
-        st.markdown("---")
-        
-        # Instruções de configuração (APENAS PARA ADMIN)
-        st.markdown("### 📋 Configuração do Sistema")
-        
-        st.markdown("""
-        Para configurar o sistema, você precisa criar um arquivo `secrets.toml` 
-        no Streamlit Cloud com as seguintes informações:
-        """)
-        
-        st.code("""[connections.gsheets]
-spreadsheet = "https://docs.google.com/spreadsheets/d/SUA_ID_AQUI/"
-
-EMAIL_USER = "aranha.corp@gmail.com"
-EMAIL_PASSWORD = "sua_senha_de_app_do_gmail"
-ADMIN_PASSWORD_HASH = "hash_gerado_pelo_sistema"
-""", language="toml")
-        
-        st.markdown("""
-        ### 📋 Passo a Passo:
-        
-        1. **Acesse o Streamlit Cloud:**
-           - Vá em: https://share.streamlit.io/
-           - Selecione seu app "TENNIS CLASS"
-           - Clique em "Settings" ⚙️
-           - Vá na aba "Secrets"
-        
-        2. **Cole o código acima** substituindo:
-           - `SUA_ID_AQUI` pelo ID da sua planilha Google Sheets
-           - `sua_senha_de_app_do_gmail` pela senha de app do Gmail
-           - `hash_gerado_pelo_sistema` pelo hash da senha admin
-        
-        3. **Salve e reinicie** o app
-        """)
-        
-        # Gerador de hash
-        st.markdown("---")
-        st.markdown("#### 🔑 Gerar Hash da Senha Admin")
-        
-        senha_input = st.text_input(
-            "Digite a senha para gerar o hash:",
-            type="password",
-            help="Esta senha será usada para acessar o Dashboard e Configurações"
-        )
-        
-        if senha_input:
-            hash_senha = hashlib.sha256(senha_input.encode()).hexdigest()
-            st.code(f"ADMIN_PASSWORD_HASH = \"{hash_senha}\"")
-            st.success("✅ Hash gerado! Cole este valor no campo ADMIN_PASSWORD_HASH")
-        
-        # Informações para Gmail
-        st.markdown("---")
-        with st.expander("📧 Configurar Gmail"):
-            st.markdown("""
-            ### Como configurar o Gmail:
-            
-            1. **Acesse:** https://myaccount.google.com/security
-            
-            2. **Ative "Verificação em duas etapas"** (se não estiver ativa)
-            
-            3. **Gere uma "senha de app":**
-               - Vá em "Senhas de app"
-               - Selecione "E-mail" como aplicativo
-               - Selecione "Outro" como dispositivo
-               - Digite um nome (ex: "Tennis Class App")
-               - Clique em "Gerar"
-            
-            4. **Use a senha gerada** no campo `EMAIL_PASSWORD`
-            
-            5. **Email de remetente:** Use `aranha.corp@gmail.com`
-            """)
-        
-        # Limpar cache
-        st.markdown("---")
-        if st.button("🗑️ Limpar Cache do Sistema", type="secondary"):
-            st.cache_data.clear()
-            st.success("✅ Cache limpo com sucesso!")
-
-# ============================================
-# 18. PÁGINA DE CONTATO
+# 16. PÁGINA DE CONTATO
 # ============================================
 
 elif st.session_state.pagina == "Contato":
@@ -1566,7 +1281,7 @@ elif st.session_state.pagina == "Contato":
                 st.warning("⚠️ Preencha todos os campos obrigatórios.")
 
 # ============================================
-# 19. RODAPÉ
+# 17. RODAPÉ
 # ============================================
 
 st.markdown("""
@@ -1581,16 +1296,9 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ============================================
-# 20. INICIALIZAÇÃO DO SISTEMA
+# 18. INICIALIZAÇÃO DO SISTEMA
 # ============================================
 
 if __name__ == "__main__":
-    # Verificar configurações
-    email_user, email_pass = Config.get_email_credentials()
-    
-    if not email_pass:
-        # Aviso discreto apenas no console/log
-        logger.warning("Configuração de e-mail pendente")
-    
     # Log de inicialização
-    logger.info("Sistema TENNIS CLASS v10 iniciado com sucesso")
+    logger.info("Sistema TENNIS CLASS v10 iniciado com sucesso - VERSÃO SEM E-MAIL")

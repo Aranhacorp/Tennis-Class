@@ -1,9 +1,10 @@
 # ============================================
-# MASTER CODE DEEP SEEK v.12
+# MASTER CODE DEEP SEEK v.12 - MOD
 # ============================================
 # TENNIS CLASS APP - Sistema Completo Otimizado
-# Versão: 12.0
+# Versão: 12.0 (modificada)
 # Correção: Preços Aula Kids (R$ 230/hora | Pacote 4h R$ 920)
+# Modificação: removido "Reservas ativas" da barra lateral
 # ============================================
 
 import streamlit as st
@@ -527,7 +528,7 @@ def card_com_estilo(conteudo: str = "", classe: str = "custom-card") -> str:
     return f'<div class="{classe}">{conteudo}</div>'
 
 # ============================================
-# 10. MENU LATERAL
+# 10. MENU LATERAL (MODIFICADO: REMOVIDO "RESERVAS ATIVAS")
 # ============================================
 
 with st.sidebar:
@@ -568,16 +569,8 @@ with st.sidebar:
         Sáb: 9h-13h
         """)
     
-    # Status
-    st.markdown("---")
-    st.markdown("### 📊 Status")
-    
-    try:
-        df = carregar_dados()
-        total = len(df) if not df.empty else 0
-        st.metric("Reservas ativas", total)
-    except:
-        st.metric("Reservas ativas", "0")
+    # ===== SEÇÃO "STATUS" REMOVIDA =====
+    # Não há mais a exibição de "Reservas ativas"
 
 # ============================================
 # 11. PÁGINA PRINCIPAL - HOME
@@ -1080,9 +1073,9 @@ st.markdown("""
 <div style='text-align: center; margin-top: 40px; color: rgba(255,255,255,0.6); font-size: 12px;'>
     <hr style='border-color: rgba(255,255,255,0.2);'>
     <p>TENNIS CLASS © 2024 - Sistema Completo</p>
-    <p>MASTER CODE DEEP SEEK v.12</p>
+    <p>MASTER CODE DEEP SEEK v.12 (modificado)</p>
     <p style='font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 5px;'>
-    Correção: Aula Kids R$ 230/hora | Pacote 4h R$ 920
+    Correção: Aula Kids R$ 230/hora | Pacote 4h R$ 920 | Reservas ativas removida
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -1092,4 +1085,4 @@ st.markdown("""
 # ============================================
 
 if __name__ == "__main__":
-    logger.info("MASTER CODE DEEP SEEK v.12 iniciado com preços Kids corrigidos")
+    logger.info("MASTER CODE DEEP SEEK v.12 modificado iniciado (sem reservas ativas)")

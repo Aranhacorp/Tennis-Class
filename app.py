@@ -1,11 +1,9 @@
 # ============================================
-# MASTER CODE DEEP SEEK v.13
+# MASTER CODE DEEP SEEK v.12
 # ============================================
 # TENNIS CLASS APP - Sistema Completo Otimizado
-# Versão: 13.0
-# Novas funcionalidades:
-#   - Envio automático de e-mail de confirmação
-#   - Preços Aula Kids corrigidos (R$ 230/hora | R$ 920 pacote 4h)
+# Versão: 12.0
+# Correção: Preços Aula Kids (R$ 230/hora | Pacote 4h R$ 920)
 # ============================================
 
 import streamlit as st
@@ -14,11 +12,12 @@ import pandas as pd
 import time
 import re
 import uuid
+import hashlib
+import urllib.parse
 from datetime import datetime, timedelta
 from typing import Dict, Any, Tuple, List, Optional
 import logging
 from functools import lru_cache
-import requests  # Para chamar a API do SendGrid
 
 # ============================================
 # 1. CONFIGURAÇÃO INICIAL
@@ -60,11 +59,6 @@ class Config:
     
     # Contato
     WHATSAPP_NUMBER = "5511971425028"
-    EMAIL_REMETENTE = "nao-responder@tennisclass.com"  # E-mail que aparecerá como remetente
-    NOME_REMETENTE = "Tennis Class"
-    
-    # SendGrid (para envio de e-mails)
-    SENDGRID_API_KEY = None  # Será carregado dos secrets
     
     # Limites do sistema
     MAX_ALUNOS_POR_HORARIO = 4
@@ -80,14 +74,6 @@ class Config:
             return st.secrets.get("ADMIN_PASSWORD", "aranha2026")
         except:
             return "aranha2026"
-    
-    @classmethod
-    def get_sendgrid_api_key(cls) -> Optional[str]:
-        """Obtém a chave da API SendGrid dos secrets."""
-        try:
-            return st.secrets.get("SENDGRID_API_KEY", None)
-        except:
-            return None
 
 class ReservaError(Exception):
     """Exceção personalizada para erros de reserva."""
@@ -142,156 +128,7 @@ FORM_LINKS = {
 }
 
 # ============================================
-# 4. FUNÇÃO DE ENVIO DE E-MAIL (SENDGRID)
-# ============================================
-
-def enviar_email_confirmacao(email_destino: str, reserva_id: str, dados_reserva: Dict[str, Any]) -> bool:
-    """
-    Envia e-mail de confirmação da reserva para o aluno usando SendGrid.
-    Retorna True se enviado com sucesso, False caso contrário.
-    """
-    api_key = Config.get_sendgrid_api_key()
-    if not api_key:
-        logger.warning("Chave da API SendGrid não configurada. E-mail não enviado.")
-        return False
-    
-    # Validar e-mail de destino
-    if not validar_email(email_destino):
-        logger.error(f"E-mail inválido: {email_destino}")
-        return False
-    
-    # Construir o conteúdo do e-mail
-    assunto = f"✅ Confirmação de Reserva - Tennis Class (ID: {reserva_id})"
-    
-    corpo_html = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <style>
-            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; }}
-            .header {{ background-color: #4CAF50; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }}
-            .content {{ padding: 20px; }}
-            .info-box {{ background-color: #f9f9f9; border-left: 4px solid #4CAF50; padding: 15px; margin: 20px 0; }}
-            .reserva-id {{ font-size: 24px; font-weight: bold; color: #4CAF50; text-align: center; padding: 15px; background-color: #e8f5e9; border-radius: 5px; }}
-            .footer {{ text-align: center; margin-top: 30px; font-size: 12px; color: #777; }}
-            .button {{ display: inline-block; padding: 10px 20px; background-color: #25d366; color: white; text-decoration: none; border-radius: 5px; }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1>🎾 Tennis Class</h1>
-                <p>Sua reserva foi confirmada!</p>
-            </div>
-            <div class="content">
-                <p>Olá <strong>{dados_reserva.get('Aluno', '')}</strong>,</p>
-                <p>Sua reserva foi confirmada com sucesso. Abaixo estão os detalhes:</p>
-                
-                <div class="info-box">
-                    <p><strong>📅 Data:</strong> {dados_reserva.get('Data', '')}</p>
-                    <p><strong>⏰ Horário:</strong> {dados_reserva.get('Horário', '')}</p>
-                    <p><strong>🏢 Unidade:</strong> {dados_reserva.get('Unidade', '')}</p>
-                    <p><strong>🎯 Serviço:</strong> {dados_reserva.get('Serviço', '')}</p>
-                </div>
-                
-                <div class="reserva-id">
-                    ID da Reserva: {reserva_id}
-                </div>
-                
-                <p><strong>📌 Importante:</strong> Guarde este ID. Ele será solicitado na recepção da academia.</p>
-                
-                <p style="text-align: center; margin-top: 30px;">
-                    <a href="https://wa.me/{Config.WHATSAPP_NUMBER}" class="button" style="color: white;">📱 Contato via WhatsApp</a>
-                </p>
-                
-                <p>Em caso de dúvidas, entre em contato conosco:</p>
-                <p>📞 {Config.WHATSAPP_NUMBER}<br>✉️ {Config.EMAIL_REMETENTE}</p>
-            </div>
-            <div class="footer">
-                <p>TENNIS CLASS © 2024 - Sistema de Reservas</p>
-                <p style="font-size: 10px;">Este é um e-mail automático. Por favor, não responda.</p>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
-    
-    corpo_texto = f"""
-    TENNIS CLASS - Confirmação de Reserva
-    
-    Olá {dados_reserva.get('Aluno', '')},
-    
-    Sua reserva foi confirmada com sucesso!
-    
-    Detalhes da reserva:
-    - ID da Reserva: {reserva_id}
-    - Data: {dados_reserva.get('Data', '')}
-    - Horário: {dados_reserva.get('Horário', '')}
-    - Unidade: {dados_reserva.get('Unidade', '')}
-    - Serviço: {dados_reserva.get('Serviço', '')}
-    
-    Guarde este ID para apresentar na academia.
-    
-    Contato: WhatsApp https://wa.me/{Config.WHATSAPP_NUMBER}
-    E-mail: {Config.EMAIL_REMETENTE}
-    
-    ---
-    TENNIS CLASS © 2024
-    """
-    
-    # Headers da API SendGrid
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
-    
-    # Payload da mensagem
-    payload = {
-        "personalizations": [
-            {
-                "to": [{"email": email_destino}],
-                "subject": assunto
-            }
-        ],
-        "from": {
-            "email": Config.EMAIL_REMETENTE,
-            "name": Config.NOME_REMETENTE
-        },
-        "content": [
-            {
-                "type": "text/plain",
-                "value": corpo_texto
-            },
-            {
-                "type": "text/html",
-                "value": corpo_html
-            }
-        ]
-    }
-    
-    try:
-        response = requests.post(
-            "https://api.sendgrid.com/v3/mail/send",
-            headers=headers,
-            json=payload,
-            timeout=10
-        )
-        
-        if response.status_code == 202:
-            logger.info(f"E-mail de confirmação enviado para {email_destino} (Reserva: {reserva_id})")
-            return True
-        else:
-            logger.error(f"Erro ao enviar e-mail via SendGrid: {response.status_code} - {response.text}")
-            return False
-            
-    except Exception as e:
-        logger.error(f"Exceção ao enviar e-mail: {str(e)}")
-        return False
-
-# ============================================
-# 5. FUNÇÕES DE VALIDAÇÃO
+# 4. FUNÇÕES DE VALIDAÇÃO
 # ============================================
 
 def validar_nome(nome: str) -> bool:
@@ -313,7 +150,12 @@ def validar_telefone(telefone: str) -> bool:
     return len(telefone_limpo) in [10, 11]
 
 def validar_data_horario(data: str, horario: str, unidade: str) -> Tuple[bool, str]:
-    """Valida disponibilidade de data/horário."""
+    """
+    Valida disponibilidade de data/horário.
+    
+    Returns:
+        Tuple[bool, str]: (disponível, mensagem)
+    """
     try:
         # Não permitir datas passadas
         data_obj = datetime.strptime(data, "%d/%m/%Y")
@@ -340,7 +182,7 @@ def validar_data_horario(data: str, horario: str, unidade: str) -> Tuple[bool, s
         return True, ""  # Em caso de erro, permite continuar
 
 # ============================================
-# 6. FUNÇÕES DE DADOS - GOOGLE SHEETS
+# 5. FUNÇÕES DE DADOS - GOOGLE SHEETS
 # ============================================
 
 @st.cache_data(ttl=300)
@@ -424,16 +266,11 @@ def criar_backup() -> bytes:
         return b""
 
 # ============================================
-# 7. FUNÇÕES DE PROCESSAMENTO
+# 6. FUNÇÕES DE PROCESSAMENTO
 # ============================================
 
-def processar_reserva(reserva: Dict[str, Any]) -> Tuple[bool, str, str, bool]:
-    """
-    Processa reserva com tratamento de erros.
-    Retorna: (sucesso, reserva_id, mensagem, email_enviado)
-    """
-    email_enviado = False
-    
+def processar_reserva(reserva: Dict[str, Any]) -> Tuple[bool, str, str]:
+    """Processa reserva com tratamento de erros."""
     try:
         # Validações
         if not validar_nome(reserva.get('Aluno', '')):
@@ -458,24 +295,13 @@ def processar_reserva(reserva: Dict[str, Any]) -> Tuple[bool, str, str, bool]:
         if not sucesso:
             raise ReservaError("Falha ao salvar reserva.")
         
-        # Enviar e-mail de confirmação (não crítico - não impede a reserva)
-        try:
-            email_enviado = enviar_email_confirmacao(
-                reserva.get('E-mail', ''),
-                reserva_id,
-                reserva
-            )
-        except Exception as e:
-            logger.error(f"Falha no envio de e-mail (não crítico): {e}")
-            email_enviado = False
-        
-        return True, reserva_id, "✅ Reserva confirmada com sucesso!", email_enviado
+        return True, reserva_id, "✅ Reserva confirmada com sucesso!"
         
     except ReservaError as e:
-        return False, "", str(e), False
+        return False, "", str(e)
     except Exception as e:
         logger.error(f"Erro inesperado: {e}")
-        return False, "", f"Erro inesperado: {str(e)}", False
+        return False, "", f"Erro inesperado: {str(e)}"
 
 def verificar_senha_admin(senha_digitada: str) -> bool:
     """Verifica senha do admin."""
@@ -487,7 +313,7 @@ def verificar_senha_admin(senha_digitada: str) -> bool:
         return False
 
 # ============================================
-# 8. ESTADOS DA SESSÃO
+# 7. ESTADOS DA SESSÃO
 # ============================================
 
 # Inicializar estados
@@ -512,11 +338,8 @@ if 'erros_form' not in st.session_state:
 if 'reserva_id_gerada' not in st.session_state:
     st.session_state.reserva_id_gerada = None
 
-if 'email_enviado' not in st.session_state:
-    st.session_state.email_enviado = False
-
 # ============================================
-# 9. ESTILOS CSS
+# 8. ESTILOS CSS
 # ============================================
 
 st.markdown("""
@@ -670,22 +493,6 @@ st.markdown("""
         transform: translateY(-2px);
         box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
-    
-    /* Aviso de e-mail */
-    .email-status {
-        font-size: 14px;
-        padding: 8px;
-        border-radius: 5px;
-        margin-top: 10px;
-    }
-    .email-success {
-        background-color: rgba(0, 200, 81, 0.1);
-        color: #00C851;
-    }
-    .email-warning {
-        background-color: rgba(255, 136, 0, 0.1);
-        color: #ff8800;
-    }
 </style>
 
 <!-- Botão WhatsApp -->
@@ -703,7 +510,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ============================================
-# 10. COMPONENTES REUTILIZÁVEIS
+# 9. COMPONENTES REUTILIZÁVEIS
 # ============================================
 
 def mostrar_timer(tempo_total: int, inicio_time: float) -> Tuple[bool, str]:
@@ -720,7 +527,7 @@ def card_com_estilo(conteudo: str = "", classe: str = "custom-card") -> str:
     return f'<div class="{classe}">{conteudo}</div>'
 
 # ============================================
-# 11. MENU LATERAL
+# 10. MENU LATERAL
 # ============================================
 
 with st.sidebar:
@@ -773,7 +580,7 @@ with st.sidebar:
         st.metric("Reservas ativas", "0")
 
 # ============================================
-# 12. PÁGINA PRINCIPAL - HOME
+# 11. PÁGINA PRINCIPAL - HOME
 # ============================================
 
 st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
@@ -908,19 +715,17 @@ if st.session_state.pagina == "Home":
         
         # Confirmação
         if st.button("✅ CONFIRMAR PAGAMENTO", type="primary", use_container_width=True):
-            with st.spinner("Processando reserva e enviando confirmação..."):
-                sucesso, reserva_id, mensagem, email_enviado = processar_reserva(
+            with st.spinner("Processando..."):
+                sucesso, reserva_id, mensagem = processar_reserva(
                     st.session_state.reserva_temp
                 )
                 
                 if sucesso:
                     st.session_state.reserva_id_gerada = reserva_id
-                    st.session_state.email_enviado = email_enviado
                     st.session_state.pagamento_ativo = False
                     
                     st.balloons()
                     
-                    # Mensagem de confirmação
                     st.markdown(f"""
                     <div class="confirmation-box">
                         <h3>✅ Reserva Confirmada!</h3>
@@ -931,29 +736,6 @@ if st.session_state.pagina == "Home":
                         <p><strong>Guarde este ID para apresentar na academia.</strong></p>
                     </div>
                     """, unsafe_allow_html=True)
-                    
-                    # Status do e-mail
-                    if email_enviado:
-                        st.markdown("""
-                        <div class="email-status email-success">
-                            📧 E-mail de confirmação enviado com sucesso para o endereço informado.
-                        </div>
-                        """, unsafe_allow_html=True)
-                    else:
-                        api_key = Config.get_sendgrid_api_key()
-                        if not api_key:
-                            st.markdown("""
-                            <div class="email-status email-warning">
-                                ⚠️ Envio de e-mail não configurado. Entre em contato com o administrador.
-                            </div>
-                            """, unsafe_allow_html=True)
-                        else:
-                            st.markdown("""
-                            <div class="email-status email-warning">
-                                ⚠️ Não foi possível enviar o e-mail de confirmação. 
-                                Por favor, anote o ID da reserva ou entre em contato pelo WhatsApp.
-                            </div>
-                            """, unsafe_allow_html=True)
                     
                     # Ações
                     col1, col2 = st.columns(2)
@@ -990,7 +772,7 @@ if st.session_state.pagina == "Home":
     """, unsafe_allow_html=True)
 
 # ============================================
-# 13. PÁGINA DE PREÇOS
+# 12. PÁGINA DE PREÇOS
 # ============================================
 
 elif st.session_state.pagina == "Preços":
@@ -1069,7 +851,7 @@ elif st.session_state.pagina == "Preços":
         st.success(f"**Total:** R$ {total:,.2f} por {quantidade} aulas")
 
 # ============================================
-# 14. PÁGINA DE CADASTRO
+# 13. PÁGINA DE CADASTRO
 # ============================================
 
 elif st.session_state.pagina == "Cadastro":
@@ -1120,7 +902,7 @@ elif st.session_state.pagina == "Cadastro":
     """, unsafe_allow_html=True)
 
 # ============================================
-# 15. PÁGINA DASHBOARD
+# 14. PÁGINA DASHBOARD
 # ============================================
 
 elif st.session_state.pagina == "Dashboard":
@@ -1229,7 +1011,7 @@ elif st.session_state.pagina == "Dashboard":
             st.error(f"❌ Erro: {str(e)}")
 
 # ============================================
-# 16. PÁGINA DE CONTATO
+# 15. PÁGINA DE CONTATO
 # ============================================
 
 elif st.session_state.pagina == "Contato":
@@ -1291,23 +1073,23 @@ elif st.session_state.pagina == "Contato":
                 st.warning("⚠️ Preencha todos os campos.")
 
 # ============================================
-# 17. RODAPÉ
+# 16. RODAPÉ
 # ============================================
 
 st.markdown("""
 <div style='text-align: center; margin-top: 40px; color: rgba(255,255,255,0.6); font-size: 12px;'>
     <hr style='border-color: rgba(255,255,255,0.2);'>
     <p>TENNIS CLASS © 2024 - Sistema Completo</p>
-    <p>MASTER CODE DEEP SEEK v.13</p>
+    <p>MASTER CODE DEEP SEEK v.12</p>
     <p style='font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 5px;'>
-    Correção: Aula Kids R$ 230/hora | Pacote 4h R$ 920 | Envio automático de e-mail de confirmação
+    Correção: Aula Kids R$ 230/hora | Pacote 4h R$ 920
     </p>
 </div>
 """, unsafe_allow_html=True)
 
 # ============================================
-# 18. INICIALIZAÇÃO
+# 17. INICIALIZAÇÃO
 # ============================================
 
 if __name__ == "__main__":
-    logger.info("MASTER CODE DEEP SEEK v.13 iniciado - com envio de e-mail")
+    logger.info("MASTER CODE DEEP SEEK v.12 iniciado com preços Kids corrigidos")

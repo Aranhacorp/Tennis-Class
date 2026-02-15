@@ -1,13 +1,12 @@
 # ============================================
-# MASTER CODE DEEP SEEK v.12.2
+# MASTER CODE DEEP SEEK v.12 - MOD (com websites)
 # ============================================
 # TENNIS CLASS APP - Sistema Completo Otimizado
-# Versão: 12.2
+# Versão: 12.0 (modificada)
 # Correção: Preços Aula Kids (R$ 230/hora | Pacote 4h R$ 920)
 # Modificações: 
 #   - removido "Reservas ativas" da barra lateral
-#   - incluídos preços de locação de quadra (R$200 externa / R$350 coberta)
-#   - adicionada calculadora completa (aulas, pacotes e locação)
+#   - adicionados websites das academias parceiras
 # ============================================
 
 import streamlit as st
@@ -104,23 +103,27 @@ SERVICOS = {
     "pacote_personal_4": {"nome": "Pacote Personal Trainer", "preco": 1000, "tipo": "4 aulas de 1 hora"}
 }
 
-# Academias parceiras
+# Academias parceiras (com websites adicionados)
 ACADEMIAS = {
     "PLAY TENNIS Ibirapuera": {
         "endereco": "R. Estado de Israel, 860 - SP",
-        "telefone": "(11) 97752-0488"
+        "telefone": "(11) 97752-0488",
+        "website": "https://www.playtennis.com.br/"
     },
     "TOP One Tennis": {
         "endereco": "Av. Indianópolis, 647 - SP",
-        "telefone": "(11) 93236-3828"
+        "telefone": "(11) 93236-3828",
+        "website": "https://toponetennis.com.br/"
     },
     "MELL Tennis": {
         "endereco": "Rua Oscar Gomes Cardim, 535 - SP",
-        "telefone": "(11) 97142-5028"
+        "telefone": "(11) 97142-5028",
+        "website": "https://www.instagram.com/barbetaefontestennisacademy/"
     },
     "ARENA BTG Morumbi": {
         "endereco": "Av. Maj. Sylvio de Magalhães Padilha, 16741",
-        "telefone": "(11) 98854-3860"
+        "telefone": "(11) 98854-3860",
+        "website": "https://arenabtg.com.br/"
     }
 }
 
@@ -531,7 +534,7 @@ def card_com_estilo(conteudo: str = "", classe: str = "custom-card") -> str:
     return f'<div class="{classe}">{conteudo}</div>'
 
 # ============================================
-# 10. MENU LATERAL (MODIFICADO: REMOVIDO "RESERVAS ATIVAS")
+# 10. MENU LATERAL (MODIFICADO: REMOVIDO "RESERVAS ATIVAS" + WEBSITES)
 # ============================================
 
 with st.sidebar:
@@ -556,7 +559,8 @@ with st.sidebar:
         st.markdown(
             f"📍 **{nome}**\n"
             f"<div style='font-size: 11px; color: #ccc; margin-bottom: 10px;'>"
-            f"{info['endereco']}<br>📞 {info['telefone']}"
+            f"{info['endereco']}<br>📞 {info['telefone']}<br>"
+            f"🌐 <a href='{info['website']}' target='_blank' style='color: #4CAF50; text-decoration: none;'>{info['website']}</a>"
             f"</div>", 
             unsafe_allow_html=True
         )
@@ -768,7 +772,7 @@ if st.session_state.pagina == "Home":
     """, unsafe_allow_html=True)
 
 # ============================================
-# 12. PÁGINA DE PREÇOS (MODIFICADA: INCLUSÃO DA LOCAÇÃO E CALCULADORA COMPLETA)
+# 12. PÁGINA DE PREÇOS
 # ============================================
 
 elif st.session_state.pagina == "Preços":
@@ -777,7 +781,7 @@ elif st.session_state.pagina == "Preços":
     st.markdown("### 🎾 Tabela de Preços")
     st.markdown("---")
     
-    # Categorias existentes
+    # Categorias
     col1, col2 = st.columns(2)
     
     with col1:
@@ -822,28 +826,9 @@ elif st.session_state.pagina == "Preços":
                 </div>
                 """, unsafe_allow_html=True)
     
-    # NOVA SEÇÃO: LOCAÇÃO DE QUADRA
+    # Calculadora
     st.markdown("---")
-    st.markdown("#### 🏟️ Locação de Quadra")
-    col3, col4 = st.columns(2)
-    with col3:
-        st.markdown("""
-        <div style='background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin-bottom: 10px;'>
-            <h4 style='margin: 0; color: white;'>Quadra Externa</h4>
-            <p style='margin: 5px 0 0 0; color: #4CAF50; font-weight: bold;'>R$ 200/hora</p>
-        </div>
-        """, unsafe_allow_html=True)
-    with col4:
-        st.markdown("""
-        <div style='background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin-bottom: 10px;'>
-            <h4 style='margin: 0; color: white;'>Quadra Coberta</h4>
-            <p style='margin: 5px 0 0 0; color: #4CAF50; font-weight: bold;'>R$ 350/hora</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # CALCULADORA ORIGINAL (MANTIDA)
-    st.markdown("---")
-    st.markdown("#### 🧮 Calculadora (Aulas Avulsas)")
+    st.markdown("#### 🧮 Calculadora")
     
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -864,60 +849,6 @@ elif st.session_state.pagina == "Preços":
         
         total = preco_por_aula * quantidade
         st.success(f"**Total:** R$ {total:,.2f} por {quantidade} aulas")
-    
-    # NOVA CALCULADORA COMPLETA (AULAS, PACOTES, LOCAÇÃO)
-    st.markdown("---")
-    st.markdown("#### 🧮 Calculadora Completa (Aulas, Pacotes e Locação)")
-    
-    with st.form("calculadora_completa"):
-        opcao = st.radio(
-            "Selecione o tipo de serviço",
-            ["Aula avulsa", "Pacote", "Locação de quadra"],
-            horizontal=True
-        )
-        
-        if opcao == "Aula avulsa":
-            tipo_aula2 = st.selectbox("Tipo de aula", 
-                                     ["Aula particular", "Aula em grupo", "Aula Kids", "Personal trainer"],
-                                     key="tipo_aula2")
-            quantidade2 = st.number_input("Quantidade de horas/aulas", min_value=1, max_value=20, value=1, key="qtd2")
-            
-            if st.form_submit_button("Calcular"):
-                preco = 0
-                for key, info in SERVICOS.items():
-                    if info['nome'] == tipo_aula2 and info['tipo'] == "Hora":
-                        preco = info['preco']
-                        break
-                total = preco * quantidade2
-                st.success(f"**Total:** R$ {total:,.2f} para {quantidade2} hora(s) de {tipo_aula2}")
-        
-        elif opcao == "Pacote":
-            # Lista de pacotes disponíveis
-            pacotes = []
-            for key, info in SERVICOS.items():
-                if "Pacote" in info['nome']:
-                    pacotes.append(f"{info['nome']} - R$ {info['preco']} ({info['tipo']})")
-            pacote_escolhido = st.selectbox("Escolha o pacote", pacotes)
-            
-            if st.form_submit_button("Calcular"):
-                # Extrai o preço do pacote escolhido
-                preco = 0
-                descricao = ""
-                for key, info in SERVICOS.items():
-                    if "Pacote" in info['nome'] and info['nome'] in pacote_escolhido:
-                        preco = info['preco']
-                        descricao = f"{info['nome']} ({info['tipo']})"
-                        break
-                st.success(f"**Total:** R$ {preco:,.2f} para o pacote: {descricao}")
-        
-        else:  # Locação de quadra
-            tipo_quadra = st.selectbox("Tipo de quadra", ["Quadra Externa", "Quadra Coberta"])
-            horas = st.number_input("Número de horas", min_value=1, max_value=12, value=1)
-            
-            if st.form_submit_button("Calcular"):
-                preco_hora = 200 if tipo_quadra == "Quadra Externa" else 350
-                total = preco_hora * horas
-                st.success(f"**Total:** R$ {total:,.2f} para {horas} hora(s) de {tipo_quadra}")
 
 # ============================================
 # 13. PÁGINA DE CADASTRO
@@ -1149,9 +1080,9 @@ st.markdown("""
 <div style='text-align: center; margin-top: 40px; color: rgba(255,255,255,0.6); font-size: 12px;'>
     <hr style='border-color: rgba(255,255,255,0.2);'>
     <p>TENNIS CLASS © 2024 - Sistema Completo</p>
-    <p>MASTER CODE DEEP SEEK v.12.2 (com Locação e Calculadora Completa)</p>
+    <p>MASTER CODE DEEP SEEK v.12 (modificado - com websites)</p>
     <p style='font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 5px;'>
-    Correção: Aula Kids R$ 230/hora | Pacote 4h R$ 920 | Reservas ativas removida | Locação de quadra adicionada | Calculadora completa
+    Correção: Aula Kids R$ 230/hora | Pacote 4h R$ 920 | Reservas ativas removida | Websites das academias adicionados
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -1161,4 +1092,4 @@ st.markdown("""
 # ============================================
 
 if __name__ == "__main__":
-    logger.info("MASTER CODE DEEP SEEK v.12.2 iniciado (com Locação e Calculadora Completa)")
+    logger.info("MASTER CODE DEEP SEEK v.12 modificado (com websites) iniciado")

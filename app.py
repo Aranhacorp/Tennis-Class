@@ -1,10 +1,11 @@
 # ============================================
-# MASTER CODE DEEP SEEK v.12 - MOD
+# MASTER CODE DEEP SEEK v.12 - MOD (com Locação)
 # ============================================
 # TENNIS CLASS APP - Sistema Completo Otimizado
-# Versão: 12.0 (modificada)
+# Versão: 12.1
 # Correção: Preços Aula Kids (R$ 230/hora | Pacote 4h R$ 920)
 # Modificação: removido "Reservas ativas" da barra lateral
+# Novo: Incluído preços de locação de quadra
 # ============================================
 
 import streamlit as st
@@ -765,7 +766,7 @@ if st.session_state.pagina == "Home":
     """, unsafe_allow_html=True)
 
 # ============================================
-# 12. PÁGINA DE PREÇOS
+# 12. PÁGINA DE PREÇOS (MODIFICADA: INCLUSÃO DA LOCAÇÃO)
 # ============================================
 
 elif st.session_state.pagina == "Preços":
@@ -774,7 +775,7 @@ elif st.session_state.pagina == "Preços":
     st.markdown("### 🎾 Tabela de Preços")
     st.markdown("---")
     
-    # Categorias
+    # Categorias existentes
     col1, col2 = st.columns(2)
     
     with col1:
@@ -819,7 +820,26 @@ elif st.session_state.pagina == "Preços":
                 </div>
                 """, unsafe_allow_html=True)
     
-    # Calculadora
+    # NOVA SEÇÃO: LOCAÇÃO DE QUADRA
+    st.markdown("---")
+    st.markdown("#### 🏟️ Locação de Quadra")
+    col3, col4 = st.columns(2)
+    with col3:
+        st.markdown("""
+        <div style='background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin-bottom: 10px;'>
+            <h4 style='margin: 0; color: white;'>Quadra Externa</h4>
+            <p style='margin: 5px 0 0 0; color: #4CAF50; font-weight: bold;'>R$ 200/hora</p>
+        </div>
+        """, unsafe_allow_html=True)
+    with col4:
+        st.markdown("""
+        <div style='background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin-bottom: 10px;'>
+            <h4 style='margin: 0; color: white;'>Quadra Coberta</h4>
+            <p style='margin: 5px 0 0 0; color: #4CAF50; font-weight: bold;'>R$ 350/hora</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Calculadora (mantida)
     st.markdown("---")
     st.markdown("#### 🧮 Calculadora")
     
@@ -1073,9 +1093,9 @@ st.markdown("""
 <div style='text-align: center; margin-top: 40px; color: rgba(255,255,255,0.6); font-size: 12px;'>
     <hr style='border-color: rgba(255,255,255,0.2);'>
     <p>TENNIS CLASS © 2024 - Sistema Completo</p>
-    <p>MASTER CODE DEEP SEEK v.12 (modificado)</p>
+    <p>MASTER CODE DEEP SEEK v.12.1 (com Locação)</p>
     <p style='font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 5px;'>
-    Correção: Aula Kids R$ 230/hora | Pacote 4h R$ 920 | Reservas ativas removida
+    Correção: Aula Kids R$ 230/hora | Pacote 4h R$ 920 | Reservas ativas removida | Locação de quadra adicionada
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -1085,4 +1105,4 @@ st.markdown("""
 # ============================================
 
 if __name__ == "__main__":
-    logger.info("MASTER CODE DEEP SEEK v.12 modificado iniciado (sem reservas ativas)")
+    logger.info("MASTER CODE DEEP SEEK v.12.1 iniciado (com Locação)")

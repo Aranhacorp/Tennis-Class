@@ -1149,9 +1149,8 @@ st.markdown("""
 <div style='text-align: center; margin-top: 40px; color: rgba(255,255,255,0.6); font-size: 12px;'>
     <hr style='border-color: rgba(255,255,255,0.2);'>
     <p>TENNIS CLASS © 2024 - Sistema Completo</p>
-    <p>MASTER CODE DEEP SEEK v.12.2 (com Locação e Calculadora Completa)</p>
+    <p>MASTER CODE DEEP SEEK v.12.2</p>
     <p style='font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 5px;'>
-    Correção: Aula Kids R$ 230/hora | Pacote 4h R$ 920 | Reservas ativas removida | Locação de quadra adicionada | Calculadora completa
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -1162,3 +1161,4 @@ st.markdown("""
 
 if __name__ == "__main__":
     logger.info("MASTER CODE DEEP SEEK v.12.2 iniciado (com Locação e Calculadora Completa)")
+

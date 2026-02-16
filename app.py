@@ -1,5 +1,5 @@
 # ============================================
-# MASTER CODE DEEP SEEK v.12.2 (com Logo)
+# MASTER CODE DEEP SEEK v.12.2 (com Logo Aumentado)
 # ============================================
 # TENNIS CLASS APP - Sistema Completo Otimizado
 # Versão: 12.2
@@ -9,7 +9,7 @@
 #   - incluídos preços de locação de quadra (R$200 externa / R$350 coberta)
 #   - adicionada calculadora completa (aulas, pacotes e locação)
 #   - melhorias no tratamento de erros e inicialização
-#   - substituído título de texto pela imagem do logo
+#   - substituído título de texto pela imagem do logo (aumentado em 12,5%)
 # ============================================
 
 import streamlit as st
@@ -293,7 +293,7 @@ if 'reserva_id_gerada' not in st.session_state:
     st.session_state.reserva_id_gerada = None
 
 # ============================================
-# 8. ESTILOS CSS (ajustados para incluir o logo)
+# 8. ESTILOS CSS (logo aumentado em 12,5%)
 # ============================================
 
 st.markdown("""
@@ -307,13 +307,13 @@ st.markdown("""
         background-attachment: fixed;
     }
     
-    /* Header com logo */
+    /* Header com logo - tamanho aumentado em 12,5% (de 300px para 337.5px) */
     .header-logo {
         text-align: center;
         margin-bottom: 20px;
     }
     .header-logo img {
-        max-width: 300px;
+        max-width: 337.5px;
         width: 100%;
         height: auto;
     }
@@ -518,7 +518,7 @@ with st.sidebar:
 # 11. PÁGINA PRINCIPAL - HOME (com logo)
 # ============================================
 
-# Substitui o título de texto pela imagem do logo
+# Substitui o título de texto pela imagem do logo (já aumentada via CSS)
 st.markdown("""
 <div class="header-logo">
     <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/Tennis%20Class%20logo%20v.1.png" alt="Tennis Class Logo">
@@ -911,7 +911,7 @@ st.markdown("""
 <div style='text-align: center; margin-top: 40px; color: rgba(255,255,255,0.6); font-size: 12px;'>
     <hr style='border-color: rgba(255,255,255,0.2);'>
     <p>TENNIS CLASS © 2025 - Sistema Completo</p>
-    <p>MASTER CODE DEEP SEEK v.12.2 (com Logo)</p>
+    <p>MASTER CODE DEEP SEEK v.12.2 (com Logo Aumentado)</p>
     <p style='font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 5px;'>
     Correção: Aula Kids R$ 230/hora | Pacote 4h R$ 920 | Locação de quadra | Calculadora completa
     </p>
@@ -923,4 +923,4 @@ st.markdown("""
 # ============================================
 
 if __name__ == "__main__":
-    logger.info("MASTER CODE DEEP SEEK v.12.2 (com Logo) iniciado")
+    logger.info("MASTER CODE DEEP SEEK v.12.2 (com Logo Aumentado) iniciado")

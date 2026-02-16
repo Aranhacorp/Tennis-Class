@@ -1,5 +1,5 @@
 # ============================================
-# MASTER CODE DEEP SEEK v.12.2 (REVISADO)
+# MASTER CODE DEEP SEEK v.12.2 (com Logo)
 # ============================================
 # TENNIS CLASS APP - Sistema Completo Otimizado
 # Versão: 12.2
@@ -9,6 +9,7 @@
 #   - incluídos preços de locação de quadra (R$200 externa / R$350 coberta)
 #   - adicionada calculadora completa (aulas, pacotes e locação)
 #   - melhorias no tratamento de erros e inicialização
+#   - substituído título de texto pela imagem do logo
 # ============================================
 
 import streamlit as st
@@ -292,7 +293,7 @@ if 'reserva_id_gerada' not in st.session_state:
     st.session_state.reserva_id_gerada = None
 
 # ============================================
-# 8. ESTILOS CSS (mantido igual, sem alterações)
+# 8. ESTILOS CSS (ajustados para incluir o logo)
 # ============================================
 
 st.markdown("""
@@ -305,14 +306,19 @@ st.markdown("""
         background-position: center; 
         background-attachment: fixed;
     }
-    .header-title { 
-        color: white; 
-        font-size: 50px; 
-        font-weight: bold; 
-        text-align: center; 
-        margin-bottom: 20px; 
-        text-shadow: 2px 2px 4px black; 
+    
+    /* Header com logo */
+    .header-logo {
+        text-align: center;
+        margin-bottom: 20px;
     }
+    .header-logo img {
+        max-width: 300px;
+        width: 100%;
+        height: auto;
+    }
+    
+    /* Cards */
     .custom-card { 
         background-color: rgba(255, 255, 255, 0.95); 
         padding: 30px; 
@@ -320,6 +326,8 @@ st.markdown("""
         color: #333; 
         position: relative; 
     }
+    
+    /* Links */
     .clean-link { 
         text-align: center; 
         text-decoration: none !important; 
@@ -332,6 +340,8 @@ st.markdown("""
         transform: translateY(-8px); 
         color: #4CAF50 !important; 
     }
+    
+    /* Ícones */
     .icon-text { 
         font-size: 80px; 
         margin-bottom: 10px; 
@@ -341,6 +351,8 @@ st.markdown("""
         font-weight: bold; 
         letter-spacing: 2px; 
     }
+    
+    /* WhatsApp flutuante */
     .whatsapp-float { 
         position: fixed; 
         width: 60px; 
@@ -359,6 +371,8 @@ st.markdown("""
         justify-content: center; 
         text-decoration: none; 
     }
+    
+    /* Mensagens */
     .error-message {
         color: #ff4444;
         font-size: 14px;
@@ -375,6 +389,8 @@ st.markdown("""
         border-radius: 4px;
         background-color: rgba(0, 200, 81, 0.1);
     }
+    
+    /* Timer */
     .timer-warning {
         color: #ff8800;
         font-weight: bold;
@@ -385,6 +401,8 @@ st.markdown("""
         border-radius: 10px;
         background-color: rgba(255, 136, 0, 0.1);
     }
+    
+    /* ID da reserva */
     .reserva-id-box {
         background-color: #f8f9fa;
         border: 2px solid #28a745;
@@ -397,6 +415,8 @@ st.markdown("""
         font-weight: bold;
         color: #28a745;
     }
+    
+    /* Confirmação */
     .confirmation-box {
         background-color: #e8f5e9;
         border: 2px solid #4CAF50;
@@ -405,6 +425,8 @@ st.markdown("""
         margin: 20px 0;
         text-align: center;
     }
+    
+    /* Chave PIX */
     .pix-key {
         background-color: #f8f9fa;
         border: 2px solid #007bff;
@@ -417,6 +439,8 @@ st.markdown("""
         text-align: center;
         color: #007bff;
     }
+    
+    /* Botões */
     .stButton > button {
         transition: all 0.3s ease;
     }
@@ -491,10 +515,15 @@ with st.sidebar:
     # Seção "Status" removida propositalmente
 
 # ============================================
-# 11. PÁGINA PRINCIPAL - HOME
+# 11. PÁGINA PRINCIPAL - HOME (com logo)
 # ============================================
 
-st.markdown('<div class="header-title">TENNIS CLASS</div>', unsafe_allow_html=True)
+# Substitui o título de texto pela imagem do logo
+st.markdown("""
+<div class="header-logo">
+    <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/Tennis%20Class%20logo%20v.1.png" alt="Tennis Class Logo">
+</div>
+""", unsafe_allow_html=True)
 
 if st.session_state.pagina == "Home":
     st.markdown(card_com_estilo(), unsafe_allow_html=True)
@@ -882,8 +911,9 @@ st.markdown("""
 <div style='text-align: center; margin-top: 40px; color: rgba(255,255,255,0.6); font-size: 12px;'>
     <hr style='border-color: rgba(255,255,255,0.2);'>
     <p>TENNIS CLASS © 2025 - Sistema Completo</p>
-    <p>MASTER CODE DEEP SEEK v.12.2 (revisado)</p>
+    <p>MASTER CODE DEEP SEEK v.12.2 (com Logo)</p>
     <p style='font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 5px;'>
+    Correção: Aula Kids R$ 230/hora | Pacote 4h R$ 920 | Locação de quadra | Calculadora completa
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -893,5 +923,4 @@ st.markdown("""
 # ============================================
 
 if __name__ == "__main__":
-    logger.info("MASTER CODE DEEP SEEK v.12.2 revisado iniciado")
-
+    logger.info("MASTER CODE DEEP SEEK v.12.2 (com Logo) iniciado")

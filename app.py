@@ -1,8 +1,8 @@
 # ============================================
-# MASTER CODE DEEP SEEK v.12.2 (com Logo Aumentado)
+# MASTER CODE DEEP SEEK v.12.3
 # ============================================
 # TENNIS CLASS APP - Sistema Completo Otimizado
-# Versão: 12.2
+# Versão: 12.3
 # Correção: Preços Aula Kids (R$ 230/hora | Pacote 4h R$ 920)
 # Modificações: 
 #   - removido "Reservas ativas" da barra lateral
@@ -10,6 +10,7 @@
 #   - adicionada calculadora completa (aulas, pacotes e locação)
 #   - melhorias no tratamento de erros e inicialização
 #   - substituído título de texto pela imagem do logo (aumentado em 12,5%)
+#   - adicionados websites das academias parceiras
 # ============================================
 
 import streamlit as st
@@ -102,22 +103,27 @@ SERVICOS = {
     "pacote_personal_4": {"nome": "Pacote Personal Trainer", "preco": 1000, "tipo": "4 aulas de 1 hora"}
 }
 
+# Academias parceiras (com websites adicionados)
 ACADEMIAS = {
     "PLAY TENNIS Ibirapuera": {
         "endereco": "R. Estado de Israel, 860 - SP",
-        "telefone": "(11) 97752-0488"
+        "telefone": "(11) 97752-0488",
+        "website": "https://www.playtennis.com.br/"
     },
     "TOP One Tennis": {
         "endereco": "Av. Indianópolis, 647 - SP",
-        "telefone": "(11) 93236-3828"
+        "telefone": "(11) 93236-3828",
+        "website": "https://toponetennis.com.br/"
     },
     "MELL Tennis": {
         "endereco": "Rua Oscar Gomes Cardim, 535 - SP",
-        "telefone": "(11) 97142-5028"
+        "telefone": "(11) 97142-5028",
+        "website": "https://www.instagram.com/barbetaefontestennisacademy/"
     },
     "ARENA BTG Morumbi": {
         "endereco": "Av. Maj. Sylvio de Magalhães Padilha, 16741",
-        "telefone": "(11) 98854-3860"
+        "telefone": "(11) 98854-3860",
+        "website": "https://arenabtg.com.br/"
     }
 }
 
@@ -479,7 +485,7 @@ def card_com_estilo(conteudo: str = "", classe: str = "custom-card") -> str:
     return f'<div class="{classe}">{conteudo}</div>'
 
 # ============================================
-# 10. MENU LATERAL
+# 10. MENU LATERAL (com websites)
 # ============================================
 
 with st.sidebar:
@@ -500,7 +506,8 @@ with st.sidebar:
         st.markdown(
             f"📍 **{nome}**\n"
             f"<div style='font-size: 11px; color: #ccc; margin-bottom: 10px;'>"
-            f"{info['endereco']}<br>📞 {info['telefone']}"
+            f"{info['endereco']}<br>📞 {info['telefone']}<br>"
+            f"🌐 <a href='{info['website']}' target='_blank' style='color: #4CAF50; text-decoration: none;'>{info['website']}</a>"
             f"</div>", 
             unsafe_allow_html=True
         )
@@ -911,8 +918,9 @@ st.markdown("""
 <div style='text-align: center; margin-top: 40px; color: rgba(255,255,255,0.6); font-size: 12px;'>
     <hr style='border-color: rgba(255,255,255,0.2);'>
     <p>TENNIS CLASS © 2025 - Sistema Completo</p>
-    <p>MASTER CODE DEEP SEEK v.12.2 (com Logo Aumentado)</p>
+    <p>MASTER CODE DEEP SEEK v.12.3</p>
     <p style='font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 5px;'>
+    Correção: Aula Kids R$ 230/hora | Pacote 4h R$ 920 | Locação de quadra | Calculadora completa | Websites academias
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -922,5 +930,4 @@ st.markdown("""
 # ============================================
 
 if __name__ == "__main__":
-    logger.info("MASTER CODE DEEP SEEK v.12.2 (com Logo Aumentado) iniciado")
-
+    logger.info("MASTER CODE DEEP SEEK v.12.3 iniciado (com websites)")

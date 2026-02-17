@@ -1,5 +1,5 @@
 # ============================================
-# MASTER CODE DEEP SEEK v.12.3
+# MASTER CODE DEEP SEEK v.12.3 (Logo ajustado)
 # ============================================
 # TENNIS CLASS APP - Sistema Completo Otimizado
 # Versão: 12.3
@@ -11,6 +11,7 @@
 #   - melhorias no tratamento de erros e inicialização
 #   - substituído título de texto pela imagem do logo (aumentado em 12,5%)
 #   - adicionados websites das academias parceiras
+#   - logo subido em 0,5 cm (aproximadamente 19px)
 # ============================================
 
 import streamlit as st
@@ -299,7 +300,7 @@ if 'reserva_id_gerada' not in st.session_state:
     st.session_state.reserva_id_gerada = None
 
 # ============================================
-# 8. ESTILOS CSS (logo aumentado em 12,5%)
+# 8. ESTILOS CSS (logo ajustado: subido 0,5 cm ≈ 19px)
 # ============================================
 
 st.markdown("""
@@ -313,9 +314,10 @@ st.markdown("""
         background-attachment: fixed;
     }
     
-    /* Header com logo - tamanho aumentado em 12,5% (de 300px para 337.5px) */
+    /* Header com logo - tamanho aumentado em 12,5% e subido 19px */
     .header-logo {
         text-align: center;
+        margin-top: -19px;        /* sobe o logo 0,5 cm */
         margin-bottom: 20px;
     }
     .header-logo img {
@@ -525,7 +527,7 @@ with st.sidebar:
 # 11. PÁGINA PRINCIPAL - HOME (com logo)
 # ============================================
 
-# Substitui o título de texto pela imagem do logo (já aumentada via CSS)
+# Substitui o título de texto pela imagem do logo (já aumentada via CSS e subida)
 st.markdown("""
 <div class="header-logo">
     <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/Tennis%20Class%20logo%20v.1.png" alt="Tennis Class Logo">
@@ -918,8 +920,9 @@ st.markdown("""
 <div style='text-align: center; margin-top: 40px; color: rgba(255,255,255,0.6); font-size: 12px;'>
     <hr style='border-color: rgba(255,255,255,0.2);'>
     <p>TENNIS CLASS © 2025 - Sistema Completo</p>
-    <p>MASTER CODE DEEP SEEK v.12.3</p>
+    <p>MASTER CODE DEEP SEEK v.12.3 (logo subido)</p>
     <p style='font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 5px;'>
+    Correção: Aula Kids R$ 230/hora | Pacote 4h R$ 920 | Locação de quadra | Calculadora completa | Websites academias | Logo subido 0,5cm
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -929,5 +932,4 @@ st.markdown("""
 # ============================================
 
 if __name__ == "__main__":
-    logger.info("MASTER CODE DEEP SEEK v.12.3 iniciado (com websites)")
-
+    logger.info("MASTER CODE DEEP SEEK v.12.3 (logo subido) iniciado")

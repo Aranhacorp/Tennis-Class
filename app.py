@@ -922,7 +922,6 @@ st.markdown("""
     <p>TENNIS CLASS © 2025 - Sistema Completo</p>
     <p>MASTER CODE DEEP SEEK v.12.3 (logo subido)</p>
     <p style='font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 5px;'>
-    Correção: Aula Kids R$ 230/hora | Pacote 4h R$ 920 | Locação de quadra | Calculadora completa | Websites academias | Logo subido 0,5cm
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -933,3 +932,4 @@ st.markdown("""
 
 if __name__ == "__main__":
     logger.info("MASTER CODE DEEP SEEK v.12.3 (logo subido) iniciado")
+

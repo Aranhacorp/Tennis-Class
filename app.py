@@ -1,17 +1,16 @@
 # ============================================
-# MASTER CODE DEEP SEEK v.12.3
+# MASTER CODE DEEP SEEK v.12.4 (SQLite)
 # ============================================
 # TENNIS CLASS APP - Sistema Completo Otimizado
-# Versão: 12.3
+# Versão: 12.4 - SQLite
 # Correção: Preços Aula Kids (R$ 230/hora | Pacote 4h R$ 920)
 # Modificações: 
 #   - removido "Reservas ativas" da barra lateral
 #   - incluídos preços de locação de quadra (R$200 externa / R$350 coberta)
 #   - adicionada calculadora completa (aulas, pacotes e locação)
-#   - melhorias no tratamento de erros e inicialização
-#   - substituído título de texto pela imagem do logo (aumentado em 12,5%)
+#   - substituído título de texto pela imagem do logo (versão 2, aumentado 12,5%)
 #   - adicionados websites das academias parceiras
-#   - (correção) removido deslocamento vertical do logo
+#   - banco de dados SQLite local (substitui Google Sheets)
 # ============================================
 
 import streamlit as st
@@ -23,15 +22,7 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, Tuple, List, Optional
 import logging
 from functools import lru_cache
-
-# Tenta importar a conexão com Google Sheets, mas não falha se não estiver disponível
-try:
-    from streamlit_gsheets import GSheetsConnection
-    GSHEETS_AVAILABLE = True
-except ImportError:
-    GSheetsConnection = None
-    GSHEETS_AVAILABLE = False
-    st.warning("⚠️ Biblioteca 'streamlit-gsheets' não encontrada. A funcionalidade de reservas pode não funcionar.")
+import sqlite3
 
 # ============================================
 # 1. CONFIGURAÇÃO INICIAL
@@ -59,9 +50,8 @@ logger = logging.getLogger(__name__)
 class Config:
     """Classe de configuração centralizada do sistema."""
     
-    # Google Sheets
-    SPREADSHEET_URL = ""
-    WORKSHEET_NAME = "Página1"
+    # Caminho do banco SQLite
+    DB_PATH = "tennis_class.db"
     
     # Contato
     WHATSAPP_NUMBER = "5511971425028"
@@ -135,7 +125,127 @@ FORM_LINKS = {
 }
 
 # ============================================
-# 4. FUNÇÕES DE VALIDAÇÃO
+# 4. FUNÇÕES DE BANCO DE DADOS (SQLite)
+# ============================================
+
+def get_db_connection():
+    """Retorna uma conexão com o banco SQLite."""
+    return sqlite3.connect(Config.DB_PATH)
+
+def init_database():
+    """Cria a tabela de reservas se não existir."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS reservas (
+                id TEXT PRIMARY KEY,
+                data TEXT NOT NULL,
+                horario TEXT NOT NULL,
+                aluno TEXT NOT NULL,
+                servico TEXT NOT NULL,
+                unidade TEXT NOT NULL,
+                email TEXT NOT NULL,
+                timestamp TEXT NOT NULL,
+                status TEXT DEFAULT 'Confirmado',
+                data_criacao TEXT NOT NULL
+            )
+        ''')
+        conn.commit()
+        conn.close()
+        logger.info("Banco de dados inicializado com sucesso.")
+    except Exception as e:
+        logger.error(f"Erro ao inicializar banco de dados: {e}")
+
+# Chama a inicialização na primeira execução
+init_database()
+
+@st.cache_data(ttl=300)
+def carregar_dados() -> pd.DataFrame:
+    """Carrega todas as reservas do banco SQLite."""
+    try:
+        conn = get_db_connection()
+        df = pd.read_sql_query("SELECT * FROM reservas", conn)
+        conn.close()
+        logger.info(f"Dados carregados: {len(df)} registros")
+        return df
+    except Exception as e:
+        logger.error(f"Erro ao carregar dados: {str(e)}")
+        st.error(f"❌ Erro ao carregar dados do banco: {str(e)}")
+        return pd.DataFrame()
+
+@lru_cache(maxsize=128)
+def carregar_disponibilidade(data: str, unidade: str) -> Dict[str, int]:
+    """Calcula vagas disponíveis para uma data/unidade."""
+    try:
+        df = carregar_dados()
+        if df.empty:
+            return {hora: Config.MAX_ALUNOS_POR_HORARIO for hora in Config.HORARIOS_DISPONIVEIS}
+        
+        # Filtra reservas ativas
+        filtrado = df[
+            (df['data'] == data) &
+            (df['unidade'] == unidade) &
+            (df['status'].isin(['Pendente', 'Confirmado']))
+        ]
+        
+        # Conta por horário
+        disponibilidade = {}
+        for hora in Config.HORARIOS_DISPONIVEIS:
+            count = len(filtrado[filtrado['horario'] == hora])
+            disponibilidade[hora] = Config.MAX_ALUNOS_POR_HORARIO - count
+        return disponibilidade
+    except Exception as e:
+        logger.error(f"Erro ao carregar disponibilidade: {e}")
+        return {hora: Config.MAX_ALUNOS_POR_HORARIO for hora in Config.HORARIOS_DISPONIVEIS}
+
+def salvar_reserva(reserva: Dict[str, Any]) -> Tuple[bool, str]:
+    """Salva uma nova reserva no banco SQLite."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        reserva_id = str(uuid.uuid4())[:8].upper()
+        
+        cursor.execute('''
+            INSERT INTO reservas 
+            (id, data, horario, aluno, servico, unidade, email, timestamp, status, data_criacao)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            reserva_id,
+            reserva.get('Data'),
+            reserva.get('Horário'),
+            reserva.get('Aluno'),
+            reserva.get('Serviço'),
+            reserva.get('Unidade'),
+            reserva.get('E-mail'),
+            datetime.now().isoformat(),
+            'Confirmado',
+            datetime.now().strftime("%d/%m/%Y %H:%M")
+        ))
+        
+        conn.commit()
+        conn.close()
+        st.cache_data.clear()
+        lru_cache(maxsize=128).cache_clear()  # limpa cache da disponibilidade
+        logger.info(f"Reserva {reserva_id} salva com sucesso")
+        return True, reserva_id
+    except Exception as e:
+        logger.error(f"Erro ao salvar reserva: {str(e)}")
+        return False, str(e)
+
+def criar_backup() -> bytes:
+    """Gera um arquivo CSV com todas as reservas para download."""
+    try:
+        df = carregar_dados()
+        if not df.empty:
+            return df.to_csv(index=False).encode('utf-8')
+        return b""
+    except Exception as e:
+        logger.error(f"Erro ao criar backup: {e}")
+        return b""
+
+# ============================================
+# 5. FUNÇÕES DE VALIDAÇÃO
 # ============================================
 
 def validar_nome(nome: str) -> bool:
@@ -170,80 +280,6 @@ def validar_data_horario(data: str, horario: str, unidade: str) -> Tuple[bool, s
     except Exception as e:
         logger.error(f"Erro na validação: {e}")
         return True, ""
-
-# ============================================
-# 5. FUNÇÕES DE DADOS - GOOGLE SHEETS
-# ============================================
-
-@st.cache_data(ttl=300)
-def carregar_dados() -> pd.DataFrame:
-    """Carrega dados do Google Sheets com tratamento de erros."""
-    if not GSHEETS_AVAILABLE:
-        st.error("❌ Biblioteca 'streamlit-gsheets' não instalada. Não é possível carregar dados.")
-        return pd.DataFrame()
-    
-    try:
-        conn = st.connection("gsheets", type=GSheetsConnection)
-        df = conn.read(worksheet=Config.WORKSHEET_NAME)
-        logger.info(f"Dados carregados: {len(df)} registros")
-        return df
-    except Exception as e:
-        logger.error(f"Erro ao carregar dados do Google Sheets: {str(e)}")
-        st.error(f"❌ Erro de conexão com Google Sheets: {str(e)}. Verifique suas secrets.")
-        return pd.DataFrame()
-
-@lru_cache(maxsize=128)
-def carregar_disponibilidade(data: str, unidade: str) -> Dict[str, int]:
-    try:
-        df = carregar_dados()
-        if df.empty:
-            return {hora: Config.MAX_ALUNOS_POR_HORARIO for hora in Config.HORARIOS_DISPONIVEIS}
-        
-        filtrado = df[
-            (df['Data'] == data) &
-            (df['Unidade'] == unidade) &
-            (df['Status'].isin(['Pendente', 'Confirmado']))
-        ]
-        
-        disponibilidade = {}
-        for hora in Config.HORARIOS_DISPONIVEIS:
-            count = len(filtrado[filtrado['Horário'] == hora])
-            disponibilidade[hora] = Config.MAX_ALUNOS_POR_HORARIO - count
-        return disponibilidade
-    except Exception as e:
-        logger.error(f"Erro ao carregar disponibilidade: {e}")
-        return {hora: Config.MAX_ALUNOS_POR_HORARIO for hora in Config.HORARIOS_DISPONIVEIS}
-
-def salvar_reserva(reserva: Dict[str, Any]) -> Tuple[bool, str]:
-    if not GSHEETS_AVAILABLE:
-        return False, "Biblioteca 'streamlit-gsheets' não disponível"
-    
-    try:
-        conn = st.connection("gsheets", type=GSheetsConnection)
-        df = carregar_dados()
-        reserva_id = str(uuid.uuid4())[:8].upper()
-        reserva["ID"] = reserva_id
-        reserva["Timestamp"] = datetime.now().isoformat()
-        reserva["Status"] = "Confirmado"
-        reserva["Data_Criacao"] = datetime.now().strftime("%d/%m/%Y %H:%M")
-        df_novo = pd.concat([df, pd.DataFrame([reserva])], ignore_index=True)
-        conn.update(worksheet=Config.WORKSHEET_NAME, data=df_novo)
-        st.cache_data.clear()
-        logger.info(f"Reserva {reserva_id} salva com sucesso")
-        return True, reserva_id
-    except Exception as e:
-        logger.error(f"Erro ao salvar reserva: {str(e)}")
-        return False, str(e)
-
-def criar_backup() -> bytes:
-    try:
-        df = carregar_dados()
-        if not df.empty:
-            return df.to_csv(index=False).encode('utf-8')
-        return b""
-    except Exception as e:
-        logger.error(f"Erro ao criar backup: {e}")
-        return b""
 
 # ============================================
 # 6. FUNÇÕES DE PROCESSAMENTO
@@ -300,7 +336,7 @@ if 'reserva_id_gerada' not in st.session_state:
     st.session_state.reserva_id_gerada = None
 
 # ============================================
-# 8. ESTILOS CSS (logo ajustado: sem deslocamento vertical)
+# 8. ESTILOS CSS (logo sem deslocamento)
 # ============================================
 
 st.markdown("""
@@ -523,13 +559,12 @@ with st.sidebar:
     # Seção "Status" removida propositalmente
 
 # ============================================
-# 11. PÁGINA PRINCIPAL - HOME (com logo)
+# 11. PÁGINA PRINCIPAL - HOME (com logo v.2)
 # ============================================
 
-# Substitui o título de texto pela imagem do logo
 st.markdown("""
 <div class="header-logo">
-    <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/Tennis%20Class%20logo%20v.1.png" alt="Tennis Class Logo">
+    <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/Tennis%20Class%20logo%20v.2.png" alt="Tennis Class Logo">
 </div>
 """, unsafe_allow_html=True)
 
@@ -839,8 +874,8 @@ elif st.session_state.pagina == "Dashboard":
             df = carregar_dados()
             if not df.empty:
                 total = len(df)
-                confirmados = len(df[df['Status'] == 'Confirmado'])
-                cancelados = len(df[df['Status'] == 'Cancelado'])
+                confirmados = len(df[df['status'] == 'Confirmado'])
+                cancelados = len(df[df['status'] == 'Cancelado'])
                 col1, col2, col3 = st.columns(3)
                 with col1:
                     st.metric("Total", total)
@@ -856,9 +891,9 @@ elif st.session_state.pagina == "Dashboard":
                     filtro_unidade = st.multiselect("Unidade", options=list(ACADEMIAS.keys()))
                 df_filtrado = df.copy()
                 if filtro_status:
-                    df_filtrado = df_filtrado[df_filtrado['Status'].isin(filtro_status)]
+                    df_filtrado = df_filtrado[df_filtrado['status'].isin(filtro_status)]
                 if filtro_unidade:
-                    df_filtrado = df_filtrado[df_filtrado['Unidade'].isin(filtro_unidade)]
+                    df_filtrado = df_filtrado[df_filtrado['unidade'].isin(filtro_unidade)]
                 st.dataframe(df_filtrado, use_container_width=True, hide_index=True)
                 st.markdown("### 🛠️ Ações")
                 col1, col2 = st.columns(2)
@@ -868,8 +903,9 @@ elif st.session_state.pagina == "Dashboard":
                         st.success("Dados atualizados!")
                         st.rerun()
                 with col2:
-                    csv = df_filtrado.to_csv(index=False).encode('utf-8')
-                    st.download_button(label="📥 Exportar CSV", data=csv, file_name=f"reservas_{datetime.now().strftime('%Y%m%d')}.csv", mime="text/csv", use_container_width=True)
+                    csv = criar_backup()
+                    if csv:
+                        st.download_button(label="📥 Exportar CSV", data=csv, file_name=f"reservas_{datetime.now().strftime('%Y%m%d')}.csv", mime="text/csv", use_container_width=True)
                 st.markdown("---")
                 if st.button("🚪 Logout", type="secondary", use_container_width=True):
                     st.session_state.admin_autenticado = False
@@ -919,7 +955,9 @@ st.markdown("""
 <div style='text-align: center; margin-top: 40px; color: rgba(255,255,255,0.6); font-size: 12px;'>
     <hr style='border-color: rgba(255,255,255,0.2);'>
     <p>TENNIS CLASS © 2025 - Sistema Completo</p>
+    <p>MASTER CODE DEEP SEEK v.12.4 (SQLite)</p>
     <p style='font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 5px;'>
+    Correção: Aula Kids R$ 230/hora | Pacote 4h R$ 920 | Locação de quadra | Calculadora completa | Websites academias | Banco SQLite
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -929,4 +967,4 @@ st.markdown("""
 # ============================================
 
 if __name__ == "__main__":
-    logger.info("MASTER CODE DEEP SEEK v.12.3")
+    logger.info("MASTER CODE DEEP SEEK v.12.4 (SQLite) iniciado")

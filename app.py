@@ -1,8 +1,8 @@
 # ============================================
-# MASTER CODE DEEP SEEK v.12.3
+# MASTER CODE DEEP SEEK v.12.4
 # ============================================
 # TENNIS CLASS APP - Sistema Completo Otimizado
-# Versão: 12.3
+# Versão: 12.4
 # Correção: Preços Aula Kids (R$ 230/hora | Pacote 4h R$ 920)
 # Modificações: 
 #   - removido "Reservas ativas" da barra lateral
@@ -11,7 +11,7 @@
 #   - melhorias no tratamento de erros e inicialização
 #   - substituído título de texto pela imagem do logo (aumentado em 12,5%)
 #   - adicionados websites das academias parceiras
-#   - (correção) removido deslocamento vertical do logo
+#   - logo posicionado na altura original (sem deslocamento)
 # ============================================
 
 import streamlit as st
@@ -300,7 +300,7 @@ if 'reserva_id_gerada' not in st.session_state:
     st.session_state.reserva_id_gerada = None
 
 # ============================================
-# 8. ESTILOS CSS (logo ajustado: sem deslocamento vertical)
+# 8. ESTILOS CSS (logo sem deslocamento)
 # ============================================
 
 st.markdown("""
@@ -919,6 +919,7 @@ st.markdown("""
 <div style='text-align: center; margin-top: 40px; color: rgba(255,255,255,0.6); font-size: 12px;'>
     <hr style='border-color: rgba(255,255,255,0.2);'>
     <p>TENNIS CLASS © 2025 - Sistema Completo</p>
+    <p>MASTER CODE DEEP SEEK v.12.4</p>
     <p style='font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 5px;'>
     </p>
 </div>
@@ -929,4 +930,4 @@ st.markdown("""
 # ============================================
 
 if __name__ == "__main__":
-    logger.info("MASTER CODE DEEP SEEK v.12.3")
+    logger.info("MASTER CODE DEEP SEEK v.12.4 iniciado")

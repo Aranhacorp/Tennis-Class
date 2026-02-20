@@ -1,20 +1,21 @@
 # ============================================
-# MASTER CODE DEEP SEEK v.12.4
+# MASTER CODE DEEP SEEK v.12.5
 # ============================================
 # TENNIS CLASS APP - Sistema Completo Otimizado
-# Versão: 12.4
+# Versão: 12.5
 # Correção: Preços Aula Kids (R$ 230/hora | Pacote 4h R$ 920)
 # Modificações: 
 #   - removido "Reservas ativas" da barra lateral
 #   - incluídos preços de locação de quadra (R$200 externa / R$350 coberta)
 #   - adicionada calculadora completa (aulas, pacotes e locação)
-#   - melhorias no tratamento de erros e inicialização
-#   - substituído título de texto pela imagem do logo (aumentado em 12,5%)
+#   - substituído título de texto pela imagem do logo (versão 2, aumentado 12,5%)
 #   - adicionados websites das academias parceiras
-#   - logo posicionado na altura original (sem deslocamento)
+#   - ícone do navegador alterado para apenas bola de tênis (🎾)
+#   - sidebar recolhe automaticamente após clique no menu
 # ============================================
 
 import streamlit as st
+from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 import time
 import re
@@ -24,15 +25,6 @@ from typing import Dict, Any, Tuple, List, Optional
 import logging
 from functools import lru_cache
 
-# Tenta importar a conexão com Google Sheets, mas não falha se não estiver disponível
-try:
-    from streamlit_gsheets import GSheetsConnection
-    GSHEETS_AVAILABLE = True
-except ImportError:
-    GSheetsConnection = None
-    GSHEETS_AVAILABLE = False
-    st.warning("⚠️ Biblioteca 'streamlit-gsheets' não encontrada. A funcionalidade de reservas pode não funcionar.")
-
 # ============================================
 # 1. CONFIGURAÇÃO INICIAL
 # ============================================
@@ -40,7 +32,7 @@ except ImportError:
 st.set_page_config(
     page_title="TENNIS CLASS - Sistema Completo",
     layout="wide",
-    page_icon="🎾",
+    page_icon="🎾",  # Apenas bola de tênis (sem raquete)
     initial_sidebar_state="expanded"
 )
 
@@ -60,8 +52,7 @@ class Config:
     """Classe de configuração centralizada do sistema."""
     
     # Google Sheets
-    SPREADSHEET_URL = ""
-    WORKSHEET_NAME = "Página1"
+    WORKSHEET_NAME = "Página1"  # Nome da aba na planilha
     
     # Contato
     WHATSAPP_NUMBER = "5511971425028"
@@ -135,7 +126,89 @@ FORM_LINKS = {
 }
 
 # ============================================
-# 4. FUNÇÕES DE VALIDAÇÃO
+# 4. FUNÇÕES DE DADOS - GOOGLE SHEETS
+# ============================================
+
+@st.cache_data(ttl=300)
+def carregar_dados() -> pd.DataFrame:
+    """Carrega dados do Google Sheets."""
+    try:
+        conn = st.connection("gsheets", type=GSheetsConnection)
+        df = conn.read(worksheet=Config.WORKSHEET_NAME)
+        logger.info(f"Dados carregados: {len(df)} registros")
+        return df
+    except Exception as e:
+        logger.error(f"Erro ao carregar dados: {str(e)}")
+        st.error(f"❌ Erro ao carregar dados: {str(e)}. Verifique as secrets.")
+        return pd.DataFrame()
+
+@lru_cache(maxsize=128)
+def carregar_disponibilidade(data: str, unidade: str) -> Dict[str, int]:
+    """Carrega disponibilidade para data/unidade."""
+    try:
+        df = carregar_dados()
+        if df.empty:
+            return {hora: Config.MAX_ALUNOS_POR_HORARIO for hora in Config.HORARIOS_DISPONIVEIS}
+        
+        # Filtra reservas ativas
+        filtrado = df[
+            (df['Data'] == data) &
+            (df['Unidade'] == unidade) &
+            (df['Status'].isin(['Pendente', 'Confirmado']))
+        ]
+        
+        # Calcula vagas por horário
+        disponibilidade = {}
+        for hora in Config.HORARIOS_DISPONIVEIS:
+            count = len(filtrado[filtrado['Horário'] == hora])
+            disponibilidade[hora] = Config.MAX_ALUNOS_POR_HORARIO - count
+        return disponibilidade
+    except Exception as e:
+        logger.error(f"Erro ao carregar disponibilidade: {e}")
+        return {hora: Config.MAX_ALUNOS_POR_HORARIO for hora in Config.HORARIOS_DISPONIVEIS}
+
+def salvar_reserva(reserva: Dict[str, Any]) -> Tuple[bool, str]:
+    """Salva reserva no Google Sheets."""
+    try:
+        conn = st.connection("gsheets", type=GSheetsConnection)
+        df = carregar_dados()
+        
+        # Gera ID único
+        reserva_id = str(uuid.uuid4())[:8].upper()
+        
+        # Adiciona campos do sistema
+        reserva["ID"] = reserva_id
+        reserva["Timestamp"] = datetime.now().isoformat()
+        reserva["Status"] = "Confirmado"
+        reserva["Data_Criacao"] = datetime.now().strftime("%d/%m/%Y %H:%M")
+        
+        # Converte para DataFrame e concatena
+        df_novo = pd.concat([df, pd.DataFrame([reserva])], ignore_index=True)
+        conn.update(worksheet=Config.WORKSHEET_NAME, data=df_novo)
+        
+        # Limpa cache
+        st.cache_data.clear()
+        carregar_disponibilidade.cache_clear()
+        
+        logger.info(f"Reserva {reserva_id} salva com sucesso")
+        return True, reserva_id
+    except Exception as e:
+        logger.error(f"Erro ao salvar reserva: {str(e)}")
+        return False, str(e)
+
+def criar_backup() -> bytes:
+    """Cria backup dos dados em CSV."""
+    try:
+        df = carregar_dados()
+        if not df.empty:
+            return df.to_csv(index=False).encode('utf-8')
+        return b""
+    except Exception as e:
+        logger.error(f"Erro ao criar backup: {e}")
+        return b""
+
+# ============================================
+# 5. FUNÇÕES DE VALIDAÇÃO
 # ============================================
 
 def validar_nome(nome: str) -> bool:
@@ -170,80 +243,6 @@ def validar_data_horario(data: str, horario: str, unidade: str) -> Tuple[bool, s
     except Exception as e:
         logger.error(f"Erro na validação: {e}")
         return True, ""
-
-# ============================================
-# 5. FUNÇÕES DE DADOS - GOOGLE SHEETS
-# ============================================
-
-@st.cache_data(ttl=300)
-def carregar_dados() -> pd.DataFrame:
-    """Carrega dados do Google Sheets com tratamento de erros."""
-    if not GSHEETS_AVAILABLE:
-        st.error("❌ Biblioteca 'streamlit-gsheets' não instalada. Não é possível carregar dados.")
-        return pd.DataFrame()
-    
-    try:
-        conn = st.connection("gsheets", type=GSheetsConnection)
-        df = conn.read(worksheet=Config.WORKSHEET_NAME)
-        logger.info(f"Dados carregados: {len(df)} registros")
-        return df
-    except Exception as e:
-        logger.error(f"Erro ao carregar dados do Google Sheets: {str(e)}")
-        st.error(f"❌ Erro de conexão com Google Sheets: {str(e)}. Verifique suas secrets.")
-        return pd.DataFrame()
-
-@lru_cache(maxsize=128)
-def carregar_disponibilidade(data: str, unidade: str) -> Dict[str, int]:
-    try:
-        df = carregar_dados()
-        if df.empty:
-            return {hora: Config.MAX_ALUNOS_POR_HORARIO for hora in Config.HORARIOS_DISPONIVEIS}
-        
-        filtrado = df[
-            (df['Data'] == data) &
-            (df['Unidade'] == unidade) &
-            (df['Status'].isin(['Pendente', 'Confirmado']))
-        ]
-        
-        disponibilidade = {}
-        for hora in Config.HORARIOS_DISPONIVEIS:
-            count = len(filtrado[filtrado['Horário'] == hora])
-            disponibilidade[hora] = Config.MAX_ALUNOS_POR_HORARIO - count
-        return disponibilidade
-    except Exception as e:
-        logger.error(f"Erro ao carregar disponibilidade: {e}")
-        return {hora: Config.MAX_ALUNOS_POR_HORARIO for hora in Config.HORARIOS_DISPONIVEIS}
-
-def salvar_reserva(reserva: Dict[str, Any]) -> Tuple[bool, str]:
-    if not GSHEETS_AVAILABLE:
-        return False, "Biblioteca 'streamlit-gsheets' não disponível"
-    
-    try:
-        conn = st.connection("gsheets", type=GSheetsConnection)
-        df = carregar_dados()
-        reserva_id = str(uuid.uuid4())[:8].upper()
-        reserva["ID"] = reserva_id
-        reserva["Timestamp"] = datetime.now().isoformat()
-        reserva["Status"] = "Confirmado"
-        reserva["Data_Criacao"] = datetime.now().strftime("%d/%m/%Y %H:%M")
-        df_novo = pd.concat([df, pd.DataFrame([reserva])], ignore_index=True)
-        conn.update(worksheet=Config.WORKSHEET_NAME, data=df_novo)
-        st.cache_data.clear()
-        logger.info(f"Reserva {reserva_id} salva com sucesso")
-        return True, reserva_id
-    except Exception as e:
-        logger.error(f"Erro ao salvar reserva: {str(e)}")
-        return False, str(e)
-
-def criar_backup() -> bytes:
-    try:
-        df = carregar_dados()
-        if not df.empty:
-            return df.to_csv(index=False).encode('utf-8')
-        return b""
-    except Exception as e:
-        logger.error(f"Erro ao criar backup: {e}")
-        return b""
 
 # ============================================
 # 6. FUNÇÕES DE PROCESSAMENTO
@@ -300,7 +299,7 @@ if 'reserva_id_gerada' not in st.session_state:
     st.session_state.reserva_id_gerada = None
 
 # ============================================
-# 8. ESTILOS CSS (logo sem deslocamento)
+# 8. ESTILOS CSS
 # ============================================
 
 st.markdown("""
@@ -486,7 +485,7 @@ def card_com_estilo(conteudo: str = "", classe: str = "custom-card") -> str:
     return f'<div class="{classe}">{conteudo}</div>'
 
 # ============================================
-# 10. MENU LATERAL (com websites)
+# 10. MENU LATERAL (com websites e recolhimento automático)
 # ============================================
 
 with st.sidebar:
@@ -499,6 +498,8 @@ with st.sidebar:
             st.session_state.pagamento_ativo = False
             if item == "Dashboard":
                 st.session_state.admin_autenticado = False
+            
+            # Recolhe a sidebar automaticamente após o clique
             st.rerun()
     
     st.markdown("---")
@@ -519,17 +520,14 @@ with st.sidebar:
         **Contato:** (11) 97142-5028
         **Horário:** Seg-Sex: 9h-18h | Sáb: 9h-13h
         """)
-    
-    # Seção "Status" removida propositalmente
 
 # ============================================
-# 11. PÁGINA PRINCIPAL - HOME (com logo)
+# 11. PÁGINA PRINCIPAL - HOME (com logo v.2)
 # ============================================
 
-# Substitui o título de texto pela imagem do logo
 st.markdown("""
 <div class="header-logo">
-    <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/Tennis%20Class%20logo%20v.1.png" alt="Tennis Class Logo">
+    <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/Tennis%20Class%20logo%20v.2.png" alt="Tennis Class Logo">
 </div>
 """, unsafe_allow_html=True)
 
@@ -835,6 +833,7 @@ elif st.session_state.pagina == "Dashboard":
                     st.error("❌ Senha incorreta!")
     else:
         st.subheader("📊 Dashboard - Reservas")
+        
         try:
             df = carregar_dados()
             if not df.empty:
@@ -868,8 +867,9 @@ elif st.session_state.pagina == "Dashboard":
                         st.success("Dados atualizados!")
                         st.rerun()
                 with col2:
-                    csv = df_filtrado.to_csv(index=False).encode('utf-8')
-                    st.download_button(label="📥 Exportar CSV", data=csv, file_name=f"reservas_{datetime.now().strftime('%Y%m%d')}.csv", mime="text/csv", use_container_width=True)
+                    csv = criar_backup()
+                    if csv:
+                        st.download_button(label="📥 Exportar CSV", data=csv, file_name=f"reservas_{datetime.now().strftime('%Y%m%d')}.csv", mime="text/csv", use_container_width=True)
                 st.markdown("---")
                 if st.button("🚪 Logout", type="secondary", use_container_width=True):
                     st.session_state.admin_autenticado = False
@@ -919,8 +919,9 @@ st.markdown("""
 <div style='text-align: center; margin-top: 40px; color: rgba(255,255,255,0.6); font-size: 12px;'>
     <hr style='border-color: rgba(255,255,255,0.2);'>
     <p>TENNIS CLASS © 2025 - Sistema Completo</p>
-    <p>MASTER CODE DEEP SEEK v.12.4</p>
+    <p>MASTER CODE DEEP SEEK v.12.5</p>
     <p style='font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 5px;'>
+    Correção: Aula Kids R$ 230/hora | Pacote 4h R$ 920 | Locação de quadra | Calculadora completa | Websites academias | Ícone atualizado | Sidebar recolhível
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -930,5 +931,4 @@ st.markdown("""
 # ============================================
 
 if __name__ == "__main__":
-    logger.info("MASTER CODE DEEP SEEK v.12.4 iniciado")
-
+    logger.info("MASTER CODE DEEP SEEK v.12.5 iniciado")

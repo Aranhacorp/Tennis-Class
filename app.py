@@ -801,7 +801,7 @@ elif st.session_state.pagina == "Cadastro":
     with col2:
         st.markdown(f"""
         <a href="{FORM_LINKS['aluno']}" class="clean-link" target="_blank">
-            <div class="icon-text">👤</div><div class="label-text">ALUNO</div>
+            <div class="icon-text">🤵‍♀️</div><div class="label-text">ALUNO</div>
         </a>""", unsafe_allow_html=True)
     with col3:
         st.markdown(f"""
@@ -931,6 +931,7 @@ st.markdown("""
 
 if __name__ == "__main__":
     logger.info("MASTER CODE DEEP SEEK v.12.4 iniciado")
+
 
 
 

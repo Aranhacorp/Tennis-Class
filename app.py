@@ -1,5 +1,5 @@
 # ============================================
-# MASTER CODE DEEP SEEK v.12.4
+# MASTER CODE DEEP SEEK v.12.4 (logo corrigido)
 # ============================================
 # TENNIS CLASS APP - Sistema Completo Otimizado
 # Versão: 12.4
@@ -8,11 +8,10 @@
 #   - removido "Reservas ativas" da barra lateral
 #   - incluídos preços de locação de quadra (R$200 externa / R$350 coberta)
 #   - adicionada calculadora completa (aulas, pacotes e locação)
-#   - substituído título de texto pela imagem do logo (versão 2, aumentado 12,5%)
+#   - substituído título de texto pela imagem do logo (versão 1, funcionando)
 #   - adicionados websites das academias parceiras
 #   - ícone do navegador alterado para apenas bola de tênis (🎾)
 #   - sidebar recolhe automaticamente após clique no menu
-#   - corrigido carregamento do logo (URL atualizada para v.2)
 # ============================================
 
 import streamlit as st
@@ -425,12 +424,12 @@ with st.sidebar:
         st.markdown("**Contato:** (11) 97142-5028  \n**Horário:** Seg-Sex: 9h-18h | Sáb: 9h-13h")
 
 # ============================================
-# 11. LOGO (versão 2)
+# 11. LOGO (versão 1 - corrigida)
 # ============================================
 
 st.markdown("""
 <div class="header-logo">
-    <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/Tennis%20Class%20logo%20v.2.png" alt="Tennis Class Logo">
+    <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/Tennis%20Class%20logo%20v.1.png" alt="Tennis Class Logo">
 </div>
 """, unsafe_allow_html=True)
 
@@ -693,7 +692,7 @@ elif st.session_state.pagina == "Contato":
 st.markdown("""
 <div style='text-align:center;margin-top:40px;color:rgba(255,255,255,0.6);font-size:12px;'>
     <hr>
-    <p>TENNIS CLASS © 2025 - v.12.4 (logo v.2)</p>
+    <p>TENNIS CLASS © 2025 - v.12.4 (logo v.1 corrigido)</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -702,4 +701,4 @@ st.markdown("""
 # ============================================
 
 if __name__ == "__main__":
-    logger.info("MASTER CODE DEEP SEEK v.12.4 (logo v.2) iniciado")
+    logger.info("MASTER CODE DEEP SEEK v.12.4 (logo v.1 corrigido) iniciado")

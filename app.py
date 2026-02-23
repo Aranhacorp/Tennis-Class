@@ -1,3 +1,4 @@
+
 # ============================================
 # MASTER CODE DEEP SEEK v.12.4
 # ============================================
@@ -109,17 +110,17 @@ ACADEMIAS = {
     "PLAY TENNIS Ibirapuera": {
         "endereco": "R. Estado de Israel, 860 - SP",
         "telefone": "(11) 97752-0488",
-        "website": www.playtennis.com.br"
+        "website": "https://www.playtennis.com.br/"
     },
     "TOP One Tennis": {
         "endereco": "Av. Indianópolis, 647 - SP",
         "telefone": "(11) 93236-3828",
-        "website": toponetennis.com.br"
+        "website": "https://toponetennis.com.br/"
     },
     "MELL Tennis": {
         "endereco": "Rua Oscar Gomes Cardim, 535 - SP",
         "telefone": "(11) 97142-5028",
-        "website": "www.instagram.com/barbetaefontestennisacademy/"
+        "website": "https://www.instagram.com/barbetaefontestennisacademy/"
     },
     "ARENA BTG Morumbi": {
         "endereco": "Av. Maj. Sylvio de Magalhães Padilha, 16741",
@@ -930,7 +931,6 @@ st.markdown("""
 
 if __name__ == "__main__":
     logger.info("MASTER CODE DEEP SEEK v.12.4 iniciado")
-
 
 
 

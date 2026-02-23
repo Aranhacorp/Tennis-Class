@@ -490,7 +490,7 @@ def card_com_estilo(conteudo: str = "", classe: str = "custom-card") -> str:
 # ============================================
 
 with st.sidebar:
-    st.markdown("<h2 style='color: white; text-align: center;'>🎾 MENU</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color: white; text-align: center;'>☑️ MENU</h2>", unsafe_allow_html=True)
     
     menu_itens = ["Home", "Preços", "Cadastro", "Dashboard", "Contato"]
     for item in menu_itens:
@@ -505,7 +505,7 @@ with st.sidebar:
     st.markdown("### 🏢 ACADEMIAS PARCEIRAS")
     for nome, info in ACADEMIAS.items():
         st.markdown(
-            f"📍 **{nome}**\n"
+            f"▶️ **{nome}**\n"
             f"<div style='font-size: 11px; color: #ccc; margin-bottom: 10px;'>"
             f"{info['endereco']}<br>📞 {info['telefone']}<br>"
             f"🌐 <a href='{info['website']}' target='_blank' style='color: #4CAF50; text-decoration: none;'>{info['website']}</a>"
@@ -930,6 +930,7 @@ st.markdown("""
 
 if __name__ == "__main__":
     logger.info("MASTER CODE DEEP SEEK v.12.4 iniciado")
+
 
 
 

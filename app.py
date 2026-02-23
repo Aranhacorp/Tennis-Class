@@ -502,7 +502,7 @@ with st.sidebar:
             st.rerun()
     
     st.markdown("---")
-    st.markdown("### 🏢 ACADEMIAS PARCEIRAS")
+    st.markdown("### 🌐 ACADEMIAS PARCEIRAS")
     for nome, info in ACADEMIAS.items():
         st.markdown(
             f"▶️ **{nome}**\n"
@@ -930,6 +930,7 @@ st.markdown("""
 
 if __name__ == "__main__":
     logger.info("MASTER CODE DEEP SEEK v.12.4 iniciado")
+
 
 
 

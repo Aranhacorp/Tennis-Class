@@ -1,6 +1,5 @@
-
 # ============================================
-# MASTER CODE DEEP SEEK v.12.4
+# MASTER CODE DEEP SEEK v.12.4 (Timer em tempo real)
 # ============================================
 # TENNIS CLASS APP - Sistema Completo Otimizado
 # Versão: 12.4
@@ -13,6 +12,7 @@
 #   - substituído título de texto pela imagem do logo (aumentado em 12,5%)
 #   - adicionados websites das academias parceiras
 #   - logo posicionado na altura original (sem deslocamento)
+#   - timer em tempo real no resumo da reserva (atualização a cada segundo)
 # ============================================
 
 import streamlit as st
@@ -24,6 +24,7 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, Tuple, List, Optional
 import logging
 from functools import lru_cache
+import threading
 
 # Tenta importar a conexão com Google Sheets, mas não falha se não estiver disponível
 try:
@@ -41,7 +42,7 @@ except ImportError:
 st.set_page_config(
     page_title="TENNIS CLASS - Sistema Completo",
     layout="wide",
-    page_icon="🔋",
+    page_icon="📆",
     initial_sidebar_state="expanded"
 )
 
@@ -456,6 +457,19 @@ st.markdown("""
         transform: translateY(-2px);
         box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
+    
+    /* Estilo para o timer em tempo real */
+    .realtime-timer {
+        background-color: #fff3cd;
+        border: 2px solid #ffc107;
+        color: #856404;
+        font-weight: bold;
+        font-size: 24px;
+        text-align: center;
+        padding: 15px;
+        border-radius: 10px;
+        margin: 15px 0;
+    }
 </style>
 
 <!-- Botão WhatsApp -->
@@ -476,11 +490,19 @@ st.markdown("""
 # 9. COMPONENTES REUTILIZÁVEIS
 # ============================================
 
-def mostrar_timer(tempo_total: int, inicio_time: float) -> Tuple[bool, str]:
+def calcular_tempo_restante(tempo_total: int, inicio_time: float) -> Tuple[bool, int, int]:
+    """Calcula o tempo restante e retorna (ativo, minutos, segundos)."""
     restante = tempo_total - (time.time() - inicio_time)
     if restante <= 0:
-        return False, "⏰ Tempo esgotado!"
+        return False, 0, 0
     m, s = divmod(int(restante), 60)
+    return True, m, s
+
+def mostrar_timer(tempo_total: int, inicio_time: float) -> Tuple[bool, str]:
+    """Versão original do timer para compatibilidade."""
+    ativo, m, s = calcular_tempo_restante(tempo_total, inicio_time)
+    if not ativo:
+        return False, "⏰ Tempo esgotado!"
     return True, f"⏱️ Expira em: {m:02d}:{s:02d}"
 
 def card_com_estilo(conteudo: str = "", classe: str = "custom-card") -> str:
@@ -594,7 +616,7 @@ if st.session_state.pagina == "Home":
                     for campo, mensagem in st.session_state.erros_form.items():
                         st.markdown(f'<div class="error-message">❌ {mensagem}</div>', unsafe_allow_html=True)
     
-    else:  # TELA DE PAGAMENTO
+    else:  # TELA DE PAGAMENTO COM TIMER EM TEMPO REAL
         st.subheader("💳 Pagamento via PIX")
         st.markdown("### Chave PIX:")
         st.markdown('<div class="pix-key">aranha.corp@gmail.com</div>', unsafe_allow_html=True)
@@ -609,17 +631,37 @@ if st.session_state.pagina == "Home":
         **E-mail:** {reserva.get('E-mail', '')}
         """)
         
-        timer_box = st.empty()
+        # Timer em tempo real usando session_state e rerun
+        timer_placeholder = st.empty()
+        
         if st.session_state.inicio_timer:
-            ativo, mensagem_timer = mostrar_timer(Config.TEMPO_PAGAMENTO, st.session_state.inicio_timer)
+            # Calcula tempo restante
+            ativo, minutos, segundos = calcular_tempo_restante(
+                Config.TEMPO_PAGAMENTO, 
+                st.session_state.inicio_timer
+            )
+            
             if ativo:
-                timer_box.markdown(f'<div class="timer-warning">{mensagem_timer}</div>', unsafe_allow_html=True)
+                # Formata o tempo para exibição
+                tempo_formatado = f"{minutos:02d}:{segundos:02d}"
+                
+                # Exibe o timer com estilo diferenciado
+                timer_placeholder.markdown(
+                    f'<div class="realtime-timer">⏳ EXPIRA EM: {tempo_formatado}</div>',
+                    unsafe_allow_html=True
+                )
+                
+                # Aguarda 1 segundo e atualiza a página para o timer continuar em tempo real
+                time.sleep(1)
+                st.rerun()
             else:
+                # Tempo esgotado
                 st.session_state.pagamento_ativo = False
-                timer_box.warning("⏰ Tempo esgotado!")
+                timer_placeholder.error("⏰ TEMPO ESGOTADO! A reserva expirou.")
                 time.sleep(2)
                 st.rerun()
         
+        # Botão de confirmação de pagamento
         if st.button("✅ CONFIRMAR PAGAMENTO", type="primary", use_container_width=True):
             with st.spinner("Processando..."):
                 sucesso, reserva_id, mensagem = processar_reserva(st.session_state.reserva_temp)
@@ -801,7 +843,7 @@ elif st.session_state.pagina == "Cadastro":
     with col2:
         st.markdown(f"""
         <a href="{FORM_LINKS['aluno']}" class="clean-link" target="_blank">
-            <div class="icon-text">🙋🏼‍♀️</div><div class="label-text">ALUNO</div>
+            <div class="icon-text">👤</div><div class="label-text">ALUNO</div>
         </a>""", unsafe_allow_html=True)
     with col3:
         st.markdown(f"""
@@ -930,16 +972,4 @@ st.markdown("""
 # ============================================
 
 if __name__ == "__main__":
-    logger.info("MASTER CODE DEEP SEEK v.12.4 iniciado")
-
-
-
-
-
-
-
-
-
-
-
-
+    logger.info("MASTER CODE DEEP SEEK v.12.4 (Timer em tempo real) iniciado")

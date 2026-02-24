@@ -42,7 +42,7 @@ except ImportError:
 st.set_page_config(
     page_title="TENNIS CLASS - Sistema Completo",
     layout="wide",
-    page_icon="📆",
+    page_icon="🔋",
     initial_sidebar_state="expanded"
 )
 
@@ -973,3 +973,4 @@ st.markdown("""
 
 if __name__ == "__main__":
     logger.info("MASTER CODE DEEP SEEK v.12.4 (Timer em tempo real) iniciado")
+

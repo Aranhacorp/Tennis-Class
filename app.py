@@ -1,5 +1,5 @@
 # ============================================
-# MASTER CODE DEEP SEEK v.12.4 (Timer em tempo real)
+# MASTER CODE DEEP SEEK v.12.4 (Planilha corrigida)
 # ============================================
 # TENNIS CLASS APP - Sistema Completo Otimizado
 # Versão: 12.4
@@ -12,7 +12,8 @@
 #   - substituído título de texto pela imagem do logo (aumentado em 12,5%)
 #   - adicionados websites das academias parceiras
 #   - logo posicionado na altura original (sem deslocamento)
-#   - timer em tempo real no resumo da reserva (atualização a cada segundo)
+#   - timer em tempo real no resumo da reserva
+#   - CORREÇÃO: formato de timestamp ISO completo para planilha
 # ============================================
 
 import streamlit as st
@@ -24,7 +25,6 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, Tuple, List, Optional
 import logging
 from functools import lru_cache
-import threading
 
 # Tenta importar a conexão com Google Sheets, mas não falha se não estiver disponível
 try:
@@ -42,7 +42,7 @@ except ImportError:
 st.set_page_config(
     page_title="TENNIS CLASS - Sistema Completo",
     layout="wide",
-    page_icon="🔋",
+    page_icon="🎾",
     initial_sidebar_state="expanded"
 )
 
@@ -174,7 +174,7 @@ def validar_data_horario(data: str, horario: str, unidade: str) -> Tuple[bool, s
         return True, ""
 
 # ============================================
-# 5. FUNÇÕES DE DADOS - GOOGLE SHEETS
+# 5. FUNÇÕES DE DADOS - GOOGLE SHEETS (CORRIGIDAS)
 # ============================================
 
 @st.cache_data(ttl=300)
@@ -201,12 +201,14 @@ def carregar_disponibilidade(data: str, unidade: str) -> Dict[str, int]:
         if df.empty:
             return {hora: Config.MAX_ALUNOS_POR_HORARIO for hora in Config.HORARIOS_DISPONIVEIS}
         
+        # Filtra reservas ativas
         filtrado = df[
             (df['Data'] == data) &
             (df['Unidade'] == unidade) &
             (df['Status'].isin(['Pendente', 'Confirmado']))
         ]
         
+        # Calcula vagas por horário
         disponibilidade = {}
         for hora in Config.HORARIOS_DISPONIVEIS:
             count = len(filtrado[filtrado['Horário'] == hora])
@@ -223,15 +225,28 @@ def salvar_reserva(reserva: Dict[str, Any]) -> Tuple[bool, str]:
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
         df = carregar_dados()
+        
+        # Gera ID único
         reserva_id = str(uuid.uuid4())[:8].upper()
+        
+        # CORREÇÃO: Timestamp no formato ISO completo (YYYY-MM-DD HH:MM:SS)
+        timestamp_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Adiciona campos do sistema
         reserva["ID"] = reserva_id
-        reserva["Timestamp"] = datetime.now().isoformat()
+        reserva["Timestamp"] = timestamp_atual  # Formato ISO completo
         reserva["Status"] = "Confirmado"
         reserva["Data_Criacao"] = datetime.now().strftime("%d/%m/%Y %H:%M")
+        
+        # Converte para DataFrame e concatena
         df_novo = pd.concat([df, pd.DataFrame([reserva])], ignore_index=True)
         conn.update(worksheet=Config.WORKSHEET_NAME, data=df_novo)
+        
+        # Limpa cache
         st.cache_data.clear()
-        logger.info(f"Reserva {reserva_id} salva com sucesso")
+        carregar_disponibilidade.cache_clear()
+        
+        logger.info(f"Reserva {reserva_id} salva com sucesso. Timestamp: {timestamp_atual}")
         return True, reserva_id
     except Exception as e:
         logger.error(f"Erro ao salvar reserva: {str(e)}")
@@ -513,7 +528,7 @@ def card_com_estilo(conteudo: str = "", classe: str = "custom-card") -> str:
 # ============================================
 
 with st.sidebar:
-    st.markdown("<h2 style='color: white; text-align: center;'>☑️ MENU</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color: white; text-align: center;'>🎾 MENU</h2>", unsafe_allow_html=True)
     
     menu_itens = ["Home", "Preços", "Cadastro", "Dashboard", "Contato"]
     for item in menu_itens:
@@ -525,10 +540,10 @@ with st.sidebar:
             st.rerun()
     
     st.markdown("---")
-    st.markdown("### 🌐 ACADEMIAS PARCEIRAS")
+    st.markdown("### 🏢 ACADEMIAS PARCEIRAS")
     for nome, info in ACADEMIAS.items():
         st.markdown(
-            f"▶️ **{nome}**\n"
+            f"📍 **{nome}**\n"
             f"<div style='font-size: 11px; color: #ccc; margin-bottom: 10px;'>"
             f"{info['endereco']}<br>📞 {info['telefone']}<br>"
             f"🌐 <a href='{info['website']}' target='_blank' style='color: #4CAF50; text-decoration: none;'>{info['website']}</a>"
@@ -631,7 +646,7 @@ if st.session_state.pagina == "Home":
         **E-mail:** {reserva.get('E-mail', '')}
         """)
         
-        # Timer em tempo real usando session_state e rerun
+        # Timer em tempo real
         timer_placeholder = st.empty()
         
         if st.session_state.inicio_timer:
@@ -972,5 +987,4 @@ st.markdown("""
 # ============================================
 
 if __name__ == "__main__":
-    logger.info("MASTER CODE DEEP SEEK v.12.4 (Timer em tempo real) iniciado")
-
+    logger.info("MASTER CODE DEEP SEEK v.12.4 (Planilha corrigida) iniciado")

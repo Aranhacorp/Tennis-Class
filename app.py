@@ -723,7 +723,7 @@ if st.session_state.pagina == "Home":
 
 elif st.session_state.pagina == "Preços":
     st.markdown(card_com_estilo(), unsafe_allow_html=True)
-    st.markdown("### 🎾 Tabela de Preços")
+    st.markdown("### ✅ Tabela de Preços")
     st.markdown("---")
     
     col1, col2 = st.columns(2)
@@ -859,12 +859,12 @@ elif st.session_state.pagina == "Cadastro":
     with col2:
         st.markdown(f"""
         <a href="{FORM_LINKS['aluno']}" class="clean-link" target="_blank">
-            <div class="icon-text">👤</div><div class="label-text">ALUNO</div>
+            <div class="icon-text">👱🏻‍♀️</div><div class="label-text">ALUNO</div>
         </a>""", unsafe_allow_html=True)
     with col3:
         st.markdown(f"""
         <a href="{FORM_LINKS['academia']}" class="clean-link" target="_blank">
-            <div class="icon-text">🏢</div><div class="label-text">ACADEMIA</div>
+            <div class="icon-text">🥇</div><div class="label-text">ACADEMIA</div>
         </a>""", unsafe_allow_html=True)
     
     st.markdown("""
@@ -989,5 +989,6 @@ st.markdown("""
 
 if __name__ == "__main__":
     logger.info("MASTER CODE DEEP SEEK v.12.4 (Planilha corrigida) iniciado")
+
 
 

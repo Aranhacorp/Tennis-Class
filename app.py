@@ -1,9 +1,9 @@
 
 # ============================================
-# MASTER CODE DEEP SEEK v.12.4 (Planilha corrigida)
+# MASTER CODE DEEP SEEK v.12.6
 # ============================================
 # TENNIS CLASS APP - Sistema Completo Otimizado
-# Versão: 12.4
+# Versão: 12.6
 # Correção: Preços Aula Kids (R$ 230/hora | Pacote 4h R$ 920)
 # Modificações: 
 #   - removido "Reservas ativas" da barra lateral
@@ -989,4 +989,5 @@ st.markdown("""
 
 if __name__ == "__main__":
     logger.info("MASTER CODE DEEP SEEK v.12.4 (Planilha corrigida) iniciado")
+
 

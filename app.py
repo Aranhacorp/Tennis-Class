@@ -988,7 +988,9 @@ st.markdown("""
 # ============================================
 
 if __name__ == "__main__":
-    logger.info("MASTER CODE DEEP SEEK v.12.6)
+     logger.info("MASTER CODE DEEP SEEK v.12.6")
+
+
 
 
 

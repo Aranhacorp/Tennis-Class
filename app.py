@@ -40,7 +40,7 @@ except ImportError:
 st.set_page_config(
     page_title="TENNIS CLASS - Sistema Completo",
     layout="wide",
-    page_icon="🎾",
+    page_icon="🔋",
     initial_sidebar_state="expanded"
 )
 
@@ -734,3 +734,4 @@ elif st.session_state.pagina == "Preços":
     with col2:
         quantidade = st.number_input("Quantidade de aulas", min_value=1, max_value=20, value=1)
     with col
+

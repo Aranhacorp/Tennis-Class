@@ -1,8 +1,9 @@
+
 # ============================================
-# MASTER CODE DEEP SEEK v.12.5
+# MASTER CODE DEEP SEEK v.12.4
 # ============================================
 # TENNIS CLASS APP - Sistema Completo Otimizado
-# Versão: 12.5
+# Versão: 12.4
 # Correção: Preços Aula Kids (R$ 230/hora | Pacote 4h R$ 920)
 # Modificações: 
 #   - removido "Reservas ativas" da barra lateral
@@ -40,7 +41,7 @@ except ImportError:
 st.set_page_config(
     page_title="TENNIS CLASS - Sistema Completo",
     layout="wide",
-    page_icon="🎾",
+    page_icon="📆",
     initial_sidebar_state="expanded"
 )
 
@@ -490,7 +491,7 @@ def card_com_estilo(conteudo: str = "", classe: str = "custom-card") -> str:
 # ============================================
 
 with st.sidebar:
-    st.markdown("<h2 style='color: white; text-align: center;'>🎾 MENU</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color: white; text-align: center;'>☑️ MENU</h2>", unsafe_allow_html=True)
     
     menu_itens = ["Home", "Preços", "Cadastro", "Dashboard", "Contato"]
     for item in menu_itens:
@@ -502,10 +503,10 @@ with st.sidebar:
             st.rerun()
     
     st.markdown("---")
-    st.markdown("### 🏢 ACADEMIAS PARCEIRAS")
+    st.markdown("### 🌐 ACADEMIAS PARCEIRAS")
     for nome, info in ACADEMIAS.items():
         st.markdown(
-            f"📍 **{nome}**\n"
+            f"▶️ **{nome}**\n"
             f"<div style='font-size: 11px; color: #ccc; margin-bottom: 10px;'>"
             f"{info['endereco']}<br>📞 {info['telefone']}<br>"
             f"🌐 <a href='{info['website']}' target='_blank' style='color: #4CAF50; text-decoration: none;'>{info['website']}</a>"
@@ -733,4 +734,205 @@ elif st.session_state.pagina == "Preços":
         tipo_aula = st.selectbox("Tipo de aula", ["Aula particular", "Aula em grupo", "Aula Kids", "Personal trainer"])
     with col2:
         quantidade = st.number_input("Quantidade de aulas", min_value=1, max_value=20, value=1)
-    with col
+    with col3:
+        st.markdown("<br>", unsafe_allow_html=True)
+        calcular = st.button("Calcular")
+    if calcular:
+        preco_por_aula = 0
+        for key, info in SERVICOS.items():
+            if info['nome'] == tipo_aula:
+                preco_por_aula = info['preco']
+                break
+        total = preco_por_aula * quantidade
+        st.success(f"**Total:** R$ {total:,.2f} por {quantidade} aulas")
+    
+    st.markdown("---")
+    st.markdown("#### 🧮 Calculadora Completa (Aulas, Pacotes e Locação)")
+    with st.form("calculadora_completa"):
+        opcao = st.radio("Selecione o tipo de serviço", ["Aula avulsa", "Pacote", "Locação de quadra"], horizontal=True)
+        if opcao == "Aula avulsa":
+            tipo_aula2 = st.selectbox("Tipo de aula", ["Aula particular", "Aula em grupo", "Aula Kids", "Personal trainer"], key="tipo_aula2")
+            quantidade2 = st.number_input("Quantidade de horas/aulas", min_value=1, max_value=20, value=1, key="qtd2")
+            if st.form_submit_button("Calcular"):
+                preco = 0
+                for key, info in SERVICOS.items():
+                    if info['nome'] == tipo_aula2 and info['tipo'] == "Hora":
+                        preco = info['preco']
+                        break
+                total = preco * quantidade2
+                st.success(f"**Total:** R$ {total:,.2f} para {quantidade2} hora(s) de {tipo_aula2}")
+        elif opcao == "Pacote":
+            pacotes = []
+            for key, info in SERVICOS.items():
+                if "Pacote" in info['nome']:
+                    pacotes.append(f"{info['nome']} - R$ {info['preco']} ({info['tipo']})")
+            pacote_escolhido = st.selectbox("Escolha o pacote", pacotes)
+            if st.form_submit_button("Calcular"):
+                preco = 0
+                descricao = ""
+                for key, info in SERVICOS.items():
+                    if "Pacote" in info['nome'] and info['nome'] in pacote_escolhido:
+                        preco = info['preco']
+                        descricao = f"{info['nome']} ({info['tipo']})"
+                        break
+                st.success(f"**Total:** R$ {preco:,.2f} para o pacote: {descricao}")
+        else:  # Locação de quadra
+            tipo_quadra = st.selectbox("Tipo de quadra", ["Quadra Externa", "Quadra Coberta"])
+            horas = st.number_input("Número de horas", min_value=1, max_value=12, value=1)
+            if st.form_submit_button("Calcular"):
+                preco_hora = 200 if tipo_quadra == "Quadra Externa" else 350
+                total = preco_hora * horas
+                st.success(f"**Total:** R$ {total:,.2f} para {horas} hora(s) de {tipo_quadra}")
+
+# ============================================
+# 13. PÁGINA DE CADASTRO
+# ============================================
+
+elif st.session_state.pagina == "Cadastro":
+    st.markdown(card_com_estilo(), unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center;'>📝 Portal de Cadastros</h2><br>", unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(f"""
+        <a href="{FORM_LINKS['professor']}" class="clean-link" target="_blank">
+            <div class="icon-text">👨‍🏫</div><div class="label-text">PROFESSOR</div>
+        </a>""", unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"""
+        <a href="{FORM_LINKS['aluno']}" class="clean-link" target="_blank">
+            <div class="icon-text">👤</div><div class="label-text">ALUNO</div>
+        </a>""", unsafe_allow_html=True)
+    with col3:
+        st.markdown(f"""
+        <a href="{FORM_LINKS['academia']}" class="clean-link" target="_blank">
+            <div class="icon-text">🏢</div><div class="label-text">ACADEMIA</div>
+        </a>""", unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div style='text-align: center; margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px; color: #ccc;'>
+        <p><strong>📋 Instruções:</strong> Os formulários abrem em nova aba. Preencha todos os campos obrigatórios.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# ============================================
+# 14. PÁGINA DASHBOARD
+# ============================================
+
+elif st.session_state.pagina == "Dashboard":
+    st.markdown(card_com_estilo(), unsafe_allow_html=True)
+    if not st.session_state.admin_autenticado:
+        st.subheader("🔐 Acesso Administrativo")
+        senha = st.text_input("Senha de administrador:", type="password", placeholder="Digite a senha...")
+        col1, _ = st.columns([3, 1])
+        with col1:
+            if st.button("🔓 Acessar", use_container_width=True):
+                if verificar_senha_admin(senha):
+                    st.session_state.admin_autenticado = True
+                    st.success("✅ Acesso concedido!")
+                    time.sleep(1)
+                    st.rerun()
+                else:
+                    st.error("❌ Senha incorreta!")
+    else:
+        st.subheader("📊 Dashboard - Reservas")
+        try:
+            df = carregar_dados()
+            if not df.empty:
+                total = len(df)
+                confirmados = len(df[df['Status'] == 'Confirmado'])
+                cancelados = len(df[df['Status'] == 'Cancelado'])
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Total", total)
+                with col2:
+                    st.metric("Confirmados", confirmados)
+                with col3:
+                    st.metric("Cancelados", cancelados)
+                st.markdown("---")
+                col1, col2 = st.columns(2)
+                with col1:
+                    filtro_status = st.multiselect("Status", options=["Confirmado", "Cancelado"], default=["Confirmado"])
+                with col2:
+                    filtro_unidade = st.multiselect("Unidade", options=list(ACADEMIAS.keys()))
+                df_filtrado = df.copy()
+                if filtro_status:
+                    df_filtrado = df_filtrado[df_filtrado['Status'].isin(filtro_status)]
+                if filtro_unidade:
+                    df_filtrado = df_filtrado[df_filtrado['Unidade'].isin(filtro_unidade)]
+                st.dataframe(df_filtrado, use_container_width=True, hide_index=True)
+                st.markdown("### 🛠️ Ações")
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button("🔄 Atualizar", use_container_width=True):
+                        st.cache_data.clear()
+                        st.success("Dados atualizados!")
+                        st.rerun()
+                with col2:
+                    csv = df_filtrado.to_csv(index=False).encode('utf-8')
+                    st.download_button(label="📥 Exportar CSV", data=csv, file_name=f"reservas_{datetime.now().strftime('%Y%m%d')}.csv", mime="text/csv", use_container_width=True)
+                st.markdown("---")
+                if st.button("🚪 Logout", type="secondary", use_container_width=True):
+                    st.session_state.admin_autenticado = False
+                    st.rerun()
+            else:
+                st.info("📭 Nenhuma reserva encontrada.")
+        except Exception as e:
+            st.error(f"❌ Erro: {str(e)}")
+
+# ============================================
+# 15. PÁGINA DE CONTATO
+# ============================================
+
+elif st.session_state.pagina == "Contato":
+    st.markdown(card_com_estilo(), unsafe_allow_html=True)
+    st.subheader("📞 Canais de Atendimento")
+    st.markdown("---")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("### 📧 E-mail")
+        st.markdown("""<div style='padding:15px;background:rgba(255,255,255,0.1);border-radius:10px;'><h4 style='margin:0;color:white;'>aranha.corp@gmail.com</h4></div>""", unsafe_allow_html=True)
+        st.markdown("### 🏢 Endereço")
+        st.markdown("""<div style='padding:15px;background:rgba(255,255,255,0.1);border-radius:10px;'><p style='margin:0;color:white;'>São Paulo - SP</p></div>""", unsafe_allow_html=True)
+    with col2:
+        st.markdown("### 📱 WhatsApp")
+        st.markdown("""<div style='padding:15px;background:rgba(255,255,255,0.1);border-radius:10px;'><h4 style='margin:0;color:white;'>(11) 97142-5028</h4><p style='margin:5px 0 0 0;color:#ccc;'>Seg-Sab: 8h-20h</p></div>""", unsafe_allow_html=True)
+        st.markdown("### ⏰ Horário")
+        st.markdown("""<div style='padding:15px;background:rgba(255,255,255,0.1);border-radius:10px;'><p style='margin:0;color:white;'>Seg-Sex: 8h-20h</p><p style='margin:5px 0 0 0;color:#ccc;'>Sáb: 8h-18h</p></div>""", unsafe_allow_html=True)
+    st.markdown("---")
+    st.markdown("### ✉️ Envie uma mensagem")
+    with st.form("contato_form"):
+        nome = st.text_input("Seu nome", placeholder="Digite seu nome")
+        email = st.text_input("Seu e-mail", placeholder="Digite seu e-mail")
+        telefone = st.text_input("Telefone (opcional)", placeholder="(11) 99999-9999")
+        mensagem = st.text_area("Mensagem", placeholder="Sua mensagem...", height=100)
+        if st.form_submit_button("📤 Enviar", use_container_width=True):
+            if nome and email and mensagem:
+                st.success("✅ Mensagem enviada!")
+            else:
+                st.warning("⚠️ Preencha todos os campos.")
+
+# ============================================
+# 16. RODAPÉ
+# ============================================
+
+st.markdown("""
+<div style='text-align: center; margin-top: 40px; color: rgba(255,255,255,0.6); font-size: 12px;'>
+    <hr style='border-color: rgba(255,255,255,0.2);'>
+    <p>TENNIS CLASS © 2025 - Sistema Completo</p>
+    <p style='font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 5px;'>
+    </p>
+</div>
+""", unsafe_allow_html=True)
+
+# ============================================
+# 17. INICIALIZAÇÃO
+# ============================================
+
+if __name__ == "__main__":
+    logger.info("MASTER CODE DEEP SEEK v.12.4 iniciado")
+
+
+
+
+

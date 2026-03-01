@@ -1,6 +1,5 @@
-
 # ============================================
-# MASTER CODE DEEP SEEK v.12.6
+# MASTER CODE DEEP SEEK v.12.6 (diagnóstico)
 # ============================================
 # TENNIS CLASS APP - Sistema Completo Otimizado
 # Versão: 12.6
@@ -15,6 +14,7 @@
 #   - logo posicionado na altura original (sem deslocamento)
 #   - timer em tempo real no resumo da reserva
 #   - CORREÇÃO: formato de timestamp ISO completo para planilha
+#   - DIAGNÓSTICO: logs detalhados e painel de diagnóstico no Dashboard
 # ============================================
 
 import streamlit as st
@@ -63,8 +63,8 @@ class Config:
     """Classe de configuração centralizada do sistema."""
     
     # Google Sheets
-    SPREADSHEET_URL = ""
-    WORKSHEET_NAME = "Página1"
+    SPREADSHEET_URL = ""  # Não usado diretamente, mas mantido
+    WORKSHEET_NAME = "Página1"  # Nome da aba na planilha - VERIFIQUE SE É ESTE MESMO
     
     # Contato
     WHATSAPP_NUMBER = "5511971425028"
@@ -180,7 +180,7 @@ def validar_data_horario(data: str, horario: str, unidade: str) -> Tuple[bool, s
 
 @st.cache_data(ttl=300)
 def carregar_dados() -> pd.DataFrame:
-    """Carrega dados do Google Sheets com tratamento de erros."""
+    """Carrega dados do Google Sheets com tratamento de erros e logs detalhados."""
     if not GSHEETS_AVAILABLE:
         st.error("❌ Biblioteca 'streamlit-gsheets' não instalada. Não é possível carregar dados.")
         return pd.DataFrame()
@@ -188,11 +188,11 @@ def carregar_dados() -> pd.DataFrame:
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
         df = conn.read(worksheet=Config.WORKSHEET_NAME)
-        logger.info(f"Dados carregados: {len(df)} registros")
+        logger.info(f"Dados carregados: {len(df)} registros. Colunas encontradas: {list(df.columns)}")
         return df
     except Exception as e:
-        logger.error(f"Erro ao carregar dados do Google Sheets: {str(e)}")
-        st.error(f"❌ Erro de conexão com Google Sheets: {str(e)}. Verifique suas secrets.")
+        logger.error(f"Erro ao carregar dados do Google Sheets: {str(e)}", exc_info=True)
+        st.error(f"❌ Erro de conexão com Google Sheets: {str(e)}. Verifique suas secrets e o nome da aba.")
         return pd.DataFrame()
 
 @lru_cache(maxsize=128)
@@ -200,7 +200,15 @@ def carregar_disponibilidade(data: str, unidade: str) -> Dict[str, int]:
     try:
         df = carregar_dados()
         if df.empty:
+            logger.warning("DataFrame vazio ao calcular disponibilidade")
             return {hora: Config.MAX_ALUNOS_POR_HORARIO for hora in Config.HORARIOS_DISPONIVEIS}
+        
+        # Verifica se as colunas necessárias existem
+        colunas_necessarias = ['Data', 'Unidade', 'Status', 'Horário']
+        for col in colunas_necessarias:
+            if col not in df.columns:
+                logger.warning(f"Coluna '{col}' não encontrada no DataFrame. Colunas disponíveis: {list(df.columns)}")
+                return {hora: Config.MAX_ALUNOS_POR_HORARIO for hora in Config.HORARIOS_DISPONIVEIS}
         
         # Filtra reservas ativas
         filtrado = df[
@@ -216,7 +224,7 @@ def carregar_disponibilidade(data: str, unidade: str) -> Dict[str, int]:
             disponibilidade[hora] = Config.MAX_ALUNOS_POR_HORARIO - count
         return disponibilidade
     except Exception as e:
-        logger.error(f"Erro ao carregar disponibilidade: {e}")
+        logger.error(f"Erro ao carregar disponibilidade: {e}", exc_info=True)
         return {hora: Config.MAX_ALUNOS_POR_HORARIO for hora in Config.HORARIOS_DISPONIVEIS}
 
 def salvar_reserva(reserva: Dict[str, Any]) -> Tuple[bool, str]:
@@ -235,7 +243,7 @@ def salvar_reserva(reserva: Dict[str, Any]) -> Tuple[bool, str]:
         
         # Adiciona campos do sistema
         reserva["ID"] = reserva_id
-        reserva["Timestamp"] = timestamp_atual  # Formato ISO completo
+        reserva["Timestamp"] = timestamp_atual
         reserva["Status"] = "Confirmado"
         reserva["Data_Criacao"] = datetime.now().strftime("%d/%m/%Y %H:%M")
         
@@ -250,7 +258,7 @@ def salvar_reserva(reserva: Dict[str, Any]) -> Tuple[bool, str]:
         logger.info(f"Reserva {reserva_id} salva com sucesso. Timestamp: {timestamp_atual}")
         return True, reserva_id
     except Exception as e:
-        logger.error(f"Erro ao salvar reserva: {str(e)}")
+        logger.error(f"Erro ao salvar reserva: {str(e)}", exc_info=True)
         return False, str(e)
 
 def criar_backup() -> bytes:
@@ -874,7 +882,7 @@ elif st.session_state.pagina == "Cadastro":
     """, unsafe_allow_html=True)
 
 # ============================================
-# 14. PÁGINA DASHBOARD
+# 14. PÁGINA DASHBOARD (COM DIAGNÓSTICO)
 # ============================================
 
 elif st.session_state.pagina == "Dashboard":
@@ -894,12 +902,41 @@ elif st.session_state.pagina == "Dashboard":
                     st.error("❌ Senha incorreta!")
     else:
         st.subheader("📊 Dashboard - Reservas")
+        
+        # Seção de diagnóstico da planilha
+        with st.expander("🔍 Diagnóstico da planilha", expanded=True):
+            st.write(f"**Aba configurada:** `{Config.WORKSHEET_NAME}`")
+            st.write(f"**Biblioteca disponível:** {GSHEETS_AVAILABLE}")
+            
+            # Teste de conexão
+            try:
+                conn = st.connection("gsheets", type=GSheetsConnection)
+                st.success("✅ Conexão com Google Sheets estabelecida.")
+            except Exception as e:
+                st.error(f"❌ Falha na conexão: {e}")
+            
+            df_teste = carregar_dados()
+            if not df_teste.empty:
+                st.write("**Colunas encontradas:**", list(df_teste.columns))
+                st.dataframe(df_teste.head(10))
+                st.write(f"**Total de registros:** {len(df_teste)}")
+            else:
+                st.warning("⚠️ Nenhum dado carregado. Verifique o nome da aba e as permissões.")
+        
         try:
             df = carregar_dados()
             if not df.empty:
+                # Verifica se as colunas necessárias existem para as métricas
+                colunas = df.columns
+                if 'Status' in colunas:
+                    confirmados = len(df[df['Status'] == 'Confirmado'])
+                    cancelados = len(df[df['Status'] == 'Cancelado'])
+                else:
+                    confirmados = 0
+                    cancelados = 0
+                
                 total = len(df)
-                confirmados = len(df[df['Status'] == 'Confirmado'])
-                cancelados = len(df[df['Status'] == 'Cancelado'])
+                
                 col1, col2, col3 = st.columns(3)
                 with col1:
                     st.metric("Total", total)
@@ -907,18 +944,36 @@ elif st.session_state.pagina == "Dashboard":
                     st.metric("Confirmados", confirmados)
                 with col3:
                     st.metric("Cancelados", cancelados)
+                
                 st.markdown("---")
+                
+                # Filtros
                 col1, col2 = st.columns(2)
                 with col1:
-                    filtro_status = st.multiselect("Status", options=["Confirmado", "Cancelado"], default=["Confirmado"])
+                    if 'Status' in colunas:
+                        status_options = df['Status'].unique().tolist()
+                        filtro_status = st.multiselect("Status", options=status_options, default=status_options)
+                    else:
+                        filtro_status = []
+                        st.info("Coluna 'Status' não encontrada")
+                
                 with col2:
-                    filtro_unidade = st.multiselect("Unidade", options=list(ACADEMIAS.keys()))
+                    if 'Unidade' in colunas:
+                        unidade_options = df['Unidade'].unique().tolist()
+                        filtro_unidade = st.multiselect("Unidade", options=unidade_options)
+                    else:
+                        filtro_unidade = []
+                        st.info("Coluna 'Unidade' não encontrada")
+                
+                # Aplicar filtros
                 df_filtrado = df.copy()
-                if filtro_status:
+                if filtro_status and 'Status' in colunas:
                     df_filtrado = df_filtrado[df_filtrado['Status'].isin(filtro_status)]
-                if filtro_unidade:
+                if filtro_unidade and 'Unidade' in colunas:
                     df_filtrado = df_filtrado[df_filtrado['Unidade'].isin(filtro_unidade)]
+                
                 st.dataframe(df_filtrado, use_container_width=True, hide_index=True)
+                
                 st.markdown("### 🛠️ Ações")
                 col1, col2 = st.columns(2)
                 with col1:
@@ -929,14 +984,16 @@ elif st.session_state.pagina == "Dashboard":
                 with col2:
                     csv = df_filtrado.to_csv(index=False).encode('utf-8')
                     st.download_button(label="📥 Exportar CSV", data=csv, file_name=f"reservas_{datetime.now().strftime('%Y%m%d')}.csv", mime="text/csv", use_container_width=True)
+                
                 st.markdown("---")
                 if st.button("🚪 Logout", type="secondary", use_container_width=True):
                     st.session_state.admin_autenticado = False
                     st.rerun()
             else:
-                st.info("📭 Nenhuma reserva encontrada.")
+                st.info("📭 Nenhuma reserva encontrada ou dados não carregados.")
         except Exception as e:
-            st.error(f"❌ Erro: {str(e)}")
+            st.error(f"❌ Erro ao processar dashboard: {str(e)}")
+            logger.error(f"Erro no dashboard: {e}", exc_info=True)
 
 # ============================================
 # 15. PÁGINA DE CONTATO
@@ -979,6 +1036,7 @@ st.markdown("""
     <hr style='border-color: rgba(255,255,255,0.2);'>
     <p>TENNIS CLASS © 2025 - Sistema Completo</p>
     <p style='font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 5px;'>
+    Versão 12.6 com diagnóstico aprimorado
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -988,11 +1046,4 @@ st.markdown("""
 # ============================================
 
 if __name__ == "__main__":
-     logger.info("MASTER CODE DEEP SEEK v.12.6")
-
-
-
-
-
-
-
+    logger.info("MASTER CODE DEEP SEEK v.12.6 (diagnóstico) iniciado")

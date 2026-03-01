@@ -1,8 +1,8 @@
 # ============================================
-# MASTER CODE DEEP SEEK v.12.6 (logo v.2)
+# MASTER CODE DEEP SEEK v.12.7 (com envio de e-mail)
 # ============================================
 # TENNIS CLASS APP - Sistema Completo Otimizado
-# Versão: 12.6
+# Versão: 12.7
 # Correção: Preços Aula Kids (R$ 230/hora | Pacote 4h R$ 920)
 # Modificações: 
 #   - removido "Reservas ativas" da barra lateral
@@ -14,6 +14,7 @@
 #   - logo posicionado na altura original (sem deslocamento)
 #   - timer em tempo real no resumo da reserva
 #   - CORREÇÃO: formato de timestamp ISO completo para planilha
+#   - ENVIO DE E-MAIL: confirmação enviada ao aluno após reserva
 # ============================================
 
 import streamlit as st
@@ -21,6 +22,10 @@ import pandas as pd
 import time
 import re
 import uuid
+import smtplib
+import ssl
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
 from typing import Dict, Any, Tuple, List, Optional
 import logging
@@ -68,6 +73,10 @@ class Config:
     # Contato
     WHATSAPP_NUMBER = "5511971425028"
     
+    # E-mail (SMTP Gmail)
+    EMAIL_USER = None
+    EMAIL_PASSWORD = None
+    
     # Limites do sistema
     MAX_ALUNOS_POR_HORARIO = 4
     TEMPO_PAGAMENTO = 300  # 5 minutos em segundos
@@ -82,10 +91,23 @@ class Config:
             return st.secrets.get("ADMIN_PASSWORD", "aranha2026")
         except:
             return "aranha2026"
+    
+    @classmethod
+    def load_email_credentials(cls):
+        """Carrega credenciais de e-mail dos secrets."""
+        try:
+            cls.EMAIL_USER = st.secrets.get("EMAIL_USER", None)
+            cls.EMAIL_PASSWORD = st.secrets.get("EMAIL_PASSWORD", None)
+        except:
+            cls.EMAIL_USER = None
+            cls.EMAIL_PASSWORD = None
 
 class ReservaError(Exception):
     """Exceção personalizada para erros de reserva."""
     pass
+
+# Carrega credenciais de e-mail na inicialização
+Config.load_email_credentials()
 
 # ============================================
 # 3. DADOS DO SISTEMA (PREÇOS CORRIGIDOS)
@@ -174,7 +196,69 @@ def validar_data_horario(data: str, horario: str, unidade: str) -> Tuple[bool, s
         return True, ""
 
 # ============================================
-# 5. FUNÇÕES DE DADOS - GOOGLE SHEETS (CORRIGIDAS)
+# 5. FUNÇÕES DE ENVIO DE E-MAIL
+# ============================================
+
+def enviar_email_confirmacao(email_destino: str, reserva_id: str, dados_reserva: Dict[str, Any]) -> bool:
+    """
+    Envia e-mail de confirmação da reserva para o aluno.
+    Retorna True se enviado com sucesso, False caso contrário.
+    """
+    # Verifica se as credenciais de e-mail estão configuradas
+    if not Config.EMAIL_USER or not Config.EMAIL_PASSWORD:
+        logger.warning("Credenciais de e-mail não configuradas. E-mail não enviado.")
+        return False
+    
+    # Valida e-mail de destino
+    if not validar_email(email_destino):
+        logger.error(f"E-mail de destino inválido: {email_destino}")
+        return False
+    
+    try:
+        # Configurar mensagem
+        msg = MIMEMultipart()
+        msg['From'] = Config.EMAIL_USER
+        msg['To'] = email_destino
+        msg['Subject'] = f"Confirmação de Reserva - Tennis Class (ID: {reserva_id})"
+        
+        # Corpo do e-mail
+        corpo = f"""
+        Olá {dados_reserva.get('Aluno', '')},
+        
+        Sua reserva foi confirmada com sucesso!
+        
+        Detalhes da reserva:
+        - ID da Reserva: {reserva_id}
+        - Data: {dados_reserva.get('Data', '')}
+        - Horário: {dados_reserva.get('Horário', '')}
+        - Unidade: {dados_reserva.get('Unidade', '')}
+        - Serviço: {dados_reserva.get('Serviço', '')}
+        
+        Guarde este ID para apresentar na academia.
+        
+        Em caso de dúvidas, entre em contato pelo WhatsApp: {Config.WHATSAPP_NUMBER}
+        
+        Atenciosamente,
+        Equipe Tennis Class
+        """
+        
+        msg.attach(MIMEText(corpo, 'plain', 'utf-8'))
+        
+        # Conectar ao servidor SMTP do Gmail e enviar
+        context = ssl.create_default_context()
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
+            server.login(Config.EMAIL_USER, Config.EMAIL_PASSWORD)
+            server.send_message(msg)
+        
+        logger.info(f"E-mail de confirmação enviado para {email_destino} (Reserva: {reserva_id})")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Erro ao enviar e-mail: {str(e)}")
+        return False
+
+# ============================================
+# 6. FUNÇÕES DE DADOS - GOOGLE SHEETS (CORRIGIDAS)
 # ============================================
 
 @st.cache_data(ttl=300)
@@ -263,10 +347,15 @@ def criar_backup() -> bytes:
         return b""
 
 # ============================================
-# 6. FUNÇÕES DE PROCESSAMENTO
+# 7. FUNÇÕES DE PROCESSAMENTO
 # ============================================
 
-def processar_reserva(reserva: Dict[str, Any]) -> Tuple[bool, str, str]:
+def processar_reserva(reserva: Dict[str, Any]) -> Tuple[bool, str, str, bool]:
+    """
+    Processa reserva com tratamento de erros.
+    Retorna: (sucesso, reserva_id, mensagem, email_enviado)
+    """
+    email_enviado = False
     try:
         if not validar_nome(reserva.get('Aluno', '')):
             raise ReservaError("Nome inválido. Use apenas letras (mínimo 3 caracteres).")
@@ -282,12 +371,24 @@ def processar_reserva(reserva: Dict[str, Any]) -> Tuple[bool, str, str]:
         sucesso, reserva_id = salvar_reserva(reserva)
         if not sucesso:
             raise ReservaError("Falha ao salvar reserva.")
-        return True, reserva_id, "✅ Reserva confirmada com sucesso!"
+        
+        # Envia e-mail de confirmação (não crítico - não impede a reserva)
+        try:
+            email_enviado = enviar_email_confirmacao(
+                reserva.get('E-mail', ''),
+                reserva_id,
+                reserva
+            )
+        except Exception as e:
+            logger.error(f"Falha no envio de e-mail (não crítico): {e}")
+            email_enviado = False
+        
+        return True, reserva_id, "✅ Reserva confirmada com sucesso!", email_enviado
     except ReservaError as e:
-        return False, "", str(e)
+        return False, "", str(e), False
     except Exception as e:
         logger.error(f"Erro inesperado: {e}")
-        return False, "", f"Erro inesperado: {str(e)}"
+        return False, "", f"Erro inesperado: {str(e)}", False
 
 def verificar_senha_admin(senha_digitada: str) -> bool:
     try:
@@ -298,7 +399,7 @@ def verificar_senha_admin(senha_digitada: str) -> bool:
         return False
 
 # ============================================
-# 7. ESTADOS DA SESSÃO
+# 8. ESTADOS DA SESSÃO
 # ============================================
 
 if 'pagina' not in st.session_state:
@@ -315,9 +416,11 @@ if 'erros_form' not in st.session_state:
     st.session_state.erros_form = {}
 if 'reserva_id_gerada' not in st.session_state:
     st.session_state.reserva_id_gerada = None
+if 'email_enviado' not in st.session_state:
+    st.session_state.email_enviado = False
 
 # ============================================
-# 8. ESTILOS CSS (logo sem deslocamento)
+# 9. ESTILOS CSS (logo sem deslocamento)
 # ============================================
 
 st.markdown("""
@@ -485,6 +588,22 @@ st.markdown("""
         border-radius: 10px;
         margin: 15px 0;
     }
+    
+    /* Aviso de e-mail */
+    .email-status {
+        font-size: 14px;
+        padding: 8px;
+        border-radius: 5px;
+        margin-top: 10px;
+    }
+    .email-success {
+        background-color: rgba(0, 200, 81, 0.1);
+        color: #00C851;
+    }
+    .email-warning {
+        background-color: rgba(255, 136, 0, 0.1);
+        color: #ff8800;
+    }
 </style>
 
 <!-- Botão WhatsApp -->
@@ -502,7 +621,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ============================================
-# 9. COMPONENTES REUTILIZÁVEIS
+# 10. COMPONENTES REUTILIZÁVEIS
 # ============================================
 
 def calcular_tempo_restante(tempo_total: int, inicio_time: float) -> Tuple[bool, int, int]:
@@ -524,7 +643,7 @@ def card_com_estilo(conteudo: str = "", classe: str = "custom-card") -> str:
     return f'<div class="{classe}">{conteudo}</div>'
 
 # ============================================
-# 10. MENU LATERAL (com websites)
+# 11. MENU LATERAL (com websites)
 # ============================================
 
 with st.sidebar:
@@ -557,11 +676,9 @@ with st.sidebar:
         **Contato:** (11) 97142-5028
         **Horário:** Seg-Sex: 9h-18h | Sáb: 9h-13h
         """)
-    
-    # Seção "Status" removida propositalmente
 
 # ============================================
-# 11. PÁGINA PRINCIPAL - HOME (com logo v.2 .jpg)
+# 12. PÁGINA PRINCIPAL - HOME (com logo v.2 .jpg)
 # ============================================
 
 # Substitui o título de texto pela imagem do logo (versão 2 .jpg)
@@ -678,12 +795,15 @@ if st.session_state.pagina == "Home":
         
         # Botão de confirmação de pagamento
         if st.button("✅ CONFIRMAR PAGAMENTO", type="primary", use_container_width=True):
-            with st.spinner("Processando..."):
-                sucesso, reserva_id, mensagem = processar_reserva(st.session_state.reserva_temp)
+            with st.spinner("Processando reserva e enviando confirmação..."):
+                sucesso, reserva_id, mensagem, email_enviado = processar_reserva(st.session_state.reserva_temp)
                 if sucesso:
                     st.session_state.reserva_id_gerada = reserva_id
+                    st.session_state.email_enviado = email_enviado
                     st.session_state.pagamento_ativo = False
                     st.balloons()
+                    
+                    # Mensagem de confirmação
                     st.markdown(f"""
                     <div class="confirmation-box">
                         <h3>✅ Reserva Confirmada!</h3>
@@ -692,6 +812,30 @@ if st.session_state.pagina == "Home":
                         <p><strong>Guarde este ID para apresentar na academia.</strong></p>
                     </div>
                     """, unsafe_allow_html=True)
+                    
+                    # Status do e-mail
+                    if email_enviado:
+                        st.markdown("""
+                        <div class="email-status email-success">
+                            📧 E-mail de confirmação enviado com sucesso para o endereço informado.
+                        </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        if not Config.EMAIL_USER or not Config.EMAIL_PASSWORD:
+                            st.markdown("""
+                            <div class="email-status email-warning">
+                                ⚠️ Envio de e-mail não configurado. Entre em contato com o administrador.
+                            </div>
+                            """, unsafe_allow_html=True)
+                        else:
+                            st.markdown("""
+                            <div class="email-status email-warning">
+                                ⚠️ Não foi possível enviar o e-mail de confirmação. 
+                                Por favor, anote o ID da reserva ou entre em contato pelo WhatsApp.
+                            </div>
+                            """, unsafe_allow_html=True)
+                    
+                    # Ações
                     col1, col2 = st.columns(2)
                     with col1:
                         if st.button("📅 Nova Reserva", use_container_width=True):
@@ -717,7 +861,7 @@ if st.session_state.pagina == "Home":
     """, unsafe_allow_html=True)
 
 # ============================================
-# 12. PÁGINA DE PREÇOS
+# 13. PÁGINA DE PREÇOS
 # ============================================
 
 elif st.session_state.pagina == "Preços":
@@ -842,7 +986,7 @@ elif st.session_state.pagina == "Preços":
                 st.success(f"**Total:** R$ {total:,.2f} para {horas} hora(s) de {tipo_quadra}")
 
 # ============================================
-# 13. PÁGINA DE CADASTRO
+# 14. PÁGINA DE CADASTRO
 # ============================================
 
 elif st.session_state.pagina == "Cadastro":
@@ -873,7 +1017,7 @@ elif st.session_state.pagina == "Cadastro":
     """, unsafe_allow_html=True)
 
 # ============================================
-# 14. PÁGINA DASHBOARD
+# 15. PÁGINA DASHBOARD
 # ============================================
 
 elif st.session_state.pagina == "Dashboard":
@@ -938,7 +1082,7 @@ elif st.session_state.pagina == "Dashboard":
             st.error(f"❌ Erro: {str(e)}")
 
 # ============================================
-# 15. PÁGINA DE CONTATO
+# 16. PÁGINA DE CONTATO
 # ============================================
 
 elif st.session_state.pagina == "Contato":
@@ -970,25 +1114,23 @@ elif st.session_state.pagina == "Contato":
                 st.warning("⚠️ Preencha todos os campos.")
 
 # ============================================
-# 16. RODAPÉ
+# 17. RODAPÉ
 # ============================================
 
 st.markdown("""
 <div style='text-align: center; margin-top: 40px; color: rgba(255,255,255,0.6); font-size: 12px;'>
     <hr style='border-color: rgba(255,255,255,0.2);'>
     <p>TENNIS CLASS © 2025 - Sistema Completo</p>
-    <p>MASTER CODE DEEP SEEK v.12.6</p>
+    <p>MASTER CODE DEEP SEEK v.12.7 (com e-mail)</p>
     <p style='font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 5px;'>
+    Correção: Aula Kids R$ 230/hora | Pacote 4h R$ 920 | Locação de quadra | Calculadora completa | Websites academias | Envio de e-mail
     </p>
 </div>
 """, unsafe_allow_html=True)
 
 # ============================================
-# 17. INICIALIZAÇÃO
+# 18. INICIALIZAÇÃO
 # ============================================
 
 if __name__ == "__main__":
-    logger.info("MASTER CODE DEEP SEEK v.12.6")
-
-
-
+    logger.info("MASTER CODE DEEP SEEK v.12.7 (com e-mail) iniciado")

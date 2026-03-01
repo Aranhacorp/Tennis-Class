@@ -13,7 +13,7 @@
 #   - adicionados websites das academias parceiras
 #   - logo posicionado na altura original (sem deslocamento)
 #   - timer em tempo real no resumo da reserva
-#   - CORREÇÃO: formato de timestamp ISO completo para planilha
+#   - CORREÇÃO: formato de timestamp ISO completo para planilha (YYYY-MM-DD HH:MM:SS)
 #   - ENVIO DE E-MAIL: confirmação enviada ao aluno após reserva
 # ============================================
 

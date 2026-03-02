@@ -232,15 +232,55 @@ init_db()
 # ============================================
 # 4. DADOS DO SISTEMA (PREÇOS CORRIGIDOS)
 # ============================================
-# (mantido igual ao original)
-SERVICOS = { ... }  # Insira aqui o dicionário SERVICOS completo
-ACADEMIAS = { ... }  # Insira aqui o dicionário ACADEMIAS completo
-FORM_LINKS = { ... } # Insira aqui o dicionário FORM_LINKS completo
+
+SERVICOS = {
+    "particular_hora": {"nome": "Aula particular", "preco": 250, "tipo": "Hora"},
+    "grupo_hora": {"nome": "Aula em grupo", "preco": 200, "tipo": "Hora"},
+    "kids_hora": {"nome": "Aula Kids", "preco": 230, "tipo": "Hora"},
+    "personal_hora": {"nome": "Personal trainer", "preco": 250, "tipo": "Hora"},
+    "competitivo": {"nome": "Treinamento competitivo", "preco": 1400, "tipo": "Mês"},
+    "eventos": {"nome": "Eventos", "preco": 0, "tipo": "Hora"},
+    "pacote_particular_4": {"nome": "Pacote aula particular", "preco": 1000, "tipo": "4 aulas de 1 hora"},
+    "pacote_grupo_4": {"nome": "Pacote aula em grupo", "preco": 800, "tipo": "4 aulas de 1 hora"},
+    "pacote_particular_8": {"nome": "Pacote aula particular", "preco": 2000, "tipo": "8 aulas de 1 hora"},
+    "pacote_grupo_8": {"nome": "Pacote aula em grupo", "preco": 1600, "tipo": "8 aulas de 1 hora"},
+    "pacote_kids_4": {"nome": "Pacote aula Kids", "preco": 920, "tipo": "4 aulas de 1 hora"},
+    "pacote_personal_4": {"nome": "Pacote Personal Trainer", "preco": 1000, "tipo": "4 aulas de 1 hora"}
+}
+
+# Academias parceiras (com websites)
+ACADEMIAS = {
+    "PLAY TENNIS Ibirapuera": {
+        "endereco": "R. Estado de Israel, 860 - SP",
+        "telefone": "(11) 97752-0488",
+        "website": "https://www.playtennis.com.br/"
+    },
+    "TOP One Tennis": {
+        "endereco": "Av. Indianópolis, 647 - SP",
+        "telefone": "(11) 93236-3828",
+        "website": "https://toponetennis.com.br/"
+    },
+    "MELL Tennis": {
+        "endereco": "Rua Oscar Gomes Cardim, 535 - SP",
+        "telefone": "(11) 97142-5028",
+        "website": "https://www.instagram.com/barbetaefontestennisacademy/"
+    },
+    "ARENA BTG Morumbi": {
+        "endereco": "Av. Maj. Sylvio de Magalhães Padilha, 16741",
+        "telefone": "(11) 98854-3860",
+        "website": "https://arenabtg.com.br/"
+    }
+}
+
+FORM_LINKS = {
+    "professor": "https://docs.google.com/forms/d/e/1FAIpQLSdHicvD5MsOTnpfWwmpXOm8b268_S6gXoBZEysIo4Wj5cL2yw/viewform?usp=dialog",
+    "aluno": "https://docs.google.com/forms/d/e/1FAIpQLSdehkMHlLyCNd1owC-dSNO_-ROXq07w41jgymyKyFugvUZ0fA/viewform?usp=dialog",
+    "academia": "https://docs.google.com/forms/d/e/1FAIpQLScaC-XBLuzTPN78inOQPcXd6r0BzaessEke1MzOfGzOIlZpwQ/viewform?usp=dialog"
+}
 
 # ============================================
 # 5. FUNÇÕES DE VALIDAÇÃO
 # ============================================
-# (mantido igual ao original)
 
 def validar_nome(nome: str) -> bool:
     nome_limpo = nome.strip()
@@ -251,6 +291,10 @@ def validar_nome(nome: str) -> bool:
 def validar_email(email: str) -> bool:
     pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
     return re.match(pattern, email) is not None
+
+def validar_telefone(telefone: str) -> bool:
+    telefone_limpo = re.sub(r'\D', '', telefone)
+    return len(telefone_limpo) in [10, 11]
 
 def validar_data_horario(data: str, horario: str, unidade: str) -> Tuple[bool, str]:
     try:
@@ -308,7 +352,6 @@ def verificar_senha_admin(senha_digitada: str) -> bool:
 # ============================================
 # 7. ESTADOS DA SESSÃO
 # ============================================
-# (mantido igual ao original)
 
 if 'pagina' not in st.session_state:
     st.session_state.pagina = "Home"
@@ -328,7 +371,6 @@ if 'reserva_id_gerada' not in st.session_state:
 # ============================================
 # 8. ESTILOS CSS
 # ============================================
-# (mantido igual ao original)
 
 st.markdown("""
 <style>
@@ -480,7 +522,6 @@ def card_com_estilo(conteudo: str = "", classe: str = "custom-card") -> str:
 # ============================================
 # 10. MENU LATERAL
 # ============================================
-# (mantido igual ao original)
 
 with st.sidebar:
     st.markdown("<h2 style='color: white; text-align: center;'>☑️ MENU</h2>", unsafe_allow_html=True)
@@ -521,7 +562,7 @@ st.markdown("""
 # ============================================
 # 12. HOME (com timer)
 # ============================================
-# (mantido igual ao original, mas vou resumir para brevidade)
+
 if st.session_state.pagina == "Home":
     st.markdown(card_com_estilo(), unsafe_allow_html=True)
     if not st.session_state.pagamento_ativo:
@@ -631,7 +672,7 @@ if st.session_state.pagina == "Home":
 # ============================================
 # 13. PREÇOS
 # ============================================
-# (mantido igual ao original, apenas com cards)
+
 elif st.session_state.pagina == "Preços":
     st.markdown(card_com_estilo(), unsafe_allow_html=True)
     st.markdown("### ✅ Tabela de Preços")
@@ -726,6 +767,7 @@ elif st.session_state.pagina == "Preços":
 # ============================================
 # 14. CADASTRO
 # ============================================
+
 elif st.session_state.pagina == "Cadastro":
     st.markdown(card_com_estilo(), unsafe_allow_html=True)
     st.markdown("<h2 style='text-align: center;'>📝 Portal de Cadastros</h2>", unsafe_allow_html=True)
@@ -746,6 +788,7 @@ elif st.session_state.pagina == "Cadastro":
 # ============================================
 # 15. DASHBOARD (COM DIAGNÓSTICO)
 # ============================================
+
 elif st.session_state.pagina == "Dashboard":
     st.markdown(card_com_estilo(), unsafe_allow_html=True)
     if not st.session_state.admin_autenticado:
@@ -847,6 +890,7 @@ elif st.session_state.pagina == "Dashboard":
 # ============================================
 # 16. CONTATO
 # ============================================
+
 elif st.session_state.pagina == "Contato":
     st.markdown(card_com_estilo(), unsafe_allow_html=True)
     st.subheader("📞 Canais de Atendimento")
@@ -879,6 +923,7 @@ elif st.session_state.pagina == "Contato":
 # ============================================
 # 17. RODAPÉ
 # ============================================
+
 st.markdown("""
 <div style='text-align:center;margin-top:40px;color:rgba(255,255,255,0.6);font-size:12px;'>
     <hr>
@@ -889,5 +934,6 @@ st.markdown("""
 # ============================================
 # 18. INICIALIZAÇÃO
 # ============================================
+
 if __name__ == "__main__":
     logger.info("MASTER CODE DEEP SEEK v.13.3 iniciado")

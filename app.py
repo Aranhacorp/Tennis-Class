@@ -927,7 +927,7 @@ elif st.session_state.pagina == "Contato":
 st.markdown("""
 <div style='text-align:center;margin-top:40px;color:rgba(255,255,255,0.6);font-size:12px;'>
     <hr>
-    <p>TENNIS CLASS © 2025 - v.13.3 (SQLite com diagnóstico)</p>
+    <p>TENNIS CLASS © 2025 - v.13.3</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -937,3 +937,4 @@ st.markdown("""
 
 if __name__ == "__main__":
     logger.info("MASTER CODE DEEP SEEK v.13.3 iniciado")
+

@@ -1,5 +1,5 @@
 # ============================================
-# MASTER CODE DEEP SEEK v.12.6 (diagnóstico)
+# MASTER CODE DEEP SEEK v.12.6 (REVISÃO FINAL)
 # ============================================
 # TENNIS CLASS APP - Sistema Completo Otimizado
 # Versão: 12.6
@@ -15,6 +15,7 @@
 #   - timer em tempo real no resumo da reserva
 #   - CORREÇÃO: formato de timestamp ISO completo para planilha
 #   - DIAGNÓSTICO: logs detalhados e painel de diagnóstico no Dashboard
+#   - GRAVAÇÃO ROBUSTA: dicionário explícito de colunas para evitar desalinhamento
 # ============================================
 
 import streamlit as st
@@ -63,8 +64,7 @@ class Config:
     """Classe de configuração centralizada do sistema."""
     
     # Google Sheets
-    SPREADSHEET_URL = ""  # Não usado diretamente, mas mantido
-    WORKSHEET_NAME = "Página1"  # Nome da aba na planilha - VERIFIQUE SE É ESTE MESMO
+    WORKSHEET_NAME = "Página1"  # Nome da aba na planilha - confirme se é este mesmo
     
     # Contato
     WHATSAPP_NUMBER = "5511971425028"
@@ -175,7 +175,7 @@ def validar_data_horario(data: str, horario: str, unidade: str) -> Tuple[bool, s
         return True, ""
 
 # ============================================
-# 5. FUNÇÕES DE DADOS - GOOGLE SHEETS (CORRIGIDAS)
+# 5. FUNÇÕES DE DADOS - GOOGLE SHEETS (REFORÇADAS)
 # ============================================
 
 @st.cache_data(ttl=300)
@@ -238,17 +238,26 @@ def salvar_reserva(reserva: Dict[str, Any]) -> Tuple[bool, str]:
         # Gera ID único
         reserva_id = str(uuid.uuid4())[:8].upper()
         
-        # CORREÇÃO: Timestamp no formato ISO completo (YYYY-MM-DD HH:MM:SS)
+        # Timestamp no formato ISO completo (YYYY-MM-DD HH:MM:SS)
         timestamp_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        data_criacao = datetime.now().strftime("%d/%m/%Y %H:%M")
         
-        # Adiciona campos do sistema
-        reserva["ID"] = reserva_id
-        reserva["Timestamp"] = timestamp_atual
-        reserva["Status"] = "Confirmado"
-        reserva["Data_Criacao"] = datetime.now().strftime("%d/%m/%Y %H:%M")
+        # Cria dicionário com todas as colunas esperadas (ordem não importa)
+        nova_linha = {
+            "Data": reserva.get('Data', ''),
+            "Horário": reserva.get('Horário', ''),
+            "Aluno": reserva.get('Aluno', ''),
+            "Serviço": reserva.get('Serviço', ''),
+            "Unidade": reserva.get('Unidade', ''),
+            "E-mail": reserva.get('E-mail', ''),
+            "ID": reserva_id,
+            "Timestamp": timestamp_atual,
+            "Status": "Confirmado",
+            "Data_Criacao": data_criacao
+        }
         
         # Converte para DataFrame e concatena
-        df_novo = pd.concat([df, pd.DataFrame([reserva])], ignore_index=True)
+        df_novo = pd.concat([df, pd.DataFrame([nova_linha])], ignore_index=True)
         conn.update(worksheet=Config.WORKSHEET_NAME, data=df_novo)
         
         # Limpa cache
@@ -259,6 +268,8 @@ def salvar_reserva(reserva: Dict[str, Any]) -> Tuple[bool, str]:
         return True, reserva_id
     except Exception as e:
         logger.error(f"Erro ao salvar reserva: {str(e)}", exc_info=True)
+        # Exibe erro detalhado no Streamlit para facilitar diagnóstico
+        st.error(f"❌ Erro detalhado ao salvar: {str(e)}")
         return False, str(e)
 
 def criar_backup() -> bytes:
@@ -326,7 +337,7 @@ if 'reserva_id_gerada' not in st.session_state:
     st.session_state.reserva_id_gerada = None
 
 # ============================================
-# 8. ESTILOS CSS (logo sem deslocamento)
+# 8. ESTILOS CSS (logo sem deslocamento) - mantido igual
 # ============================================
 
 st.markdown("""
@@ -1036,7 +1047,7 @@ st.markdown("""
     <hr style='border-color: rgba(255,255,255,0.2);'>
     <p>TENNIS CLASS © 2025 - Sistema Completo</p>
     <p style='font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 5px;'>
-    Versão 12.6 com diagnóstico aprimorado
+    Versão 12.6 com gravação robusta e diagnóstico
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -1046,5 +1057,4 @@ st.markdown("""
 # ============================================
 
 if __name__ == "__main__":
-    logger.info("MASTER CODE DEEP SEEK v.12.6 (diagnóstico) iniciado")
-
+    logger.info("MASTER CODE DEEP SEEK v.12.6 (revisão final) iniciado")

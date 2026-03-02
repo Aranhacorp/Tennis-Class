@@ -669,7 +669,7 @@ if st.session_state.pagina == "Home":
 
 elif st.session_state.pagina == "Preços":
     st.markdown(card_com_estilo(), unsafe_allow_html=True)
-    st.markdown("### 🎾 Tabela de Preços")
+    st.markdown("### ☑️ Tabela de Preços")
     st.markdown("---")
     
     col1, col2 = st.columns(2)
@@ -881,5 +881,6 @@ st.markdown("""
 
 if __name__ == "__main__":
     logger.info("MASTER CODE DEEP SEEK v.13.0 (SQLite) iniciado")
+
 
 

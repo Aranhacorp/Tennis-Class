@@ -507,10 +507,10 @@ with st.sidebar:
             st.rerun()
     
     st.markdown("---")
-    st.markdown("### 🏢 ACADEMIAS PARCEIRAS")
+    st.markdown("### 🌐 ACADEMIAS PARCEIRAS")
     for nome, info in ACADEMIAS.items():
         st.markdown(
-            f"📍 **{nome}**\n"
+            f"▶️ **{nome}**\n"
             f"<div style='font-size: 11px; color: #ccc; margin-bottom: 10px;'>"
             f"{info['endereco']}<br>📞 {info['telefone']}<br>"
             f"🌐 <a href='{info['website']}' target='_blank' style='color: #4CAF50; text-decoration: none;'>{info['website']}</a>"
@@ -881,4 +881,5 @@ st.markdown("""
 
 if __name__ == "__main__":
     logger.info("MASTER CODE DEEP SEEK v.13.0 (SQLite) iniciado")
+
 

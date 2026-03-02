@@ -1,17 +1,20 @@
 # ============================================
-# MASTER CODE DEEP SEEK v.13.0 (SQLite)
+# MASTER CODE DEEP SEEK v.13.2
 # ============================================
 # TENNIS CLASS APP - Sistema Completo Otimizado
-# Versão: 13.0
+# Versão: 13.2
 # Correção: Preços Aula Kids (R$ 230/hora | Pacote 4h R$ 920)
 # Modificações: 
 #   - removido "Reservas ativas" da barra lateral
 #   - incluídos preços de locação de quadra (R$200 externa / R$350 coberta)
 #   - adicionada calculadora completa (aulas, pacotes e locação)
+#   - melhorias no tratamento de erros e inicialização
 #   - substituído título de texto pela imagem do logo (aumentado em 12,5%)
 #   - adicionados websites das academias parceiras
+#   - logo posicionado na altura original (sem deslocamento)
 #   - timer em tempo real no resumo da reserva
-#   - CORREÇÃO: banco de dados SQLite local (elimina problemas de permissão)
+#   - CORREÇÃO: timestamp no formato ISO completo
+#   - BANCO DE DADOS: migração do Google Sheets para SQLite local
 # ============================================
 
 import streamlit as st
@@ -21,8 +24,9 @@ import time
 import re
 import uuid
 from datetime import datetime, timedelta
-from typing import Dict, Any, Tuple, List
+from typing import Dict, Any, Tuple, List, Optional
 import logging
+from functools import lru_cache
 
 # ============================================
 # 1. CONFIGURAÇÃO INICIAL
@@ -35,6 +39,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Configuração de logging - apenas console, sem arquivo
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -49,6 +54,9 @@ logger = logging.getLogger(__name__)
 class Config:
     """Classe de configuração centralizada do sistema."""
     
+    # Banco de dados SQLite
+    DB_PATH = "tennis_class.db"
+    
     # Contato
     WHATSAPP_NUMBER = "5511971425028"
     
@@ -59,9 +67,6 @@ class Config:
     # Horários disponíveis
     HORARIOS_DISPONIVEIS = [f"{h:02d}:00" for h in range(7, 23)]
     
-    # Banco de dados SQLite
-    DB_PATH = "tennis_class.db"
-    
     @classmethod
     def get_admin_password(cls) -> str:
         """Obtém senha do admin com fallback seguro."""
@@ -71,14 +76,15 @@ class Config:
             return "aranha2026"
 
 class ReservaError(Exception):
+    """Exceção personalizada para erros de reserva."""
     pass
 
 # ============================================
-# 3. BANCO DE DADOS SQLITE
+# 3. FUNÇÕES DE BANCO DE DADOS SQLITE
 # ============================================
 
-def init_database():
-    """Cria a tabela de reservas se não existir."""
+def init_db():
+    """Inicializa o banco de dados e cria a tabela se não existir."""
     try:
         conn = sqlite3.connect(Config.DB_PATH)
         cursor = conn.cursor()
@@ -98,12 +104,10 @@ def init_database():
         ''')
         conn.commit()
         conn.close()
-        logger.info(f"Banco de dados inicializado em: {Config.DB_PATH}")
-        return True
+        logger.info(f"Banco de dados inicializado em {Config.DB_PATH}")
     except Exception as e:
-        logger.error(f"Erro ao criar banco: {e}")
-        st.error(f"❌ Erro ao criar banco de dados: {e}")
-        return False
+        logger.error(f"Erro ao inicializar banco de dados: {e}")
+        st.error("❌ Erro ao inicializar banco de dados local.")
 
 def carregar_dados() -> pd.DataFrame:
     """Carrega todas as reservas do banco SQLite."""
@@ -115,17 +119,18 @@ def carregar_dados() -> pd.DataFrame:
         return df
     except Exception as e:
         logger.error(f"Erro ao carregar dados: {e}")
-        st.error(f"❌ Erro ao carregar dados: {e}")
+        st.error("❌ Erro ao carregar dados do banco local.")
         return pd.DataFrame()
 
+@lru_cache(maxsize=128)
 def carregar_disponibilidade(data: str, unidade: str) -> Dict[str, int]:
-    """Calcula vagas disponíveis para uma data/unidade."""
+    """Calcula vagas disponíveis para uma data/unidade usando o DataFrame cacheado."""
     try:
         df = carregar_dados()
         if df.empty:
             return {hora: Config.MAX_ALUNOS_POR_HORARIO for hora in Config.HORARIOS_DISPONIVEIS}
         
-        # Filtra reservas ativas
+        # Filtra reservas ativas (status Confirmado ou Pendente)
         filtrado = df[
             (df['data'] == data) &
             (df['unidade'] == unidade) &
@@ -147,7 +152,7 @@ def salvar_reserva(reserva: Dict[str, Any]) -> Tuple[bool, str]:
         conn = sqlite3.connect(Config.DB_PATH)
         cursor = conn.cursor()
         reserva_id = str(uuid.uuid4())[:8].upper()
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        timestamp_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         data_criacao = datetime.now().strftime("%d/%m/%Y %H:%M")
         
         cursor.execute('''
@@ -162,13 +167,16 @@ def salvar_reserva(reserva: Dict[str, Any]) -> Tuple[bool, str]:
             reserva.get('Serviço'),
             reserva.get('Unidade'),
             reserva.get('E-mail'),
-            timestamp,
+            timestamp_atual,
             'Confirmado',
             data_criacao
         ))
         conn.commit()
         conn.close()
-        logger.info(f"Reserva {reserva_id} salva com sucesso")
+        # Limpa cache de disponibilidade
+        carregar_disponibilidade.cache_clear()
+        st.cache_data.clear()
+        logger.info(f"Reserva {reserva_id} salva com sucesso. Timestamp: {timestamp_atual}")
         return True, reserva_id
     except Exception as e:
         logger.error(f"Erro ao salvar reserva: {e}")
@@ -186,7 +194,7 @@ def criar_backup() -> bytes:
         return b""
 
 # Inicializa o banco na primeira execução
-init_database()
+init_db()
 
 # ============================================
 # 4. DADOS DO SISTEMA (PREÇOS CORRIGIDOS)
@@ -207,7 +215,7 @@ SERVICOS = {
     "pacote_personal_4": {"nome": "Pacote Personal Trainer", "preco": 1000, "tipo": "4 aulas de 1 hora"}
 }
 
-# Academias parceiras (com websites)
+# Academias parceiras (com websites adicionados)
 ACADEMIAS = {
     "PLAY TENNIS Ibirapuera": {
         "endereco": "R. Estado de Israel, 860 - SP",
@@ -250,6 +258,10 @@ def validar_nome(nome: str) -> bool:
 def validar_email(email: str) -> bool:
     pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
     return re.match(pattern, email) is not None
+
+def validar_telefone(telefone: str) -> bool:
+    telefone_limpo = re.sub(r'\D', '', telefone)
+    return len(telefone_limpo) in [10, 11]
 
 def validar_data_horario(data: str, horario: str, unidade: str) -> Tuple[bool, str]:
     try:
@@ -301,7 +313,8 @@ def verificar_senha_admin(senha_digitada: str) -> bool:
     try:
         senha_correta = Config.get_admin_password()
         return senha_digitada == senha_correta
-    except:
+    except Exception as e:
+        logger.error(f"Erro na verificação: {e}")
         return False
 
 # ============================================
@@ -324,11 +337,12 @@ if 'reserva_id_gerada' not in st.session_state:
     st.session_state.reserva_id_gerada = None
 
 # ============================================
-# 8. ESTILOS CSS
+# 8. ESTILOS CSS (logo sem deslocamento)
 # ============================================
 
 st.markdown("""
 <style>
+    /* Configuração global */
     .stApp {
         background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
                     url("https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/Fundo%20APP%20ver2.png");
@@ -337,6 +351,7 @@ st.markdown("""
         background-attachment: fixed;
     }
     
+    /* Header com logo - tamanho aumentado em 12,5% */
     .header-logo {
         text-align: center;
         margin-bottom: 20px;
@@ -347,6 +362,7 @@ st.markdown("""
         height: auto;
     }
     
+    /* Cards */
     .custom-card { 
         background-color: rgba(255, 255, 255, 0.95); 
         padding: 30px; 
@@ -355,6 +371,7 @@ st.markdown("""
         position: relative; 
     }
     
+    /* Links */
     .clean-link { 
         text-align: center; 
         text-decoration: none !important; 
@@ -368,6 +385,7 @@ st.markdown("""
         color: #4CAF50 !important; 
     }
     
+    /* Ícones */
     .icon-text { 
         font-size: 80px; 
         margin-bottom: 10px; 
@@ -378,6 +396,7 @@ st.markdown("""
         letter-spacing: 2px; 
     }
     
+    /* WhatsApp flutuante */
     .whatsapp-float { 
         position: fixed; 
         width: 60px; 
@@ -385,13 +404,19 @@ st.markdown("""
         bottom: 40px; 
         right: 40px; 
         background-color: #25d366; 
+        color: #FFF; 
         border-radius: 50px; 
+        text-align: center; 
+        font-size: 35px; 
+        box-shadow: 2px 2px 3px #999; 
         z-index: 9999; 
         display: flex; 
         align-items: center; 
         justify-content: center; 
+        text-decoration: none; 
     }
     
+    /* Mensagens */
     .error-message {
         color: #ff4444;
         font-size: 14px;
@@ -400,7 +425,16 @@ st.markdown("""
         border-radius: 4px;
         background-color: rgba(255, 68, 68, 0.1);
     }
+    .success-message {
+        color: #00C851;
+        font-size: 14px;
+        margin-top: 5px;
+        padding: 5px;
+        border-radius: 4px;
+        background-color: rgba(0, 200, 81, 0.1);
+    }
     
+    /* Timer */
     .timer-warning {
         color: #ff8800;
         font-weight: bold;
@@ -412,6 +446,7 @@ st.markdown("""
         background-color: rgba(255, 136, 0, 0.1);
     }
     
+    /* ID da reserva */
     .reserva-id-box {
         background-color: #f8f9fa;
         border: 2px solid #28a745;
@@ -425,6 +460,7 @@ st.markdown("""
         color: #28a745;
     }
     
+    /* Confirmação */
     .confirmation-box {
         background-color: #e8f5e9;
         border: 2px solid #4CAF50;
@@ -434,6 +470,7 @@ st.markdown("""
         text-align: center;
     }
     
+    /* Chave PIX */
     .pix-key {
         background-color: #f8f9fa;
         border: 2px solid #007bff;
@@ -447,6 +484,16 @@ st.markdown("""
         color: #007bff;
     }
     
+    /* Botões */
+    .stButton > button {
+        transition: all 0.3s ease;
+    }
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    /* Estilo para o timer em tempo real */
     .realtime-timer {
         background-color: #fff3cd;
         border: 2px solid #ffc107;
@@ -461,12 +508,16 @@ st.markdown("""
 </style>
 
 <!-- Botão WhatsApp -->
-<a href="https://wa.me/5511971425028" class="whatsapp-float" target="_blank">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" width="35">
+<a href="https://wa.me/5511971425028" class="whatsapp-float" target="_blank" 
+   aria-label="Contato via WhatsApp">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" 
+         width="35" alt="WhatsApp">
 </a>
 
 <!-- Assinatura -->
 <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/By%20Andre%20Aranha.png" 
+     class="assinatura-footer" 
+     alt="Assinatura André Aranha"
      style="position: fixed; bottom: 15px; left: 20px; width: 130px; z-index: 9999; opacity: 0.8;">
 """, unsafe_allow_html=True)
 
@@ -475,6 +526,7 @@ st.markdown("""
 # ============================================
 
 def calcular_tempo_restante(tempo_total: int, inicio_time: float) -> Tuple[bool, int, int]:
+    """Calcula o tempo restante e retorna (ativo, minutos, segundos)."""
     restante = tempo_total - (time.time() - inicio_time)
     if restante <= 0:
         return False, 0, 0
@@ -482,6 +534,7 @@ def calcular_tempo_restante(tempo_total: int, inicio_time: float) -> Tuple[bool,
     return True, m, s
 
 def mostrar_timer(tempo_total: int, inicio_time: float) -> Tuple[bool, str]:
+    """Versão original do timer para compatibilidade."""
     ativo, m, s = calcular_tempo_restante(tempo_total, inicio_time)
     if not ativo:
         return False, "⏰ Tempo esgotado!"
@@ -491,11 +544,11 @@ def card_com_estilo(conteudo: str = "", classe: str = "custom-card") -> str:
     return f'<div class="{classe}">{conteudo}</div>'
 
 # ============================================
-# 10. MENU LATERAL
+# 10. MENU LATERAL (com websites)
 # ============================================
 
 with st.sidebar:
-    st.markdown("<h2 style='color: white; text-align: center;'>🎾 MENU</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color: white; text-align: center;'>☑️ MENU</h2>", unsafe_allow_html=True)
     
     menu_itens = ["Home", "Preços", "Cadastro", "Dashboard", "Contato"]
     for item in menu_itens:
@@ -507,7 +560,7 @@ with st.sidebar:
             st.rerun()
     
     st.markdown("---")
-    st.markdown("### 🌐 ACADEMIAS PARCEIRAS")
+    st.markdown("### 🏢 ACADEMIAS PARCEIRAS")
     for nome, info in ACADEMIAS.items():
         st.markdown(
             f"▶️ **{nome}**\n"
@@ -524,26 +577,25 @@ with st.sidebar:
         **Contato:** (11) 97142-5028
         **Horário:** Seg-Sex: 9h-18h | Sáb: 9h-13h
         """)
+    
+    # Seção "Status" removida propositalmente
 
 # ============================================
-# 11. LOGO
+# 11. PÁGINA PRINCIPAL - HOME (com logo)
 # ============================================
 
+# Substitui o título de texto pela imagem do logo
 st.markdown("""
 <div class="header-logo">
     <img src="https://raw.githubusercontent.com/Aranhacorp/Tennis-Class/main/Tennis%20Class%20logo%20v.1.png" alt="Tennis Class Logo">
 </div>
 """, unsafe_allow_html=True)
 
-# ============================================
-# 12. HOME
-# ============================================
-
 if st.session_state.pagina == "Home":
     st.markdown(card_com_estilo(), unsafe_allow_html=True)
     
     if not st.session_state.pagamento_ativo:
-        with st.form("reserva_form"):
+        with st.form("reserva_form", clear_on_submit=True):
             st.subheader("📅 Agendar Aula")
             col1, col2 = st.columns(2)
             with col1:
@@ -552,14 +604,13 @@ if st.session_state.pagina == "Home":
                 email = st.text_input("E-mail *", placeholder="exemplo@email.com")
             
             servicos_lista = []
-            for info in SERVICOS.values():
+            for key, info in SERVICOS.items():
                 if info['tipo'] == "Hora":
                     servicos_lista.append(f"{info['nome']} R$ {info['preco']}/hora")
                 elif info['tipo'] == "Mês":
                     servicos_lista.append(f"{info['nome']} R$ {info['preco']}/mês")
                 else:
                     servicos_lista.append(f"{info['nome']} R$ {info['preco']} / {info['tipo']}")
-            
             servico = st.selectbox("Serviço *", servicos_lista)
             unidade = st.selectbox("Unidade *", list(ACADEMIAS.keys()))
             
@@ -571,17 +622,18 @@ if st.session_state.pagina == "Home":
             with col2:
                 hr = st.selectbox("Horário *", Config.HORARIOS_DISPONIVEIS)
             
-            if st.form_submit_button("AVANÇAR PARA PAGAMENTO", use_container_width=True, type="primary"):
+            submit = st.form_submit_button("AVANÇAR PARA PAGAMENTO", use_container_width=True, type="primary")
+            
+            if submit:
                 st.session_state.erros_form = {}
                 if not validar_nome(aluno):
                     st.session_state.erros_form['aluno'] = "Nome inválido."
                 if not validar_email(email):
                     st.session_state.erros_form['email'] = "E-mail inválido."
-                
                 data_str = dt.strftime("%d/%m/%Y")
-                disponivel, msg = validar_data_horario(data_str, hr, unidade)
+                disponivel, mensagem = validar_data_horario(data_str, hr, unidade)
                 if not disponivel:
-                    st.session_state.erros_form['disponibilidade'] = msg
+                    st.session_state.erros_form['disponibilidade'] = mensagem
                 
                 if not st.session_state.erros_form:
                     st.session_state.reserva_temp = {
@@ -596,13 +648,15 @@ if st.session_state.pagina == "Home":
                     st.session_state.inicio_timer = time.time()
                     st.rerun()
                 else:
-                    for msg in st.session_state.erros_form.values():
-                        st.markdown(f'<div class="error-message">❌ {msg}</div>', unsafe_allow_html=True)
+                    for campo, mensagem in st.session_state.erros_form.items():
+                        st.markdown(f'<div class="error-message">❌ {mensagem}</div>', unsafe_allow_html=True)
     
-    else:  # TELA DE PAGAMENTO COM TIMER
+    else:  # TELA DE PAGAMENTO COM TIMER EM TEMPO REAL
         st.subheader("💳 Pagamento via PIX")
+        st.markdown("### Chave PIX:")
         st.markdown('<div class="pix-key">aranha.corp@gmail.com</div>', unsafe_allow_html=True)
         
+        st.markdown("### 📋 Resumo da Reserva")
         reserva = st.session_state.reserva_temp
         st.info(f"""
         **Aluno:** {reserva.get('Aluno', '')}  
@@ -612,22 +666,40 @@ if st.session_state.pagina == "Home":
         **E-mail:** {reserva.get('E-mail', '')}
         """)
         
+        # Timer em tempo real
         timer_placeholder = st.empty()
+        
         if st.session_state.inicio_timer:
-            ativo, m, s = calcular_tempo_restante(Config.TEMPO_PAGAMENTO, st.session_state.inicio_timer)
+            # Calcula tempo restante
+            ativo, minutos, segundos = calcular_tempo_restante(
+                Config.TEMPO_PAGAMENTO, 
+                st.session_state.inicio_timer
+            )
+            
             if ativo:
-                timer_placeholder.markdown(f'<div class="realtime-timer">⏳ EXPIRA EM: {m:02d}:{s:02d}</div>', unsafe_allow_html=True)
+                # Formata o tempo para exibição
+                tempo_formatado = f"{minutos:02d}:{segundos:02d}"
+                
+                # Exibe o timer com estilo diferenciado
+                timer_placeholder.markdown(
+                    f'<div class="realtime-timer">⏳ EXPIRA EM: {tempo_formatado}</div>',
+                    unsafe_allow_html=True
+                )
+                
+                # Aguarda 1 segundo e atualiza a página para o timer continuar em tempo real
                 time.sleep(1)
                 st.rerun()
             else:
+                # Tempo esgotado
                 st.session_state.pagamento_ativo = False
-                timer_placeholder.error("⏰ TEMPO ESGOTADO!")
+                timer_placeholder.error("⏰ TEMPO ESGOTADO! A reserva expirou.")
                 time.sleep(2)
                 st.rerun()
         
+        # Botão de confirmação de pagamento
         if st.button("✅ CONFIRMAR PAGAMENTO", type="primary", use_container_width=True):
             with st.spinner("Processando..."):
-                sucesso, reserva_id, msg = processar_reserva(st.session_state.reserva_temp)
+                sucesso, reserva_id, mensagem = processar_reserva(st.session_state.reserva_temp)
                 if sucesso:
                     st.session_state.reserva_id_gerada = reserva_id
                     st.session_state.pagamento_ativo = False
@@ -635,204 +707,265 @@ if st.session_state.pagina == "Home":
                     st.markdown(f"""
                     <div class="confirmation-box">
                         <h3>✅ Reserva Confirmada!</h3>
-                        <p>{msg}</p>
-                        <div class="reserva-id-box">ID: {reserva_id}</div>
-                        <p>Guarde este ID.</p>
+                        <p>{mensagem}</p>
+                        <div class="reserva-id-box">ID da Reserva: {reserva_id}</div>
+                        <p><strong>Guarde este ID para apresentar na academia.</strong></p>
                     </div>
                     """, unsafe_allow_html=True)
                     col1, col2 = st.columns(2)
                     with col1:
-                        if st.button("📅 Nova Reserva"):
+                        if st.button("📅 Nova Reserva", use_container_width=True):
                             st.session_state.reserva_temp = {}
                             st.rerun()
                     with col2:
-                        st.markdown(f'<a href="https://wa.me/{Config.WHATSAPP_NUMBER}" target="_blank"><button style="width:100%">📱 WhatsApp</button></a>', unsafe_allow_html=True)
+                        if st.button("📱 Abrir WhatsApp", use_container_width=True):
+                            st.markdown(f'<a href="https://wa.me/{Config.WHATSAPP_NUMBER}" target="_blank"><button style="width: 100%; padding: 10px;">Abrir WhatsApp</button></a>', unsafe_allow_html=True)
                     time.sleep(5)
                     st.session_state.reserva_temp = {}
                     st.rerun()
                 else:
-                    st.error(f"❌ {msg}")
-    
-    st.markdown("</div>", unsafe_allow_html=True)
+                    st.error(f"❌ {mensagem}")
     
     st.markdown("""
-    <hr>
+    <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
     <a href="https://docs.google.com/document/d/1LW9CNdmgYxwnpXlDYRrE8rKsLdajbPi3fniwXVsBqco/edit?usp=sharing" 
-       target="_blank" style="display:block; text-align:center; color:#555;">
-        📄 Ler Regulamento
+       target="_blank" 
+       style="display: block; text-align: center; margin-top: 20px; text-decoration: none; color: #555; font-size: 14px;">
+        <span style="font-size: 24px; display: block;">📄</span>
+        Ler Regulamento de Uso
     </a>
     """, unsafe_allow_html=True)
 
 # ============================================
-# 13. PREÇOS
+# 12. PÁGINA DE PREÇOS
 # ============================================
 
 elif st.session_state.pagina == "Preços":
     st.markdown(card_com_estilo(), unsafe_allow_html=True)
-    st.markdown("### ☑️ Tabela de Preços")
+    st.markdown("### ✅ Tabela de Preços")
     st.markdown("---")
     
     col1, col2 = st.columns(2)
     with col1:
         st.markdown("#### 📋 Aulas Avulsas")
-        for info in SERVICOS.values():
+        for key, info in SERVICOS.items():
             if info['tipo'] == "Hora" and "Pacote" not in info['nome']:
-                st.markdown(f"**{info['nome']}**  \nR$ {info['preco']}/hora")
+                st.markdown(f"""
+                <div style='background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin-bottom: 10px;'>
+                    <h4 style='margin: 0; color: white;'>{info['nome']}</h4>
+                    <p style='margin: 5px 0 0 0; color: #4CAF50; font-weight: bold;'>R$ {info['preco']}/hora</p>
+                </div>
+                """, unsafe_allow_html=True)
         st.markdown("#### 🏆 Treinamento Competitivo")
-        for info in SERVICOS.values():
+        for key, info in SERVICOS.items():
             if info['tipo'] == "Mês":
-                st.markdown(f"**{info['nome']}**  \nR$ {info['preco']}/mês")
+                st.markdown(f"""
+                <div style='background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin-bottom: 10px;'>
+                    <h4 style='margin: 0; color: white;'>{info['nome']}</h4>
+                    <p style='margin: 5px 0 0 0; color: #4CAF50; font-weight: bold;'>R$ {info['preco']}/mês</p>
+                </div>
+                """, unsafe_allow_html=True)
     
     with col2:
         st.markdown("#### 📦 Pacotes")
-        for info in SERVICOS.values():
+        for key, info in SERVICOS.items():
             if "Pacote" in info['nome']:
-                st.markdown(f"**{info['nome']}**  \nR$ {info['preco']} / {info['tipo']}")
+                st.markdown(f"""
+                <div style='background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin-bottom: 10px;'>
+                    <h4 style='margin: 0; color: white;'>{info['nome']}</h4>
+                    <p style='margin: 5px 0 0 0; color: #4CAF50; font-weight: bold;'>R$ {info['preco']} / {info['tipo']}</p>
+                </div>
+                """, unsafe_allow_html=True)
         st.markdown("#### 🎉 Eventos")
-        st.markdown("**Eventos**  \nValor a combinar")
+        for key, info in SERVICOS.items():
+            if info['nome'] == "Eventos":
+                st.markdown(f"""
+                <div style='background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin-bottom: 10px;'>
+                    <h4 style='margin: 0; color: white;'>{info['nome']}</h4>
+                    <p style='margin: 5px 0 0 0; color: #FF9800; font-weight: bold;'>Valor a combinar</p>
+                </div>
+                """, unsafe_allow_html=True)
     
     st.markdown("---")
     st.markdown("#### 🏟️ Locação de Quadra")
     col3, col4 = st.columns(2)
     with col3:
-        st.markdown("**Quadra Externa**  \nR$ 200/hora")
+        st.markdown("""
+        <div style='background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin-bottom: 10px;'>
+            <h4 style='margin: 0; color: white;'>Quadra Externa</h4>
+            <p style='margin: 5px 0 0 0; color: #4CAF50; font-weight: bold;'>R$ 200/hora</p>
+        </div>
+        """, unsafe_allow_html=True)
     with col4:
-        st.markdown("**Quadra Coberta**  \nR$ 350/hora")
+        st.markdown("""
+        <div style='background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin-bottom: 10px;'>
+            <h4 style='margin: 0; color: white;'>Quadra Coberta</h4>
+            <p style='margin: 5px 0 0 0; color: #4CAF50; font-weight: bold;'>R$ 350/hora</p>
+        </div>
+        """, unsafe_allow_html=True)
     
     st.markdown("---")
-    st.markdown("#### 🧮 Calculadora")
+    st.markdown("#### 🧮 Calculadora (Aulas Avulsas)")
     col1, col2, col3 = st.columns(3)
     with col1:
-        tipo = st.selectbox("Tipo", ["Aula particular", "Aula em grupo", "Aula Kids", "Personal trainer"])
+        tipo_aula = st.selectbox("Tipo de aula", ["Aula particular", "Aula em grupo", "Aula Kids", "Personal trainer"])
     with col2:
-        qtd = st.number_input("Quantidade", 1, 20, 1)
+        quantidade = st.number_input("Quantidade de aulas", min_value=1, max_value=20, value=1)
     with col3:
-        if st.button("Calcular"):
-            preco = next((info['preco'] for info in SERVICOS.values() if info['nome'] == tipo), 0)
-            st.success(f"Total: R$ {preco * qtd:,.2f}")
+        st.markdown("<br>", unsafe_allow_html=True)
+        calcular = st.button("Calcular")
+    if calcular:
+        preco_por_aula = 0
+        for key, info in SERVICOS.items():
+            if info['nome'] == tipo_aula:
+                preco_por_aula = info['preco']
+                break
+        total = preco_por_aula * quantidade
+        st.success(f"**Total:** R$ {total:,.2f} por {quantidade} aulas")
     
     st.markdown("---")
     st.markdown("#### 🧮 Calculadora Completa (Aulas, Pacotes e Locação)")
-    with st.form("calc_completa"):
-        opcao = st.radio("Tipo", ["Aula avulsa", "Pacote", "Locação"], horizontal=True)
+    with st.form("calculadora_completa"):
+        opcao = st.radio("Selecione o tipo de serviço", ["Aula avulsa", "Pacote", "Locação de quadra"], horizontal=True)
         if opcao == "Aula avulsa":
-            tipo2 = st.selectbox("Aula", ["Aula particular", "Aula em grupo", "Aula Kids", "Personal trainer"], key="tipo2")
-            qtd2 = st.number_input("Horas", 1, 20, 1, key="qtd2")
+            tipo_aula2 = st.selectbox("Tipo de aula", ["Aula particular", "Aula em grupo", "Aula Kids", "Personal trainer"], key="tipo_aula2")
+            quantidade2 = st.number_input("Quantidade de horas/aulas", min_value=1, max_value=20, value=1, key="qtd2")
             if st.form_submit_button("Calcular"):
-                preco = next((info['preco'] for info in SERVICOS.values() if info['nome'] == tipo2), 0)
-                st.success(f"Total: R$ {preco * qtd2:,.2f}")
+                preco = 0
+                for key, info in SERVICOS.items():
+                    if info['nome'] == tipo_aula2 and info['tipo'] == "Hora":
+                        preco = info['preco']
+                        break
+                total = preco * quantidade2
+                st.success(f"**Total:** R$ {total:,.2f} para {quantidade2} hora(s) de {tipo_aula2}")
         elif opcao == "Pacote":
-            pacotes = [f"{info['nome']} - R$ {info['preco']}" for info in SERVICOS.values() if "Pacote" in info['nome']]
-            pacote = st.selectbox("Pacote", pacotes)
+            pacotes = []
+            for key, info in SERVICOS.items():
+                if "Pacote" in info['nome']:
+                    pacotes.append(f"{info['nome']} - R$ {info['preco']} ({info['tipo']})")
+            pacote_escolhido = st.selectbox("Escolha o pacote", pacotes)
             if st.form_submit_button("Calcular"):
-                preco = float(pacote.split("R$")[1].strip())
-                st.success(f"Total: R$ {preco:,.2f}")
-        else:
-            quadra = st.selectbox("Quadra", ["Externa", "Coberta"])
-            horas = st.number_input("Horas", 1, 12, 1)
+                preco = 0
+                descricao = ""
+                for key, info in SERVICOS.items():
+                    if "Pacote" in info['nome'] and info['nome'] in pacote_escolhido:
+                        preco = info['preco']
+                        descricao = f"{info['nome']} ({info['tipo']})"
+                        break
+                st.success(f"**Total:** R$ {preco:,.2f} para o pacote: {descricao}")
+        else:  # Locação de quadra
+            tipo_quadra = st.selectbox("Tipo de quadra", ["Quadra Externa", "Quadra Coberta"])
+            horas = st.number_input("Número de horas", min_value=1, max_value=12, value=1)
             if st.form_submit_button("Calcular"):
-                preco = 200 if quadra == "Externa" else 350
-                st.success(f"Total: R$ {preco * horas:,.2f}")
-    
-    st.markdown("</div>", unsafe_allow_html=True)
+                preco_hora = 200 if tipo_quadra == "Quadra Externa" else 350
+                total = preco_hora * horas
+                st.success(f"**Total:** R$ {total:,.2f} para {horas} hora(s) de {tipo_quadra}")
 
 # ============================================
-# 14. CADASTRO
+# 13. PÁGINA DE CADASTRO
 # ============================================
 
 elif st.session_state.pagina == "Cadastro":
     st.markdown(card_com_estilo(), unsafe_allow_html=True)
-    st.markdown("<h2 style='text-align: center;'>📝 Portal de Cadastros</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center;'>📝 Portal de Cadastros</h2><br>", unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.markdown(f'<a href="{FORM_LINKS["professor"]}" class="clean-link" target="_blank"><div class="icon-text">👨‍🏫</div><div class="label-text">PROFESSOR</div></a>', unsafe_allow_html=True)
+        st.markdown(f"""
+        <a href="{FORM_LINKS['professor']}" class="clean-link" target="_blank">
+            <div class="icon-text">👨‍🏫</div><div class="label-text">PROFESSOR</div>
+        </a>""", unsafe_allow_html=True)
     with col2:
-        st.markdown(f'<a href="{FORM_LINKS["aluno"]}" class="clean-link" target="_blank"><div class="icon-text">👤</div><div class="label-text">ALUNO</div></a>', unsafe_allow_html=True)
+        st.markdown(f"""
+        <a href="{FORM_LINKS['aluno']}" class="clean-link" target="_blank">
+            <div class="icon-text">👱🏻‍♀️</div><div class="label-text">ALUNO</div>
+        </a>""", unsafe_allow_html=True)
     with col3:
-        st.markdown(f'<a href="{FORM_LINKS["academia"]}" class="clean-link" target="_blank"><div class="icon-text">🏢</div><div class="label-text">ACADEMIA</div></a>', unsafe_allow_html=True)
+        st.markdown(f"""
+        <a href="{FORM_LINKS['academia']}" class="clean-link" target="_blank">
+            <div class="icon-text">🥇</div><div class="label-text">ACADEMIA</div>
+        </a>""", unsafe_allow_html=True)
     
     st.markdown("""
-    <div style='text-align:center;margin-top:20px;padding:15px;background:rgba(255,255,255,0.1);border-radius:10px;color:#ccc;'>
-        <p>Os formulários abrem em nova aba.</p>
+    <div style='text-align: center; margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px; color: #ccc;'>
+        <p><strong>📋 Instruções:</strong> Os formulários abrem em nova aba. Preencha todos os campos obrigatórios.</p>
     </div>
     """, unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
 
 # ============================================
-# 15. DASHBOARD
+# 14. PÁGINA DASHBOARD
 # ============================================
 
 elif st.session_state.pagina == "Dashboard":
     st.markdown(card_com_estilo(), unsafe_allow_html=True)
     if not st.session_state.admin_autenticado:
         st.subheader("🔐 Acesso Administrativo")
-        senha = st.text_input("Senha:", type="password")
-        if st.button("🔓 Acessar"):
-            if verificar_senha_admin(senha):
-                st.session_state.admin_autenticado = True
-                st.rerun()
-            else:
-                st.error("Senha incorreta!")
+        senha = st.text_input("Senha de administrador:", type="password", placeholder="Digite a senha...")
+        col1, _ = st.columns([3, 1])
+        with col1:
+            if st.button("🔓 Acessar", use_container_width=True):
+                if verificar_senha_admin(senha):
+                    st.session_state.admin_autenticado = True
+                    st.success("✅ Acesso concedido!")
+                    time.sleep(1)
+                    st.rerun()
+                else:
+                    st.error("❌ Senha incorreta!")
     else:
         st.subheader("📊 Dashboard - Reservas")
-        
-        # Diagnóstico do banco
-        with st.expander("🔍 Diagnóstico do Banco"):
-            st.write(f"**Arquivo:** `{Config.DB_PATH}`")
-            if st.button("🔄 Recarregar dados"):
-                st.cache_data.clear()
-                st.rerun()
-        
-        df = carregar_dados()
-        if not df.empty:
-            total = len(df)
-            confirmados = len(df[df['status'] == 'Confirmado'])
-            cancelados = len(df[df['status'] == 'Cancelado'])
-            
-            col1, col2, col3 = st.columns(3)
-            col1.metric("Total", total)
-            col2.metric("Confirmados", confirmados)
-            col3.metric("Cancelados", cancelados)
-            
-            st.markdown("---")
-            col1, col2 = st.columns(2)
-            with col1:
-                status_opts = df['status'].unique().tolist() if 'status' in df.columns else []
-                filtro_status = st.multiselect("Status", status_opts, default=status_opts)
-            with col2:
-                unidade_opts = df['unidade'].unique().tolist() if 'unidade' in df.columns else []
-                filtro_unidade = st.multiselect("Unidade", unidade_opts)
-            
-            df_filtrado = df.copy()
-            if filtro_status and 'status' in df.columns:
-                df_filtrado = df_filtrado[df_filtrado['status'].isin(filtro_status)]
-            if filtro_unidade and 'unidade' in df.columns:
-                df_filtrado = df_filtrado[df_filtrado['unidade'].isin(filtro_unidade)]
-            
-            st.dataframe(df_filtrado, use_container_width=True, hide_index=True)
-            
-            st.markdown("### 🛠️ Ações")
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("🔄 Atualizar"):
-                    st.cache_data.clear()
+        try:
+            df = carregar_dados()
+            if not df.empty:
+                total = len(df)
+                confirmados = len(df[df['status'] == 'Confirmado'])
+                cancelados = len(df[df['status'] == 'Cancelado'])
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Total", total)
+                with col2:
+                    st.metric("Confirmados", confirmados)
+                with col3:
+                    st.metric("Cancelados", cancelados)
+                st.markdown("---")
+                col1, col2 = st.columns(2)
+                with col1:
+                    # Usa os nomes das colunas do DataFrame (minúsculas, conforme SQLite)
+                    status_opts = df['status'].unique().tolist()
+                    filtro_status = st.multiselect("Status", options=status_opts, default=status_opts)
+                with col2:
+                    unidade_opts = df['unidade'].unique().tolist()
+                    filtro_unidade = st.multiselect("Unidade", options=unidade_opts)
+                
+                df_filtrado = df.copy()
+                if filtro_status:
+                    df_filtrado = df_filtrado[df_filtrado['status'].isin(filtro_status)]
+                if filtro_unidade:
+                    df_filtrado = df_filtrado[df_filtrado['unidade'].isin(filtro_unidade)]
+                
+                st.dataframe(df_filtrado, use_container_width=True, hide_index=True)
+                
+                st.markdown("### 🛠️ Ações")
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button("🔄 Atualizar", use_container_width=True):
+                        st.cache_data.clear()
+                        st.success("Dados atualizados!")
+                        st.rerun()
+                with col2:
+                    csv = criar_backup()
+                    if csv:
+                        st.download_button(label="📥 Exportar CSV", data=csv, file_name=f"reservas_{datetime.now().strftime('%Y%m%d')}.csv", mime="text/csv", use_container_width=True)
+                st.markdown("---")
+                if st.button("🚪 Logout", type="secondary", use_container_width=True):
+                    st.session_state.admin_autenticado = False
                     st.rerun()
-            with col2:
-                csv = criar_backup()
-                if csv:
-                    st.download_button("📥 Exportar CSV", csv, f"reservas_{datetime.now():%Y%m%d}.csv", "text/csv")
-            
-            if st.button("🚪 Logout"):
-                st.session_state.admin_autenticado = False
-                st.rerun()
-        else:
-            st.info("📭 Nenhuma reserva encontrada.")
-    
-    st.markdown("</div>", unsafe_allow_html=True)
+            else:
+                st.info("📭 Nenhuma reserva encontrada.")
+        except Exception as e:
+            st.error(f"❌ Erro: {str(e)}")
 
 # ============================================
-# 16. CONTATO
+# 15. PÁGINA DE CONTATO
 # ============================================
 
 elif st.session_state.pagina == "Contato":
@@ -842,45 +975,44 @@ elif st.session_state.pagina == "Contato":
     col1, col2 = st.columns(2)
     with col1:
         st.markdown("### 📧 E-mail")
-        st.markdown("aranha.corp@gmail.com")
+        st.markdown("""<div style='padding:15px;background:rgba(255,255,255,0.1);border-radius:10px;'><h4 style='margin:0;color:white;'>aranha.corp@gmail.com</h4></div>""", unsafe_allow_html=True)
         st.markdown("### 🏢 Endereço")
-        st.markdown("São Paulo - SP")
+        st.markdown("""<div style='padding:15px;background:rgba(255,255,255,0.1);border-radius:10px;'><p style='margin:0;color:white;'>São Paulo - SP</p></div>""", unsafe_allow_html=True)
     with col2:
         st.markdown("### 📱 WhatsApp")
-        st.markdown("(11) 97142-5028  \nSeg-Sab: 8h-20h")
+        st.markdown("""<div style='padding:15px;background:rgba(255,255,255,0.1);border-radius:10px;'><h4 style='margin:0;color:white;'>(11) 97142-5028</h4><p style='margin:5px 0 0 0;color:#ccc;'>Seg-Sab: 8h-20h</p></div>""", unsafe_allow_html=True)
         st.markdown("### ⏰ Horário")
-        st.markdown("Seg-Sex: 8h-20h  \nSáb: 8h-18h")
+        st.markdown("""<div style='padding:15px;background:rgba(255,255,255,0.1);border-radius:10px;'><p style='margin:0;color:white;'>Seg-Sex: 8h-20h</p><p style='margin:5px 0 0 0;color:#ccc;'>Sáb: 8h-18h</p></div>""", unsafe_allow_html=True)
     st.markdown("---")
     st.markdown("### ✉️ Envie uma mensagem")
     with st.form("contato_form"):
-        nome = st.text_input("Seu nome")
-        email = st.text_input("Seu e-mail")
-        telefone = st.text_input("Telefone (opcional)")
-        msg = st.text_area("Mensagem", height=100)
-        if st.form_submit_button("📤 Enviar"):
-            if nome and email and msg:
+        nome = st.text_input("Seu nome", placeholder="Digite seu nome")
+        email = st.text_input("Seu e-mail", placeholder="Digite seu e-mail")
+        telefone = st.text_input("Telefone (opcional)", placeholder="(11) 99999-9999")
+        mensagem = st.text_area("Mensagem", placeholder="Sua mensagem...", height=100)
+        if st.form_submit_button("📤 Enviar", use_container_width=True):
+            if nome and email and mensagem:
                 st.success("✅ Mensagem enviada!")
             else:
-                st.warning("⚠️ Preencha os campos obrigatórios.")
-    st.markdown("</div>", unsafe_allow_html=True)
+                st.warning("⚠️ Preencha todos os campos.")
 
 # ============================================
-# 17. RODAPÉ
+# 16. RODAPÉ
 # ============================================
 
 st.markdown("""
-<div style='text-align:center;margin-top:40px;color:rgba(255,255,255,0.6);font-size:12px;'>
-    <hr>
-    <p>TENNIS CLASS © 2025 - v.13.0 (SQLite)</p>
+<div style='text-align: center; margin-top: 40px; color: rgba(255,255,255,0.6); font-size: 12px;'>
+    <hr style='border-color: rgba(255,255,255,0.2);'>
+    <p>TENNIS CLASS © 2025 - Sistema Completo</p>
+    <p style='font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 5px;'>
+    MASTER CODE DEEP SEEK v.13.2 (SQLite)
+    </p>
 </div>
 """, unsafe_allow_html=True)
 
 # ============================================
-# 18. INICIALIZAÇÃO
+# 17. INICIALIZAÇÃO
 # ============================================
 
 if __name__ == "__main__":
-    logger.info("MASTER CODE DEEP SEEK v.13.0 (SQLite) iniciado")
-
-
-
+    logger.info("MASTER CODE DEEP SEEK v.13.2 (SQLite) iniciado")

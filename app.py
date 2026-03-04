@@ -938,3 +938,4 @@ st.markdown("""
 if __name__ == "__main__":
     logger.info("MASTER CODE DEEP SEEK v.13.3 iniciado")
 
+
